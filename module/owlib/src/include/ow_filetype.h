@@ -177,6 +177,7 @@ struct filetype {
 		ASCII *a;
 	} data;						// extra data pointer (used for separating similar but differently named functions)
 };
+#define NO_FILETYPE_DATA {.v=NULL}
 
 #include "ow_bitfield.h" // read/write bit fields
 

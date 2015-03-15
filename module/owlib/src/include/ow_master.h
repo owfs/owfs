@@ -50,10 +50,10 @@ struct master_fake {
 // DS2490R (usb) hub
 struct master_usb {
 #if OW_USB
-	struct usb_device *dev;
-	struct usb_dev_handle *usb;
-	int usb_bus_number;
-	int usb_dev_number;
+	libusb_device * lusb_dev ;
+	libusb_device_handle * lusb_handle ;
+	int bus_number;
+	int address;
 	int datasampleoffset;
 	int writeonelowtime;
 	int pulldownslewrate;
@@ -180,6 +180,7 @@ struct master_browse {
 	AvahiClient *client ;
 	AvahiServiceBrowser * browser ;
 	AvahiThreadedPoll *poll ;
+
 #if __HAS_IPV6__
 	char host[INET6_ADDRSTRLEN+1] ;
 #else

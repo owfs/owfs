@@ -256,7 +256,7 @@ static void *ProcessAcceptSocket(void *arg)
 	// cleanup
 	Test_and_Close( &(asd->acceptfd) );
 	owfree(asd);
-	LEVEL_DEBUG("Normal exit.");
+	LEVEL_DEBUG("Normal completion.");
 
 	// All done. If shutdown in progress and this is a last handler thread, send a message to the main thread.
 	RWLOCK_RLOCK( shutdown_mutex_rw ) ;

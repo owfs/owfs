@@ -33,7 +33,7 @@ GOOD_OR_BAD LibStart(void* v)
 	if ( OW_Load_dnssd_library() == 0 ) {
 		Globals.zero = zero_bonjour ;
 	}
-#endif
+#endif /* OW_ZERO */
 
 	/* Initialize random number generator, make sure fake devices get the same
 	 * id each time */

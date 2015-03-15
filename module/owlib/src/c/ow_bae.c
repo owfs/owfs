@@ -584,7 +584,7 @@ static struct filetype BAE[] = {
 	{"911/pio", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA,},
 	{"911/pio/pio",   PROPERTY_LENGTH_YESNO, &A911pio , ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_PIO0,}, },
 	{"911/pio/direction", PROPERTY_LENGTH_YESNO, &A911piodd, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_PIODIR0,}, },
-	{"911/pio/strenght",  PROPERTY_LENGTH_YESNO, &A911piods, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_PIODS0,}, },
+	{"911/pio/strength",  PROPERTY_LENGTH_YESNO, &A911piods, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_PIODS0,}, },
 	{"911/pio/pull_enable", PROPERTY_LENGTH_YESNO, &A911piope, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_PIOPE0,}, },
 	{"911/pio/pull_down", PROPERTY_LENGTH_YESNO, &A911piopd, ft_yesno, fc_volatile, FS_r_8, FS_w_8, VISIBLE_911, {.u=_FC03_PULLDOWN0,}, },
 	{"911/alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_911, NO_FILETYPE_DATA, },

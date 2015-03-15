@@ -139,6 +139,9 @@ struct global {
 	int locks ; // show mutexes
 	_FLOAT templow ;
 	_FLOAT temphigh ;
+#if OW_USB
+	libusb_context * luc ;
+#endif /* OW_USB */
 	int argc;
 	char ** argv ;
 	enum e_inet_type inet_type ;

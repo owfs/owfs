@@ -56,6 +56,7 @@ static struct port_in * CreateW1Port(int bus_master)
 	return pin ;
 }
 
+// GOOD means no match
 static GOOD_OR_BAD W1_nomatch( struct port_in * trial, struct port_in * existing )
 {
 	if ( get_busmode(existing->first) != bus_w1 ) {
