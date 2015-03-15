@@ -12,8 +12,8 @@ AC_INIT
 # (In our case it's better to always keep AGE to 0, since nobody else will use our library)
 
 VERSION_MAJOR=3
-VERSION_MINOR=0
-VERSION_PATCHLEVEL=2
+VERSION_MINOR=1
+VERSION_PATCHLEVEL=0
 
 OWFS_INTERFACE_AGE=0
 OWFS_BINARY_AGE=0
