@@ -12,7 +12,6 @@
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
-#include "ow_usb_msg.h"
 
 static void ENET_monitor_close(struct connection_in *in);
 static GOOD_OR_BAD ENET_monitor_in_use(const struct port_in * pin) ;
