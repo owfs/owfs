@@ -132,6 +132,7 @@
 #endif							/* OW_CYGWIN */
 #endif							/* HAVE_STDINT_H */
 
+#include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -296,6 +297,10 @@ enum  e_inet_type { inet_none, inet_systemd , inet_launchd, } ;
 #include "ow_dnssd.h"
 #endif							/* OW_ZERO */
 #include "ow_avahi.h"
+
+#if OW_USB
+#include <libusb.h>
+#endif /* OW_USB */
 
 /*
     OW -- One Wire

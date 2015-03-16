@@ -22,7 +22,7 @@ API_setup(program_type_swig) ;
 
 char *version( ) 
 {
-	return VERSION;
+	return OWFS_VERSION;
 }
 
 int init( const char * dev ) 

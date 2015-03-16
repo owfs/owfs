@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -24,41 +23,19 @@ $Id$
 
 #if OW_USB						/* conditional inclusion of USB */
 
-/* Extensive FreeBSD workarounds by Robert Nilsson <rnilsson@mac.com> */
-/* Peter Radcliffe updated support for FreeBSD >= 8 */
-#ifdef __FreeBSD__
-	// Add a few definitions we need
-#undef HAVE_USB_INTERRUPT_READ	// This call in libusb is unneeded for FreeBSD (and it's broken)
-#if __FreeBSD__ < 8
-#include <sys/types.h>
-#include <dev/usb/usb.h>
-#define USB_CLEAR_HALT BSD_usb_clear_halt
-#endif /* __FreeBSD__ < 8 */
-struct usb_dev_handle {
-	FILE_DESCRIPTOR_OR_ERROR file_descriptor;
-	struct usb_bus *bus;
-	struct usb_device *device;
-	int config;
-	int interface;
-	int altsetting;
-	void *impl_info;
-};
-#endif /* __FreeBSD__ */
-
-#ifndef USB_CLEAR_HALT
-#define USB_CLEAR_HALT usb_clear_halt
-#endif /* USB_CLEAR_HALT */
 
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
 
 GOOD_OR_BAD USB_Control_Msg(BYTE bRequest, UINT wValue, UINT wIndex, const struct parsedname *pn);
-GOOD_OR_BAD DS9490_open(struct usb_list *ul, struct connection_in *in);
+GOOD_OR_BAD DS9490_open(struct connection_in *in);
 
-#define DS9490_getstatus_BUFFER_LENGTH ( 32 + 1 )
+#define DS9490_getstatus_BUFFER ( 16 )
+#define DS9490_getstatus_BUFFER_LENGTH ( DS9490_getstatus_BUFFER * 2 )
 RESET_TYPE DS9490_getstatus(BYTE * buffer, int * readlen, const struct parsedname *pn);
 SIZE_OR_ERROR DS9490_read(BYTE * buf, size_t size, const struct parsedname *pn);
-SIZE_OR_ERROR DS9490_write(const BYTE * buf, size_t size, const struct parsedname *pn);
+SIZE_OR_ERROR DS9490_write(BYTE * buf, size_t size, const struct parsedname *pn);
 void DS9490_close(struct connection_in *in);
+void DS9490_port_setup( libusb_device * dev, struct port_in * pin ) ;
 
 // Mode Command Code Constants
 #define ONEWIREDEVICEDETECT               0xA5

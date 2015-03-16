@@ -29,22 +29,6 @@
 #include "ow_usb_msg.h"
 #include "ow_usb_cycle.h"
 
-/* Extensive FreeBSD workarounds by Robert Nilsson <rnilsson@mac.com> */
-/* Peter Radcliffe updated support for FreeBSD >= 8 */
-#ifdef __FreeBSD__
-	// Add a few definitions we need
-#undef HAVE_USB_INTERRUPT_READ	// This call in libusb is unneeded for FreeBSD (and it's broken)
-#if __FreeBSD__ < 8
-#include <sys/types.h>
-#include <dev/usb/usb.h>
-#define USB_CLEAR_HALT BSD_usb_clear_halt
-#endif /* __FreeBSD__ < 8 */
-#endif /* __FreeBSD__ */
-
-#ifndef USB_CLEAR_HALT
-#define USB_CLEAR_HALT usb_clear_halt
-#endif /* USB_CLEAR_HALT */
-
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
 
 static RESET_TYPE DS9490_reset(const struct parsedname *pn);
@@ -72,8 +56,7 @@ static int FindDiscrepancy(BYTE * last_sn, BYTE * discrepancy_sn);
 static enum search_status DS9490_directory(struct device_search *ds, const struct parsedname *pn);
 static GOOD_OR_BAD DS9490_SetSpeed(const struct parsedname *pn);
 static void DS9490_SetFlexParameters(struct connection_in *in) ;
-static GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in);
-static void DS9490_connection_init( struct connection_in * in ) ;
+static GOOD_OR_BAD DS9490_open_and_name( libusb_device * dev, struct connection_in *in);
 
 /* Device-specific routines */
 static void DS9490_setroutines(struct connection_in *in)
@@ -220,11 +203,18 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 	struct address_pair ap ;
 	GOOD_OR_BAD gbResult = gbBAD;
 	
+	DS9490_setroutines(in);
+
+	if ( in->master.usb.lusb_dev != NULL ) {
+		// special case: exists (from scan)
+		return DS9490_open_and_name( in->master.usb.lusb_dev, in ) ;
+		// Note DS9490_ID_this_master needs to be called,
+		// but the bus hasn't yet been added.
+		// So it's done in USB_scan_for_adapters
+	}
+		
 	/* uses "name" before it's cleared by connection_init */
 	Parse_Address( pin->init_data, &ap ) ;
-
-	DS9490_connection_init( in ) ;
-	pin->busmode = bus_usb;
 
 	switch ( ap.entries ) {
 		case 0:
@@ -261,6 +251,7 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 			}
 			break ;
 	}
+
 	Free_Address( &ap ) ;
 	return gbResult;
 }
@@ -268,72 +259,138 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 /* Open a DS9490  -- low level code (to allow for repeats)  */
 static GOOD_OR_BAD DS9490_detect_single_adapter(int usb_nr, struct connection_in * in)
 {
-	struct usb_list ul;
-	USB_first(&ul);
-
-	if ( usb_nr == 1 ) {
-		// return the first free
-		RETURN_BAD_IF_BAD( USB_next_match( &ul ) ) ;
-	} else {
-		// return the nth
-		RETURN_BAD_IF_BAD( USB_next_match_until_n( &ul, usb_nr ) ) ;
+	// discover devices
+	libusb_device **device_list;
+	int n_devices = libusb_get_device_list( Globals.luc, &device_list) ;
+	int i_device ;
+	
+	if ( n_devices < 1 ) {
+		LEVEL_CONNECT("Could not find a list of USB devices");
+		if ( n_devices<0 ) {
+			LEVEL_DEBUG("<%s>",libusb_error_name(n_devices));
+		}
+		return gbBAD ;
 	}
 
-	RETURN_BAD_IF_BAD( DS9490_open_and_name(&ul, in)) ;
-	if ( BAD(DS9490_ID_this_master(in)) ) {
-		DS9490_close(in) ;
-		return gbBAD;
+	for ( i_device = 0 ; i_device < n_devices ; ++i_device ) {
+		libusb_device * current = device_list[i_device] ;
+		if ( GOOD( USB_match( current ) ) ) {
+			--usb_nr ;
+			if ( usb_nr > 0 ) {
+				continue ;
+			}
+			
+			if ( BAD(DS9490_open_and_name( current, in)) ) {
+				LEVEL_DEBUG("Cannot open USB device %.d:%.d", libusb_get_device_address(current), libusb_get_bus_number(current) );
+				break ;
+			} else if ( BAD(DS9490_ID_this_master(in)) ) {
+				DS9490_close(in) ;
+				LEVEL_DEBUG("Cannot access USB device %.d:%.d", libusb_get_device_address(current), libusb_get_bus_number(current) );
+				break ;
+			} else{
+				libusb_free_device_list(device_list, 1);
+				return gbGOOD ;
+			}
+		}
 	}
+	
+	libusb_free_device_list(device_list, 1);
 
-	return gbGOOD ;
+	LEVEL_CONNECT("No USB DS9490 bus master found");
+	return gbBAD;
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
 static GOOD_OR_BAD DS9490_detect_specific_adapter(int bus_nr, int dev_nr, struct connection_in * in)
 {
-	struct usb_list ul;
+	// discover devices
+	libusb_device **device_list;
+	int n_devices = libusb_get_device_list( Globals.luc, &device_list) ;
+	int i_device ;
 	
+	if ( n_devices < 1 ) {
+		LEVEL_CONNECT("Could not find a list of USB devices");
+		if ( n_devices<0 ) {
+			LEVEL_DEBUG("<%s>",libusb_error_name(n_devices));
+		}
+		return gbBAD ;
+	}
+
 	// Mark this connection as taking only this address pair. Important for reconnections.
 	in->master.usb.specific_usb_address = 1 ;
 
-	USB_first(&ul);
-	while ( GOOD(USB_next_match(&ul)) ) {
-		if ( ul.usb_bus_number != bus_nr || ul.usb_dev_number != dev_nr ) {
-			LEVEL_CONNECT("USB DS9490 %d:%d passed over. (Looking for %d:%d)", ul.usb_bus_number, ul.usb_dev_number, bus_nr, dev_nr );
-			continue ;
+	for ( i_device = 0 ; i_device < n_devices ; ++i_device ) {
+		libusb_device * current = device_list[i_device] ;
+		if ( GOOD( USB_match( current ) ) ) {
+			if ( libusb_get_bus_number(current) != bus_nr ) {
+				continue ;
+			}
+			
+			if ( libusb_get_device_address(current) != dev_nr ) {
+				continue ;
+			}
+			
+			if ( BAD(DS9490_open_and_name( current, in)) ) {
+				LEVEL_DEBUG("Cannot open USB device %.d:%.d", libusb_get_device_address(current), libusb_get_bus_number(current) );
+				break ;
+			} else if ( BAD(DS9490_ID_this_master(in)) ) {
+				DS9490_close(in) ;
+				LEVEL_DEBUG("Cannot access USB device %.d:%.d", libusb_get_device_address(current), libusb_get_bus_number(current) );
+				break ;
+			} else{
+				libusb_free_device_list(device_list, 1);
+				return gbGOOD ;
+			}
 		}
-		return DS9490_open_and_name(&ul, in) ;
 	}
+	
+	libusb_free_device_list(device_list, 1);
 
-	LEVEL_CONNECT("No matching USB DS9490 bus master found");
+	LEVEL_CONNECT("No USB DS9490 bus master found matching %d:%d", bus_nr,dev_nr);
 	return gbBAD;
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
 static GOOD_OR_BAD DS9490_detect_all_adapters(struct port_in * pin_first)
 {
-	struct usb_list ul;
+	// discover devices
 	struct port_in * pin = pin_first ;
+	libusb_device **device_list;
+	int n_devices = libusb_get_device_list( Globals.luc, &device_list) ;
+	int i_device ;
+	
+	if ( n_devices < 1 ) {
+		LEVEL_CONNECT("Could not find a list of USB devices");
+		if ( n_devices<0 ) {
+			LEVEL_DEBUG("<%s>",libusb_error_name(n_devices));
+		}
+		return gbBAD ;
+	}
 
-	USB_first(&ul);
-	while ( GOOD(USB_next_match(&ul)) ) {
-		struct connection_in * in = pin->first ;
-		if ( BAD(DS9490_open_and_name(&ul, in)) ) {
-			LEVEL_DEBUG("Cannot open USB device %.d:%.d", ul.usb_bus_number, ul.usb_dev_number );
-			continue ;
-		} else if ( BAD(DS9490_ID_this_master(in)) ) {
-			DS9490_close(in) ;
-			LEVEL_DEBUG("Cannot access USB device %.d:%.d", ul.usb_bus_number, ul.usb_dev_number );
-			continue;
-		} else{
-			pin = NewPort(pin) ;
-			if ( pin == NULL ) {
-				return gbGOOD ;
+	for ( i_device = 0 ; i_device < n_devices ; ++i_device ) {
+		libusb_device * current = device_list[i_device] ;
+		if ( GOOD( USB_match( current ) ) ) {
+			struct connection_in * in = pin->first ;
+			if ( BAD(DS9490_open_and_name( current, in)) ) {
+				LEVEL_DEBUG("Cannot open USB device %.d:%.d", libusb_get_device_address(current), libusb_get_bus_number(current) );
+				continue ;
+			} else if ( BAD(DS9490_ID_this_master(in)) ) {
+				DS9490_close(in) ;
+				LEVEL_DEBUG("Cannot access USB device %.d:%.d", libusb_get_device_address(current), libusb_get_bus_number(current) );
+				continue;
+			} else{
+				pin = NewPort(NULL) ; // no reason to copy anything
+				if ( pin == NULL ) {
+					return gbGOOD ;
+				}
+				// set up the new connection for the next adapter
+				DS9490_setroutines(in);
 			}
-			// set up the new connection for the next adapter
-			DS9490_connection_init(pin->first) ;
 		}
 	}
+	
+	libusb_free_device_list(device_list, 1);
+
 	if ( pin == pin_first ) {
 		LEVEL_CONNECT("No USB DS9490 bus masters used");
 		return gbBAD;
@@ -341,24 +398,6 @@ static GOOD_OR_BAD DS9490_detect_all_adapters(struct port_in * pin_first)
 	// Remove the extra connection
 	RemovePort(pin);
 	return gbGOOD ;
-}
-
-static void DS9490_connection_init( struct connection_in * in )
-{
-	if ( in == NO_CONNECTION ) {
-		return ;
-	}
-	DEVICENAME(in) = owstrdup(badUSBname);		// initialized
-
-	DS9490_setroutines(in);		// set up close, reconnect, reset, ...
-
-	in->flex = 1 ; // Michael Markstaller suggests this
-	in->master.usb.usb = NULL ; // no handle yet
-	in->master.usb.usb_bus_number = in->master.usb.usb_dev_number = -1 ;
-	memset( in->master.usb.ds1420_address, 0, SERIAL_NUMBER_SIZE ) ;
-	DS9490_setroutines(in);
-	in->Adapter = adapter_DS9490;	/* OWFS assigned value */
-	in->adapter_name = "DS9490";
 }
 
 /* ------------------------------------------------------------ */
@@ -395,21 +434,36 @@ static GOOD_OR_BAD DS9490_reconnect(const struct parsedname *pn)
 /* Open a DS9490  -- low level code (to allow for repeats)  */
 static GOOD_OR_BAD DS9490_redetect_low(struct connection_in * in)
 {
-	struct usb_list ul;
-
-	USB_first(&ul);
-		
-	while ( GOOD(USB_next_match(&ul)) ) {
-		// try to open the DS9490
-		if ( BAD(DS9490_open_and_name(&ul, in)) ) {
-			LEVEL_CONNECT("Cannot open USB bus master, Find next...");
-			continue;
+	// discover devices
+	libusb_device **device_list;
+	int n_devices = libusb_get_device_list( Globals.luc, &device_list) ;
+	int i_device ;
+	
+	if ( n_devices < 1 ) {
+		LEVEL_CONNECT("Could not find a list of USB devices");
+		if ( n_devices<0 ) {
+			LEVEL_DEBUG("<%s>",libusb_error_name(n_devices));
 		}
-		RETURN_GOOD_IF_GOOD( DS9490_redetect_match( in ) ) ;
-		DS9490_close(in);
+		return gbBAD;
 	}
-	//LEVEL_CONNECT("No available USB DS9490 bus master found");
-	return gbBAD;
+
+	for ( i_device = 0 ; i_device < n_devices ; ++i_device ) {
+		libusb_device * current = device_list[i_device] ;
+		if ( GOOD( USB_match( current ) ) ) {
+			// try to open the DS9490
+			if ( BAD(DS9490_open_and_name( current, in )) ) {
+				LEVEL_CONNECT("Cannot open USB bus master, Find next...");
+				continue;
+			}
+			if ( GOOD( DS9490_redetect_match( in ) ) ) {
+				break ;
+			}
+			DS9490_close(in);
+		}
+	}
+	
+	libusb_free_device_list(device_list, 1);
+	return (in->master.usb.lusb_handle!=NULL) ? gbGOOD : gbBAD ;
 }
 
 /* Open a DS9490  -- low level code (to allow for repeats)  */
@@ -487,14 +541,14 @@ static GOOD_OR_BAD DS9490_redetect_match( struct connection_in * in)
 static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 {
 	int i; 
-	BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH ];
+	BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH + 1 ];
 	int USpeed;
 	struct connection_in * in = pn->selected_connection ;
 	int readlen = 0 ;
 
 	LEVEL_DEBUG("DS9490 RESET. changed %d, flex: %d", in->changed_bus_settings, in->flex) ;	
 
-	if (in->master.usb.usb == NULL || in->master.usb.dev == NULL) {
+	if (in->master.usb.lusb_dev == NULL || in->master.usb.lusb_handle == NULL) {
 		// From Michael Markstaller:
 		LEVEL_DEBUG("Attempting RESET on null bus") ;
 		//FIXME! what doees it mean? no action/reconnect is even tried-> shouldn't we just drop this BM and let uscan rediscover it? DS9490 must always have an ID chip..
@@ -635,7 +689,7 @@ static enum search_status DS9490_next_both(struct device_search *ds, const struc
 // a dirblob. Called from DS9490_next_both every 7 devices to fill.
 static enum search_status DS9490_directory(struct device_search *ds, const struct parsedname *pn)
 {
-	BYTE status_buffer[ DS9490_getstatus_BUFFER_LENGTH ];
+	BYTE status_buffer[ DS9490_getstatus_BUFFER_LENGTH + 1 ];
 	BYTE EP2_data[SERIAL_NUMBER_SIZE] ; //USB endpoint 3 buffer
 	union {
 		BYTE b[DS2490_BULK_BUFFER_SIZE] ;
@@ -757,21 +811,17 @@ static int FindDiscrepancy(BYTE * last_sn, BYTE * discrepancy_sn)
 /* --- USB Open and Close --------------------------------------*/
 
 // Open usb device,
-static GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_in *in)
+// dev already set
+static GOOD_OR_BAD DS9490_open_and_name( libusb_device * dev, struct connection_in *in)
 {
-	if (in->master.usb.usb) {
+	if (in->master.usb.lusb_handle != NULL) {
 		LEVEL_DEFAULT("DS9490 %s was NOT closed?", DEVICENAME(in));
 		return gbBAD ;
 	}
 
-	SAFEFREE(DEVICENAME(in)) ;
-	DEVICENAME(in) = DS9490_device_name(ul);
+	DS9490_port_setup( dev, in->pown ) ;
 
-	if (DEVICENAME(in) == NULL) {
-		return gbBAD;
-	}
-	
-	if ( BAD( DS9490_open( ul, in ) ) ) {
+	if ( BAD( DS9490_open( in ) ) ) {
 		STAT_ADD1_BUS(e_bus_open_errors, in);
 		return gbBAD ;
 	} else if ( BAD( DS9490_setup_adapter(in)) ) {
@@ -787,12 +837,15 @@ static GOOD_OR_BAD DS9490_open_and_name(struct usb_list *ul, struct connection_i
 /* ------------------------------------------------------------ */
 /* --- USB read and write --------------------------------------*/
 
-static GOOD_OR_BAD DS9490_sendback_data(const BYTE * data, BYTE * resp, size_t len, const struct parsedname *pn)
+static GOOD_OR_BAD DS9490_sendback_data(const BYTE * const_data, BYTE * resp, size_t len, const struct parsedname *pn)
 {
 	size_t location = 0 ;
+	BYTE data[len] ; // to avoid const problem
+
+	memcpy( data, const_data, len ) ;
 
 	while ( location < len ) {
-		BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH ];
+		BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH + 1 ];
 		int readlen ;
 
 		size_t block = len - location ;
@@ -877,7 +930,7 @@ static GOOD_OR_BAD DS9490_ProgramPulse(const struct parsedname *pn)
 
 static GOOD_OR_BAD DS9490_HaltPulse(const struct parsedname *pn)
 {
-	BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH ];
+	BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH + 1 ];
 	struct timeval tv;
 	struct timeval tvtarget;
 	struct timeval tvlimit = { 0, 300000 } ; // 300 millisec from PDKit /ib/other/libUSB/libusbds2490.c
@@ -1007,12 +1060,11 @@ static GOOD_OR_BAD DS9490_setup_adapter(struct connection_in * in)
 {
 	struct parsedname s_pn;
 	struct parsedname * pn = &s_pn ;
-	BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH ];
+	BYTE buffer[ DS9490_getstatus_BUFFER_LENGTH + 1 ];
 	int readlen = 0 ;
 
 	FS_ParsedName_Placeholder(pn);	// minimal parsename -- no destroy needed
 	pn->selected_connection = in;
-
 	// reset the device (not the 1-wire bus)
 	if ( BAD(USB_Control_Msg(CONTROL_CMD, CTL_RESET_DEVICE, 0x0000, pn))) {
 		LEVEL_DATA("ResetDevice error");

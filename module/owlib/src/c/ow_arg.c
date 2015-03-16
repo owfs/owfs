@@ -14,6 +14,7 @@
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
+#include "ow_usb_msg.h" // for DS9490_port_setup
 
 enum arg_address { arg_addr_device, arg_addr_null, arg_addr_ip, arg_addr_colon, arg_addr_number, arg_addr_other } ;
 
@@ -373,18 +374,23 @@ GOOD_OR_BAD ARG_W1_monitor(void)
 GOOD_OR_BAD ARG_USB_monitor(const char *arg)
 {
 #if OW_USB
-	struct port_in * pin = NewPort( NULL ) ;
-	struct connection_in * in ;
-	if ( pin == NULL ) {
-		return gbBAD;
+	if ( Globals.luc != NULL ) {
+		struct port_in * pin = NewPort( NULL ) ;
+		struct connection_in * in ;
+		if ( pin == NULL ) {
+			return gbBAD;
+		}
+		in = pin->first ;
+		if (in == NO_CONNECTION) {
+			return gbBAD;
+		}
+		arg_data(arg,pin) ;
+		pin->busmode = bus_usb_monitor;
+		return gbGOOD;
+	} else {
+		LEVEL_DEFAULT("USB library could not be initialized -- cannot proceed") ;
+		return gbBAD ;
 	}
-	in = pin->first ;
-	if (in == NO_CONNECTION) {
-		return gbBAD;
-	}
-	arg_data(arg,pin) ;
-	pin->busmode = bus_usb_monitor;
-	return gbGOOD;
 #else
 	(void) arg ;
 	fprintf(stderr, "OWFS is compiled without USB support.\n");
@@ -523,18 +529,24 @@ GOOD_OR_BAD ARG_Tester(const char *arg)
 GOOD_OR_BAD ARG_USB(const char *arg)
 {
 #if OW_USB
-	struct port_in * pin = NewPort( NULL ) ;
-	struct connection_in * in ;
-	if ( pin == NULL ) {
-		return gbBAD;
+	if ( Globals.luc != NULL ) {
+		struct port_in * pin = NewPort( NULL ) ;
+		struct connection_in * in ;
+		if ( pin == NULL ) {
+			return gbBAD;
+		}
+		in = pin->first ;
+		if (in == NO_CONNECTION) {
+			return gbBAD;
+		}
+		pin->busmode = bus_usb;
+		DS9490_port_setup( NULL, pin ) ; // flag as not yet set up
+		arg_data(arg,pin) ;
+		return gbGOOD;
+	} else {
+		LEVEL_DEFAULT( "USB library initialization had problems -- can't proceed") ;
+		return gbBAD ;
 	}
-	in = pin->first ;
-	if (in == NO_CONNECTION) {
-		return gbBAD;
-	}
-	pin->busmode = bus_usb;
-	arg_data(arg,pin) ;
-	return gbGOOD;
 #else							/* OW_USB */
 	(void) arg ;
 	LEVEL_DEFAULT("USB support (intentionally) not included in compilation. Check LIBUSB, then reconfigure and recompile.");

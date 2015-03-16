@@ -104,6 +104,10 @@ struct global Globals = {
 	
 //	.allow_external = 1 , // for testing
 	.allow_external = 0 , // unless program == owexternal
+	
+#if OW_USB
+	.luc = NULL ,
+#endif /* OW_USB */
 };
 
 // generic value for ignorable function returns 
