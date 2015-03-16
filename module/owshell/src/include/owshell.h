@@ -179,7 +179,6 @@ struct global {
 	int announce_off;			// use zeroconf?
 	struct antiloop Token;
 	int readonly;
-	int max_clients;			// for ftp
 	int autoserver;
 	int quiet ;
 	int trim ;
