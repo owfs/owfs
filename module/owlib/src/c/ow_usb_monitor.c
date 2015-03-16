@@ -35,25 +35,25 @@ GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 
 	switch ( ap.entries ) {
 		case 0:
-			Globals.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
+			in->master.usb_monitor.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
 			break ;
 		case 1:
 			switch( ap.first.type ) {
 				case address_numeric:
-					Globals.usb_scan_interval = ap.first.number ;
+					in->master.usb_monitor.usb_scan_interval = ap.first.number ;
 					break ;
 				default:
-					Globals.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
+					in->master.usb_monitor.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
 					break ;
 			}
 			break ;
 		case 2:
 			switch( ap.second.type ) {
 				case address_numeric:
-					Globals.usb_scan_interval = ap.second.number ;
+					in->master.usb_monitor.usb_scan_interval = ap.second.number ;
 					break ;
 				default:
-					Globals.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
+					in->master.usb_monitor.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
 					break ;
 			}
 			break ;
@@ -137,7 +137,7 @@ static void * USB_monitor_loop( void * v )
 	
 	do {
 		fd_set readset;
-		struct timeval tv = { Globals.usb_scan_interval, 0, };
+		struct timeval tv = { in->master.usb_monitor.usb_scan_interval, 0, };
 		
 		/* Initialize readset */
 		FD_ZERO(&readset);

@@ -165,6 +165,8 @@ struct master_w1_monitor {
 // Search for USB (DS9490R) devices
 struct master_usb_monitor {
 	FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
+	int usb_scan_interval ;
+
 };
 
 struct master_enet_monitor {

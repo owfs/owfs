@@ -123,7 +123,6 @@ struct global {
 	int timeout_persistent_high;
 	int clients_persistent_low;
 	int clients_persistent_high;
-	int usb_scan_interval ;
 	int enet_scan_interval ;
 	int pingcrazy;
 	int no_dirall;
