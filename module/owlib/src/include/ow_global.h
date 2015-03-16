@@ -95,7 +95,6 @@ struct global {
 	int error_level_restore;
 	int error_print;
 	int fatal_debug;
-	int concurrent_connections;
 	ASCII *fatal_debug_file;
 	int readonly;
 	int max_clients;			// for ftp
@@ -123,7 +122,6 @@ struct global {
 	int timeout_persistent_high;
 	int clients_persistent_low;
 	int clients_persistent_high;
-	int enet_scan_interval ;
 	int pingcrazy;
 	int no_dirall;
 	int no_get;

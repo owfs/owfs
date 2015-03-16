@@ -171,6 +171,8 @@ struct master_usb_monitor {
 
 struct master_enet_monitor {
 	FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
+	int enet_scan_interval ;
+
 };
 
 struct master_browse {

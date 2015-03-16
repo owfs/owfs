@@ -170,7 +170,6 @@ void ow_help_program(void)
 	"\n"
 	" owserver (OWFS server)\n"
 	"  -p --port [ip:]port   TCP address and port number for access\n"
-	"  --max_connections     [%3d] Nr of allowed concurrent connections\n"
 	"\n"
 	" Development tests (owserver only)\n"
 	"  --pingcrazy      Add lots of keep-alive messages to the owserver protocol\n"
@@ -184,7 +183,6 @@ void ow_help_program(void)
 	"  --zero                Announce service via zeroconf\n"
 	"  --announce name       Name for service given in zeroconf broadcast\n"
 	"  --nozero              Don't announce service via zeroconf\n" "\n"
-	, Globals.concurrent_connections
 	);
 }
 

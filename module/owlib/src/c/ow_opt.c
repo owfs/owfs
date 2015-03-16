@@ -111,10 +111,6 @@ const struct option owopts_long[] = {
 	{"error-level", required_argument, NO_LINKED_VAR, e_error_level},
 	{"errorlevel", required_argument, NO_LINKED_VAR, e_error_level},
 	{"debug", no_argument, NO_LINKED_VAR, e_debug},
-	{"concurrent_connections", required_argument, NO_LINKED_VAR, e_concurrent_connections},
-	{"concurrent-connections", required_argument, NO_LINKED_VAR, e_concurrent_connections},
-	{"max-connections", required_argument, NO_LINKED_VAR, e_concurrent_connections},
-	{"max_connections", required_argument, NO_LINKED_VAR, e_concurrent_connections},
 	{"cache_size", required_argument, NO_LINKED_VAR, e_cache_size},	/* max cache size */
 	{"cache-size", required_argument, NO_LINKED_VAR, e_cache_size},	/* max cache size */
 	{"cachesize", required_argument, NO_LINKED_VAR, e_cache_size},	/* max cache size */
@@ -750,10 +746,6 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		Globals.error_level = 9 ;
 		Globals.error_level_restore = 9 ;
 		break ;
-	case e_concurrent_connections:
-		RETURN_BAD_IF_BAD(OW_parsevalue_I(&arg_to_integer, arg)) ;
-		Globals.concurrent_connections = (int) arg_to_integer;
-		break;
 	case e_cache_size:
 		RETURN_BAD_IF_BAD(OW_parsevalue_I(&arg_to_integer, arg)) ;
 		Globals.cache_size = (size_t) arg_to_integer;

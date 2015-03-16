@@ -51,7 +51,6 @@ struct global Globals = {
 	.fatal_debug = 1,
 	.fatal_debug_file = NULL,
 
-	.concurrent_connections = 10,
 	.readonly = 0,
 	.max_clients = 250,
 
@@ -80,8 +79,6 @@ struct global Globals = {
 	.timeout_persistent_high = 3600,
 	.clients_persistent_low = 10,
 	.clients_persistent_high = 20,
-
-	.enet_scan_interval = DEFAULT_ENET_SCAN_INTERVAL,
 
 	.pingcrazy = 0,
 	.no_dirall = 0,
