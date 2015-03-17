@@ -243,11 +243,24 @@ GOOD_OR_BAD DS9490_detect(struct port_in *pin)
 			}
 			break ;
 		case 2:
-			if ( ap.first.type != address_numeric || ap.second.type != address_numeric ) {
-				LEVEL_DEFAULT("USB address <%s:%s> not in number:number format",ap.first.alpha,ap.second.alpha) ;
-				gbResult = gbBAD ;
-			} else {
-				gbResult = DS9490_detect_specific_adapter( ap.first.number, ap.second.number, in ) ;
+			switch( ap.first.type ) {
+				case address_all:
+				case address_asterix:
+					LEVEL_DEBUG("Look for all USB adapters");
+					gbResult = DS9490_detect_all_adapters(pin) ;
+					break ;
+				case address_numeric:
+					LEVEL_DEBUG("Look for USB adapter number %d:%d",ap.first.number,ap.second.number);
+					gbResult = DS9490_detect_specific_adapter( ap.first.number, ap.second.number, in ) ;
+					break ;
+				case address_scan:
+					// completely change personality!
+					gbResult = USB_monitor_detect(pin) ;
+					break ;
+				default:
+					LEVEL_DEFAULT("USB address <%s:%s> not in number:number format",ap.first.alpha,ap.second.alpha) ;
+					gbResult = gbBAD ;
+					break ;
 			}
 			break ;
 	}

@@ -175,6 +175,13 @@ struct master_enet_monitor {
 
 };
 
+// Search for HobbyBoards MasterHub (network) devices
+struct master_masterhub_monitor {
+	FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
+	int mh_scan_interval ;
+
+};
+
 struct master_browse {
 #if OW_ZERO
 	DNSServiceRef bonjour_browse;
@@ -199,20 +206,21 @@ union master_union {
 	struct master_link link;
 	struct master_server server ;
 	struct master_usb usb;
+	struct master_usb_monitor usb_monitor ;
 	struct master_i2c i2c;
 	struct master_fake fake;
 	struct master_fake tester;
 	struct master_fake mock;
 	struct master_enet enet;
+	struct master_enet_monitor enet_monitor ;
 	struct master_ha5 ha5;
 	struct master_ha7 ha7;
 	struct master_pbm pbm;
 	struct master_w1 w1;
 	struct master_masterhub masterhub;
+	struct master_masterhub_monitor masterhub_monitor ;
 	struct master_w1_monitor w1_monitor ;
 	struct master_browse browse;
-	struct master_usb_monitor usb_monitor ;
-	struct master_enet_monitor enet_monitor ;
 	struct master_ds1wm ds1wm ;
 };
 

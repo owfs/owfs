@@ -219,7 +219,7 @@ void ow_help_device(void)
 	"  -u    --USB     DS9490R or PuceBaboon bus master\n"
 	"  -uall --USB=all Find and use all DS9490-type bus masters\n"
 	"  -u3:4 --USB=3:4 Specific USB location (bus 3, device 4)\n"
-	"  -uscan --USB_scan=n Keep looking for new USB adapters (every n seconds; default 10)\n"
+	"  -uscan --USB=scan[:n] Keep looking for new USB adapters (every n seconds; default 10)\n"
 	"  -d /dev/ttyUSB0 ECLO USB bus master\n"
 	"  --link /dev/ttyUSB0 Link-USB\n"
 	"  --masterhub=/dev/ttyUSB0 Link-USB\n"

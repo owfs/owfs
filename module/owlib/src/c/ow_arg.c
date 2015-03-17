@@ -371,33 +371,6 @@ GOOD_OR_BAD ARG_W1_monitor(void)
 	return gbGOOD;
 }
 
-GOOD_OR_BAD ARG_USB_monitor(const char *arg)
-{
-#if OW_USB
-	if ( Globals.luc != NULL ) {
-		struct port_in * pin = NewPort( NULL ) ;
-		struct connection_in * in ;
-		if ( pin == NULL ) {
-			return gbBAD;
-		}
-		in = pin->first ;
-		if (in == NO_CONNECTION) {
-			return gbBAD;
-		}
-		arg_data(arg,pin) ;
-		pin->busmode = bus_usb_monitor;
-		return gbGOOD;
-	} else {
-		LEVEL_DEFAULT("USB library could not be initialized -- cannot proceed") ;
-		return gbBAD ;
-	}
-#else
-	(void) arg ;
-	fprintf(stderr, "OWFS is compiled without USB support.\n");
-	return gbBAD;
-#endif
-}
-
 GOOD_OR_BAD ARG_Browse(void)
 {
 	struct port_in * pin = NewPort( NULL ) ;
