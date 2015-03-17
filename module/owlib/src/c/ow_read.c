@@ -365,8 +365,10 @@ static SIZE_OR_ERROR FS_r_local(struct one_wire_query *owq)
 			case adapter_mock:
 				/* Special case for "mock" adapter */
 				if ( GOOD( OWQ_Cache_Get(owq)) ) {	// cached
+					LEVEL_DEBUG("Mock value in cache");
 					return 0;
 				}
+				LEVEL_DEBUG("Mock value NOT in cache");
 				return FS_read_fake(owq);
 			default:
 				break ;
