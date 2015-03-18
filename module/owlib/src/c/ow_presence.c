@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -209,6 +208,12 @@ ZERO_OR_ERROR FS_present(struct one_wire_query *owq)
 
 	if (NotRealDir(pn) || pn->selected_device == DeviceSimultaneous || pn->selected_device == DeviceThermostat) {
 		OWQ_Y(owq) = 1;
+	} else if ( IsUncachedDir(pn) ) {
+		struct transaction_log t[] = {
+			TRXN_NVERIFY,
+			TRXN_END,
+		};
+		OWQ_Y(owq) = BAD(BUS_transaction(t, pn)) ? 0 : 1;
 	} else if ( pn->selected_connection->iroutines.flags & ADAP_FLAG_presence_from_dirblob ) {
 		OWQ_Y(owq) = GOOD( PresenceFromDirblob(pn) ) ;
 	} else if ( pn->selected_connection->iroutines.flags & ADAP_FLAG_sham ) {

@@ -56,6 +56,7 @@
 
 #define DEFAULT_USB_SCAN_INTERVAL 10 /* seconds */
 #define DEFAULT_ENET_SCAN_INTERVAL 60 /* seconds */
+#define DEFAULT_MASTERHUB_SCAN_INTERVAL 60 /* seconds */
 
 enum zero_support { zero_unknown, zero_none, zero_bonjour, zero_avahi, } ;
 
