@@ -155,7 +155,7 @@ static void Cache_Add_Alias_SN(const ASCII * alias_name, const BYTE * sn) ;
 static void Cache_Del_Alias_SN(const ASCII * alias_name) ;
 
 static void Cache_Add_Alias_Persistent(struct alias_tree_node *atn);
-static enum cache_task_return Cache_Get_Alias_Persistent( BYTE * sn, struct alias_tree_node * atn);
+static GOOD_OR_BAD Cache_Get_Alias_Persistent( BYTE * sn, struct alias_tree_node * atn);
 static void Cache_Del_Alias_Persistent( struct alias_tree_node * atn) ;
 
 static GOOD_OR_BAD Add_Stat(struct cache_stats *scache, GOOD_OR_BAD result);
@@ -1624,11 +1624,11 @@ GOOD_OR_BAD Cache_Get_Alias_SN(const ASCII * alias_name, BYTE * sn )
 	atn->size = datasize;
 	memcpy( ALIAS_TREE_DATA(atn), alias_name, datasize+1 ) ;
 	
-	return Cache_Get_Alias_Persistent( sn, atn )==ctr_ok ? gbGOOD : gbBAD  ;
+	return Cache_Get_Alias_Persistent( sn, atn ) ;
 }
 
 /* look in persistent alias->sn tree */
-static enum cache_task_return Cache_Get_Alias_Persistent( BYTE * sn, struct alias_tree_node * atn)
+static GOOD_OR_BAD Cache_Get_Alias_Persistent( BYTE * sn, struct alias_tree_node * atn)
 {
 	struct tree_opaque *opaque;
 	GOOD_OR_BAD ret = gbBAD ;

@@ -41,9 +41,8 @@ int main(int argc, char *argv[])
 	LibSetup(program_type_filesystem);
 
 	/* grab our executable name */
-	if (argc > 0) {
-		Globals.progname = owstrdup(argv[0]);
-	}
+	ArgCopy( argc, argv ) ;
+
 	//mtrace() ;
 	/* process command line arguments */
 	while ((c = getopt_long(argc, argv, OWLIB_OPT, owopts_long, NULL)) != -1) {
@@ -103,7 +102,7 @@ int main(int argc, char *argv[])
 	//set_signal_handlers(exit_handler);
 
 	/* Set up adapters */
-	if ( BAD(LibStart()) ) {
+	if ( BAD(LibStart(NULL)) ) {
 		ow_exit(1);
 	}
 

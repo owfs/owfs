@@ -29,7 +29,7 @@
 
 #include "owfs_config.h"
 #ifdef HAVE_VASPRINTF
-#define _GNU_SOURCE
+#define _GNU_SOURCE 1
 #endif
 #include <tcl.h>
 #include "ow.h"

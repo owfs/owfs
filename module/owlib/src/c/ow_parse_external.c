@@ -261,7 +261,7 @@ void AddProperty( char * input_string, enum external_type et )
 	}
 	
 	if ( ! Globals.allow_external ) {
-		LEVEL_DEBUG("External prgroams not supported by %s",Globals.progname) ;
+		LEVEL_DEBUG("External prgroams not supported by %s",Globals.argv[0]) ;
 		return ;
 	}
 
@@ -357,8 +357,8 @@ void AddProperty( char * input_string, enum external_type et )
 			}
 			break ;
 		case '+':
-			if ( isalpha(s_dummy[1]) ) {
-				s_array = toupper(s_dummy[1]) - 'A' ;
+			if ( isalpha( (int) s_dummy[1] ) ) {
+				s_array = toupper( (int) s_dummy[1] ) - 'A' ;
 				s_combined = ag_aggregate ;
 				s_index_type = ag_letters ;
 			} else {
@@ -368,8 +368,8 @@ void AddProperty( char * input_string, enum external_type et )
 			}
 			break ;
 		default:
-			if ( isalpha(s_dummy[0]) ) {
-				s_array = toupper(s_dummy[0]) - 'A' ;
+			if ( isalpha( (int) s_dummy[0] ) ) {
+				s_array = toupper( (int) s_dummy[0] ) - 'A' ;
 				s_combined = ag_separate ;
 				s_index_type = ag_letters ;
 			} else {
@@ -456,7 +456,7 @@ void AddSensor( char * input_string )
 	}
 	
 	if ( ! Globals.allow_external ) {
-		LEVEL_DEBUG("External prgroams not supported by %s",Globals.progname) ;
+		LEVEL_DEBUG("External prgroams not supported by %s",Globals.argv[0]) ;
 		return ;
 	}
 	

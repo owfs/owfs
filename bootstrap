@@ -1,4 +1,12 @@
 #! /bin/sh
 
+# OSX uses BSD libtool by default -- we want GNU
+case `uname` in 
+	Darwin*) 
+		LZ=glibtoolize ;;
+	*) 
+		LZ=libtoolize ;;
+esac
+
 rm -rf *cache
-libtoolize -f -c -i && aclocal -I src/scripts/m4 && autoheader && autoconf && automake -a -c --foreign && echo "Run './configure' and 'make' to build owfs"
+$LZ -f -c -i && aclocal -I src/scripts/m4 && autoheader && autoconf && automake -a -c --foreign && echo "Run './configure' and 'make' to build owfs"

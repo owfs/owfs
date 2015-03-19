@@ -78,6 +78,9 @@
 
 #define _FILE_OFFSET_BITS   64
 
+/* For everything */
+#define _GNU_SOURCE 1
+
 #ifdef __FreeBSD__
 /* from Johan Ström: needed for sys/param.h if sys/types.h sees it */
 #define __BSD_VISIBLE 1 
@@ -98,24 +101,27 @@
 #include <sys/types.h>			/* for stat */
 #endif							/* HAVE_SYS_TYPES_H */
 
+#ifdef __CYGWIN__
+#define __BSD_VISIBLE  1 /* for strep */
+#endif
+
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>			/* for times */
 #endif							/* HAVE_SYS_TIMES_H */
+
+#include <stdio.h> // for getline
+
 #include <ctype.h>
 #include <stdlib.h>
-#include <stdio.h>
-#ifdef STRING_WITH_STRINGS
-# include <string.h>
-# include <strings.h>			/* for strcasecmp */
-#else
-# ifdef HAVE_STRING_H
-#  include <string.h>
-# else
-#  ifdef HAVE_STRINGS_H
-#   include <strings.h>			/* for strcasecmp */
-#  endif
-# endif
+
+#ifdef HAVE_STRING_H
+#include <string.h>
 #endif
+
+#ifdef HAVE_STRINGS_H
+#include <strings.h>			/* for strcasecmp */
+#endif
+
 #include <dirent.h>
 #include <signal.h>
 
@@ -126,6 +132,7 @@
 #endif							/* OW_CYGWIN */
 #endif							/* HAVE_STDINT_H */
 
+#include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -187,25 +194,7 @@
 
 /* Can't include search.h when compiling owperl on Fedora Core 1. */
 #ifndef SKIP_SEARCH_H
-#ifndef __USE_GNU
-#define __USE_GNU
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
 #include <search.h>
-#undef _GNU_SOURCE
-#else
-#include <search.h>
-#endif
-#undef __USE_GNU
-#else							/* __USE_GNU */
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#include <search.h>
-#undef _GNU_SOURCE
-#else
-#include <search.h>
-#endif
-#endif							/* __USE_GNU */
 #endif							/* SKIP_SEARCH_H */
 
 /* If no getline, use our version */
@@ -288,12 +277,33 @@ time_t timegm(struct tm *tm);
 // regular expressions
 #include "ow_regex.h"
 
+/* Special checks for config file changes -- OS specific */
+ #ifdef HAVE_SYS_EVENT_H
+  /* BSD and OSX */
+  #define WE_HAVE_KEVENT
+#elif defined( HAVE_SYS_INOTIFY_H )
+   #define WE_HAVE_INOTIFY
+#else /* HAVE_SYS_EVENT_H */
+	// no change notification available
+   #define Config_Monitor_Add(x)
+   #define Config_Monitor_Watch(v)
+#endif /* HAVE_SYS_EVENT_H */
+#include "ow_kevent.h"
+#include "ow_inotify.h"
+
+/* Program startup type */
+enum  e_inet_type { inet_none, inet_systemd , inet_launchd, } ;
+
 #if OW_ZERO
 /* Zeroconf / Bonjour */
 #include "ow_dl.h"
 #include "ow_dnssd.h"
 #endif							/* OW_ZERO */
 #include "ow_avahi.h"
+
+#if OW_USB
+#include <libusb.h>
+#endif /* OW_USB */
 
 /*
     OW -- One Wire
@@ -373,8 +383,10 @@ enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
 /* Return and error codes */
 #include "ow_return_code.h"
 
+/* Launchd  -- OSX-specific startup code */
+#include "ow_launchd.h"
 
-// regular expressions
-#include "ow_regex.h"
+/* Argument and restart */
+#include "ow_exec.h"
 
 #endif							/* OW_H */

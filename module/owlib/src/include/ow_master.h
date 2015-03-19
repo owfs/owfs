@@ -50,10 +50,10 @@ struct master_fake {
 // DS2490R (usb) hub
 struct master_usb {
 #if OW_USB
-	struct usb_device *dev;
-	struct usb_dev_handle *usb;
-	int usb_bus_number;
-	int usb_dev_number;
+	libusb_device * lusb_dev ;
+	libusb_device_handle * lusb_handle ;
+	int bus_number;
+	int address;
 	int datasampleoffset;
 	int writeonelowtime;
 	int pulldownslewrate;
@@ -101,6 +101,20 @@ struct master_ha7 {
 
 struct master_enet {
 	int version;
+};
+
+struct master_ds1wm {
+	off_t base ;
+	off_t page_start ;
+	off_t page_offset ;
+	void * mm ; // mmap
+	int longline ;
+	int byte_mode ;
+	long int frequency ;
+	int presence_mask ;
+	size_t mm_size ;
+	uint8_t channels_count; // for k1wm
+	uint8_t active_channel; // for k1wm
 };
 
 enum e_link_t_mode { e_link_t_unknown, e_link_t_extra, e_link_t_none } ;
@@ -151,10 +165,21 @@ struct master_w1_monitor {
 // Search for USB (DS9490R) devices
 struct master_usb_monitor {
 	FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
+	int usb_scan_interval ;
+
 };
 
 struct master_enet_monitor {
 	FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
+	int enet_scan_interval ;
+
+};
+
+// Search for HobbyBoards MasterHub (network) devices
+struct master_masterhub_monitor {
+	FILE_DESCRIPTOR_OR_ERROR shutdown_pipe[2] ;
+	int mh_scan_interval ;
+
 };
 
 struct master_browse {
@@ -166,6 +191,7 @@ struct master_browse {
 	AvahiClient *client ;
 	AvahiServiceBrowser * browser ;
 	AvahiThreadedPoll *poll ;
+
 #if __HAS_IPV6__
 	char host[INET6_ADDRSTRLEN+1] ;
 #else
@@ -180,20 +206,22 @@ union master_union {
 	struct master_link link;
 	struct master_server server ;
 	struct master_usb usb;
+	struct master_usb_monitor usb_monitor ;
 	struct master_i2c i2c;
 	struct master_fake fake;
 	struct master_fake tester;
 	struct master_fake mock;
 	struct master_enet enet;
+	struct master_enet_monitor enet_monitor ;
 	struct master_ha5 ha5;
 	struct master_ha7 ha7;
 	struct master_pbm pbm;
 	struct master_w1 w1;
 	struct master_masterhub masterhub;
+	struct master_masterhub_monitor masterhub_monitor ;
 	struct master_w1_monitor w1_monitor ;
 	struct master_browse browse;
-	struct master_usb_monitor usb_monitor ;
-	struct master_enet_monitor enet_monitor ;
+	struct master_ds1wm ds1wm ;
 };
 
 

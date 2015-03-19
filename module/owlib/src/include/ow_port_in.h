@@ -34,6 +34,7 @@ enum bus_mode {
 	bus_usb,
 	bus_usb_monitor,
 	bus_enet_monitor,
+	bus_masterhub_monitor,
 	bus_parallel,
 	bus_server,
 	bus_zero,
@@ -55,6 +56,8 @@ enum bus_mode {
 	bus_w1_monitor,
 	bus_xport_control,
 	bus_external,
+	bus_ds1wm,
+	bus_k1wm,
 };
 
 enum com_state {

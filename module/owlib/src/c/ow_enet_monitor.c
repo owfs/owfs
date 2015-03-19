@@ -12,7 +12,6 @@
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
-#include "ow_usb_msg.h"
 
 static void ENET_monitor_close(struct connection_in *in);
 static GOOD_OR_BAD ENET_monitor_in_use(const struct port_in * pin) ;
@@ -28,27 +27,28 @@ GOOD_OR_BAD ENET_monitor_detect(struct port_in *pin)
 	
 	/* init_data has form "scan" or "scan:15" (15 seconds) */
 	Parse_Address( pin->init_data, &ap ) ;
+	in->master.enet_monitor.enet_scan_interval = DEFAULT_ENET_SCAN_INTERVAL ;
 	switch ( ap.entries ) {
 		case 0:
-			Globals.enet_scan_interval = DEFAULT_ENET_SCAN_INTERVAL ;
+			in->master.enet_monitor.enet_scan_interval = DEFAULT_ENET_SCAN_INTERVAL ;
 			break ;
 		case 1:
 			switch( ap.first.type ) {
 				case address_numeric:
-					Globals.enet_scan_interval = ap.first.number ;
+					in->master.enet_monitor.enet_scan_interval = ap.first.number ;
 					break ;
 				default:
-					Globals.enet_scan_interval = DEFAULT_ENET_SCAN_INTERVAL ;
+					in->master.enet_monitor.enet_scan_interval = DEFAULT_ENET_SCAN_INTERVAL ;
 					break ;
 			}
 			break ;
 		case 2:
 			switch( ap.second.type ) {
 				case address_numeric:
-					Globals.enet_scan_interval = ap.second.number ;
+					in->master.enet_monitor.enet_scan_interval = ap.second.number ;
 					break ;
 				default:
-					Globals.enet_scan_interval = DEFAULT_ENET_SCAN_INTERVAL ;
+					in->master.enet_monitor.enet_scan_interval = DEFAULT_ENET_SCAN_INTERVAL ;
 					break ;
 			}
 			break ;
@@ -131,7 +131,7 @@ static void * ENET_monitor_loop( void * v )
 	
 	do {
 		fd_set readset;
-		struct timeval tv = { Globals.enet_scan_interval, 0, };
+		struct timeval tv = { in->master.enet_monitor.enet_scan_interval, 0, };
 		
 		/* Initialize readset */
 		FD_ZERO(&readset);

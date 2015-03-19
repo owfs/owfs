@@ -71,8 +71,11 @@ enum adapter_type {
 	adapter_xport,
 	adapter_usb_monitor,
 	adapter_enet_monitor,
+	adapter_masterhub_monitor,
 	adapter_external,
 	adapter_pbm,
+	adapter_ds1wm,
+	adapter_k1wm,
 };
 
 enum e_reconnect {

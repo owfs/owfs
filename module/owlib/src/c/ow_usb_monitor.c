@@ -35,25 +35,25 @@ GOOD_OR_BAD USB_monitor_detect(struct port_in *pin)
 
 	switch ( ap.entries ) {
 		case 0:
-			Globals.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
+			in->master.usb_monitor.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
 			break ;
 		case 1:
 			switch( ap.first.type ) {
 				case address_numeric:
-					Globals.usb_scan_interval = ap.first.number ;
+					in->master.usb_monitor.usb_scan_interval = ap.first.number ;
 					break ;
 				default:
-					Globals.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
+					in->master.usb_monitor.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
 					break ;
 			}
 			break ;
 		case 2:
 			switch( ap.second.type ) {
 				case address_numeric:
-					Globals.usb_scan_interval = ap.second.number ;
+					in->master.usb_monitor.usb_scan_interval = ap.second.number ;
 					break ;
 				default:
-					Globals.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
+					in->master.usb_monitor.usb_scan_interval = DEFAULT_USB_SCAN_INTERVAL ;
 					break ;
 			}
 			break ;
@@ -137,7 +137,7 @@ static void * USB_monitor_loop( void * v )
 	
 	do {
 		fd_set readset;
-		struct timeval tv = { Globals.usb_scan_interval, 0, };
+		struct timeval tv = { in->master.usb_monitor.usb_scan_interval, 0, };
 		
 		/* Initialize readset */
 		FD_ZERO(&readset);
@@ -157,36 +157,51 @@ static void * USB_monitor_loop( void * v )
 /* Open a DS9490  -- low level code (to allow for repeats)  */
 static void USB_scan_for_adapters(void)
 {
-	struct usb_list ul;
-
-	MONITOR_RLOCK ;
+	// discover devices
+	libusb_device **device_list;
+	int n_devices = libusb_get_device_list( Globals.luc, &device_list) ;
+	int i_device ;
 	
-	LEVEL_DEBUG("USB SCAN!");
-	USB_first(&ul);
-	while ( GOOD(USB_next_match(&ul)) ) {
-		// Create a port and connection, fill is with name and then test for function and uniqueness
-		struct port_in * pin = AllocPort(NULL) ;
-		struct connection_in * in ;
-		if ( pin == NULL ) {
-			break ;
+	if ( n_devices < 1 ) {
+		LEVEL_CONNECT("Could not find a list of USB devices");
+		if ( n_devices<0 ) {
+			LEVEL_DEBUG("<%s>",libusb_error_name(n_devices));
 		}
-		in = pin->first ;
-		DEVICENAME(in) = DS9490_device_name(&ul) ;
-		pin->init_data = owstrdup( DEVICENAME(in) ) ;
-		pin->type = ct_usb ;
-		
-		// Can do detect. Because the name makes this a specific adapter (USB pair)
-		// we won't do a directory and won't add the directory and devices with the wrong index
-		if ( BAD( DS9490_detect(pin)) ) {
-			// Remove the extra connection
-			RemovePort(pin);
-		} else {
-			// Add the device, but no need to check for bad match
-			Add_InFlight( NULL, pin ) ;
+		return ;
+	}
+
+	LEVEL_DEBUG("USB SCAN! %d total entries",n_devices);
+	MONITOR_RLOCK ;
+
+	for ( i_device = 0 ; i_device < n_devices ; ++i_device ) {
+		libusb_device * current = device_list[i_device] ;
+		if ( GOOD( USB_match( current ) ) ) {
+			// Create a port and connection, fill in with name and then test for function and uniqueness
+			struct port_in * pin = AllocPort(NULL) ;
+
+			if ( pin == NULL ) {
+				break ;
+			}
+			DS9490_port_setup( current, pin ) ;
+
+			// Can do detect. Because the name makes this a specific adapter (USB pair)
+			// we won't do a directory and won't add the directory and devices with the wrong index
+			if ( BAD( DS9490_detect(pin)) ) {
+				// Remove the extra connection
+				RemovePort(pin);
+			} else {
+				// Add the device, but no need to check for bad match
+				Add_InFlight( NULL, pin ) ;
+				if ( BAD(DS9490_ID_this_master(pin->first)) ) {
+					Del_InFlight( NULL, pin ) ;
+				}
+			}
 		}
 	}
 
 	MONITOR_RUNLOCK ;
+	
+	libusb_free_device_list(device_list, 1);
 }
 
 #else /*  OW_USB */

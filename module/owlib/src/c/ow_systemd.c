@@ -31,9 +31,11 @@ void Setup_Systemd( void )
 		out->file_descriptor = i + SD_LISTEN_FDS_START ;
 		++ fd_count ;
 		out->name = owstrdup("systemd");
+		out->inet_type = inet_systemd ;
 	}
 	if ( fd_count > 0 ) {
 		Globals.daemon_status = e_daemon_sd ;
+		Globals.inet_type = inet_systemd ;
 	}
 }
 

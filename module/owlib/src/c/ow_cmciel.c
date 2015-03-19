@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -64,8 +63,8 @@ enum e_mVM001 { e_mVM001_peak=1, e_mVM001_rms=2, e_mVM001_multi=4, } ;
 static struct filetype mTS017[] = {
 	F_STANDARD,
 	{"reading", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_data17, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
-	{"object", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_temperature, fc_link, FS_r_temperature, NO_WRITE_FUNCTION, VISIBLE, { u:mTS017_object}, },
-	{"ambient", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_temperature, fc_link, FS_r_temperature, NO_WRITE_FUNCTION, VISIBLE, { u:mTS017_ambient}, },
+	{"object", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_temperature, fc_link, FS_r_temperature, NO_WRITE_FUNCTION, VISIBLE, {.u=mTS017_object}, },
+	{"ambient", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_temperature, fc_link, FS_r_temperature, NO_WRITE_FUNCTION, VISIBLE, {.u=mTS017_ambient}, },
 };
 
 DeviceEntry(A6, mTS017, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -74,8 +73,8 @@ DeviceEntry(A6, mTS017, NO_GENERIC_READ, NO_GENERIC_WRITE);
 static struct filetype mVM001[] = {
 	F_STANDARD,
 	{"reading", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_data, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
-	{"RMS", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_vibration, NO_WRITE_FUNCTION, VISIBLE, { i:e_mVM001_rms, }, },
-	{"peak", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_vibration, NO_WRITE_FUNCTION, VISIBLE, { i:e_mVM001_peak, }, },
+	{"RMS", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_vibration, NO_WRITE_FUNCTION, VISIBLE, {.i=e_mVM001_rms, }, },
+	{"peak", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_r_vibration, NO_WRITE_FUNCTION, VISIBLE, {.i=e_mVM001_peak, }, },
 	{"configure", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"configure/read_mode", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, NO_READ_FUNCTION, FS_w_vib_mode, VISIBLE, NO_FILETYPE_DATA, },
 	{"configure/peak_interval", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
@@ -125,12 +124,12 @@ static struct aggregate mDI001_state = { 4, ag_numbers, ag_aggregate, }; // 4 in
 static struct filetype mDI001[] = {
 	F_STANDARD,
 	{"reading", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_data, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
-	{"switch", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_bitfield, NO_WRITE_FUNCTION, INVISIBLE, {v: &mDI001_switch,}, },
-	{"shorted", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_bitfield, NO_WRITE_FUNCTION, INVISIBLE, {v: &mDI001_shorted,}, },
-	{"open", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_bitfield, NO_WRITE_FUNCTION, INVISIBLE, {v: &mDI001_open,}, },
-	{"switch_closed", PROPERTY_LENGTH_BITFIELD, &mDI001_state, ft_bitfield, fc_volatile, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE, {v: &mDI001_switch_closed,}, },
-	{"loop_shorted", PROPERTY_LENGTH_BITFIELD, &mDI001_state, ft_bitfield, fc_volatile, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE, {v: &mDI001_loop_shorted,}, },
-	{"loop_open", PROPERTY_LENGTH_BITFIELD, &mDI001_state, ft_bitfield, fc_volatile, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE, {v: &mDI001_loop_open,}, },
+	{"switch", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_bitfield, NO_WRITE_FUNCTION, INVISIBLE, {.v= &mDI001_switch,}, },
+	{"shorted", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_bitfield, NO_WRITE_FUNCTION, INVISIBLE, {.v= &mDI001_shorted,}, },
+	{"open", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_bitfield, NO_WRITE_FUNCTION, INVISIBLE, {.v= &mDI001_open,}, },
+	{"switch_closed", PROPERTY_LENGTH_BITFIELD, &mDI001_state, ft_bitfield, fc_volatile, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE, {.v= &mDI001_switch_closed,}, },
+	{"loop_shorted", PROPERTY_LENGTH_BITFIELD, &mDI001_state, ft_bitfield, fc_volatile, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE, {.v= &mDI001_loop_shorted,}, },
+	{"loop_open", PROPERTY_LENGTH_BITFIELD, &mDI001_state, ft_bitfield, fc_volatile, FS_r_bit_array, NO_WRITE_FUNCTION, VISIBLE, {.v= &mDI001_loop_open,}, },
 };
 
 DeviceEntry(A5, mDI001, NO_GENERIC_READ, NO_GENERIC_WRITE);

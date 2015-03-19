@@ -28,13 +28,15 @@ static int reg_compare( const void * a, const void *b)
 	const struct s_regex * pa = (const struct s_regex *) a ;
 	const struct s_regex * pb = (const struct s_regex *) b ;
 
-	if ( pa->reg < pb->reg ) {
+/*
+ 	if ( pa->reg < pb->reg ) {
 		return -1 ;
 	}
 	if ( pa->reg > pb->reg ) {
 		return 1 ;
 	}
-	return 0 ;
+*/
+	return (int) (pa->reg - pb->reg) ;
 }
 
 // Add a reg comp and return 1 or 0 if exists already
@@ -98,7 +100,7 @@ static void regexaction(const void *t, const VISIT which, const int depth)
 	switch (which) {
 	case leaf:
 	case postorder:
-		printf("Regex compiled pointer %p\n",(*(const struct s_regex * const *) t)->reg ) ;
+		LEVEL_DEBUG("Regex compiled pointer %p",(*(const struct s_regex * const *) t)->reg ) ;
 	default:
 		break;
 	}
@@ -110,7 +112,7 @@ static void regexkillaction(const void *t, const VISIT which, const int depth)
 	switch (which) {
 	case leaf:
 	case postorder:
-		printf(">>>>>>>>> Free %p\n",(*(const struct s_regex * const *) t)->reg ) ;
+		LEVEL_DEBUG("Regex Free %p",(*(const struct s_regex * const *) t)->reg ) ;
 		regfree((*(const struct s_regex * const *) t)->reg ) ;
 	default:
 		break;
@@ -122,7 +124,7 @@ void ow_regdestroy( void )
 	twalk( regex_tree, regexaction ) ;
 	twalk( regex_tree, regexkillaction ) ;
 	SAFETDESTROY( regex_tree, owfree_func ) ;
-	printf(">>>>>>>>> regdestroy done\n") ;
+	LEVEL_DEBUG("Regex destroy done") ;
 	regex_tree = NULL ;
 }
  

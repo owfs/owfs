@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -26,6 +25,7 @@ GOOD_OR_BAD ClientAddr(char *sname, char * default_port, struct connection_in *i
 	struct address_pair ap ;
 	int ret;
 
+LEVEL_DEBUG("Called with %s default=%s",SAFESTRING(sname),SAFESTRING(default_port));
 	Parse_Address( sname, &ap ) ;
 
 	switch ( ap.entries ) {
@@ -82,7 +82,7 @@ GOOD_OR_BAD ClientAddr(char *sname, char * default_port, struct connection_in *i
 	hint.ai_family = AF_UNSPEC;
 #endif
 
-	LEVEL_DEBUG("IP address=[%s] port=[%s]", SAFESTRING( pin->dev.tcp.host), pin->dev.tcp.service);
+	LEVEL_DEBUG("Called with [%s] IP address=[%s] port=[%s]", SAFESTRING(sname),SAFESTRING( pin->dev.tcp.host), SAFESTRING(pin->dev.tcp.service) );
 	ret = getaddrinfo( pin->dev.tcp.host, pin->dev.tcp.service, &hint, &( pin->dev.tcp.ai) ) ;
 	if ( ret != 0 ) {
 		LEVEL_CONNECT("GETADDRINFO error %s", gai_strerror(ret));

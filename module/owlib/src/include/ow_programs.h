@@ -1,7 +1,5 @@
-/*
-$Id$
-    
-Written 2003 Paul H Alfille
+/*    
+	Written 2003 Paul H Alfille
         Fuse code based on "fusexmp" {GPL} by Miklos Szeredi, mszeredi@inf.bme.hu
         Serial code based on "xt" {GPL} by David Querbach, www.realtime.bc.ca
         in turn based on "miniterm" by Sven Goldt, goldt@math.tu.berlin.de
@@ -39,7 +37,7 @@ extern int main_threadid_init ;
 extern pthread_t main_threadid;
 #define IS_MAINTHREAD ( (main_threadid_init==1) && (main_threadid == pthread_self()) )
 
-/* Exit handler */
+/* Exit handler */	
 void exit_handler(int signo, siginfo_t * info, void *context) ;
 void ow_exit(int exit_code) ;
 

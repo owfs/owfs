@@ -130,12 +130,14 @@ static const char favicon[] = {
 	0x00, 0x00,
 };
 
-void Favicon(FILE * out)
+void Favicon(struct OutputControl * oc)
 {
+	FILE * out = oc->out ;
 	int i;
-	HTTPstart(out, "200 OK", ct_icon);
+	
+	HTTPstart(oc, "200 OK", ct_icon);
 	for (i = 0; i < 894; ++i) {
 		fprintf(out, "%c", favicon[i]);
 	}
-	HTTPfoot(out);
+	HTTPfoot(oc);
 }

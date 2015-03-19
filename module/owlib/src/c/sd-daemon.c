@@ -24,9 +24,7 @@
   SOFTWARE.
 ***/
 
-#ifndef _GNU_SOURCE
-#  define _GNU_SOURCE
-#endif
+#define _GNU_SOURCE 1
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -47,7 +45,9 @@
 #  include <mqueue.h>
 #endif
 
+#ifdef __linux__
 #include "sd-daemon.h"
+#endif
 
 #if (__GNUC__ >= 4)
 #  ifdef SD_EXPORT_SYMBOLS
@@ -61,9 +61,11 @@
 #  define _sd_export_
 #endif
 
-_sd_export_ int sd_listen_fds(int unset_environment) {
+_sd_export_ int sd_listen_fds(int unset_environment) 
+{
 
 #if defined(DISABLE_SYSTEMD) || !defined(__linux__)
+		(void) unset_environment ;
         return 0;
 #else
         int r, fd;
@@ -375,6 +377,8 @@ _sd_export_ int sd_is_socket_unix(int fd, int type, int listening, const char *p
 
 _sd_export_ int sd_is_mq(int fd, const char *path) {
 #if !defined(__linux__) || defined(SD_DAEMON_DISABLE_MQ)
+		(void) fd ;
+		(void) path ;
         return 0;
 #else
         struct mq_attr attr;
@@ -412,6 +416,8 @@ _sd_export_ int sd_is_mq(int fd, const char *path) {
 
 _sd_export_ int sd_notify(int unset_environment, const char *state) {
 #if defined(DISABLE_SYSTEMD) || !defined(__linux__) || !defined(SOCK_CLOEXEC)
+		(void) unset_environment ;
+		(void) state ;
         return 0;
 #else
         int fd = -1, r;
@@ -482,6 +488,8 @@ finish:
 
 _sd_export_ int sd_notifyf(int unset_environment, const char *format, ...) {
 #if defined(DISABLE_SYSTEMD) || !defined(__linux__)
+		(void) unset_environment ;
+		(void) format ;
         return 0;
 #else
         va_list ap;

@@ -18,16 +18,16 @@ void ow_help_general(void)
 {
 	switch (Globals.program_type) {
 	case program_type_filesystem:
-		printf("Syntax: %s [options] device mountpoint\n", SAFESTRING(Globals.progname));
+		printf("Syntax: %s [options] device mountpoint\n", SAFESTRING(Globals.argv[0]));
 		break;
 	case program_type_httpd:
 	case program_type_server:
 	case program_type_external:
-		printf("Syntax: %s [options] device clientport\n", SAFESTRING(Globals.progname));
+		printf("Syntax: %s [options] device clientport\n", SAFESTRING(Globals.argv[0]));
 		break;
 	case program_type_ftpd:
 	default:
-		printf("Syntax: %s [options] device\n", SAFESTRING(Globals.progname));
+		printf("Syntax: %s [options] device\n", SAFESTRING(Globals.argv[0]));
 		break;
 	}
 	printf("\n"
@@ -42,9 +42,9 @@ void ow_help_general(void)
 	"\n"
 	" man %s                 man page for this program\n"
 	"  and man pages for individual 1-wire devices e.g. 'man DS2409'\n",
-	SAFESTRING(Globals.progname), SAFESTRING(Globals.progname),
-	SAFESTRING(Globals.progname), SAFESTRING(Globals.progname), SAFESTRING(Globals.progname),
-	SAFESTRING(Globals.progname), SAFESTRING(Globals.progname), SAFESTRING(Globals.progname)
+	SAFESTRING(Globals.argv[0]), SAFESTRING(Globals.argv[0]),
+	SAFESTRING(Globals.argv[0]), SAFESTRING(Globals.argv[0]), SAFESTRING(Globals.argv[0]),
+	SAFESTRING(Globals.argv[0]), SAFESTRING(Globals.argv[0]), SAFESTRING(Globals.argv[0])
 	);
 }
 
@@ -170,7 +170,6 @@ void ow_help_program(void)
 	"\n"
 	" owserver (OWFS server)\n"
 	"  -p --port [ip:]port   TCP address and port number for access\n"
-	"  --max_connections     [%3d] Nr of allowed concurrent connections\n"
 	"\n"
 	" Development tests (owserver only)\n"
 	"  --pingcrazy      Add lots of keep-alive messages to the owserver protocol\n"
@@ -184,7 +183,6 @@ void ow_help_program(void)
 	"  --zero                Announce service via zeroconf\n"
 	"  --announce name       Name for service given in zeroconf broadcast\n"
 	"  --nozero              Don't announce service via zeroconf\n" "\n"
-	, Globals.concurrent_connections
 	);
 }
 
@@ -221,7 +219,7 @@ void ow_help_device(void)
 	"  -u    --USB     DS9490R or PuceBaboon bus master\n"
 	"  -uall --USB=all Find and use all DS9490-type bus masters\n"
 	"  -u3:4 --USB=3:4 Specific USB location (bus 3, device 4)\n"
-	"  -uscan --USB_scan=n Keep looking for new USB adapters (every n seconds; default 10)\n"
+	"  -uscan --USB=scan[:n] Keep looking for new USB adapters (every n seconds; default 10)\n"
 	"  -d /dev/ttyUSB0 ECLO USB bus master\n"
 	"  --link /dev/ttyUSB0 Link-USB\n"
 	"  --masterhub=/dev/ttyUSB0 Link-USB\n"
@@ -250,6 +248,10 @@ void ow_help_device(void)
 	" Linux Kernel Device\n"
 	"  --w1            Scan for kernel-managed bus masters\n"
 	"\n" 
+	" Synthesized (FPGA) based device\n"
+	"  --DS1WM address Synthesizable 1-Wire BusMaster (address is base register location)\n"
+	"  --K1WM  address,channels Kistler precision sensors\n"
+	"\n"
 	"  --external      Allow external scripts to be called\n"
 	"  --no_external   Do not allow external scripts to be called\n"
 	

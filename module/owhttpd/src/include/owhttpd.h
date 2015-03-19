@@ -1,5 +1,4 @@
 /*
-$Id$
    OWFS and OWHTTPD
    one-wire file system and
    one-wire web server
@@ -37,19 +36,26 @@ $Id$
 /* in owhttpd_handler.c */
 int handle_socket(FILE * out);
 
+struct OutputControl {
+	FILE * out ;
+	int not_first ;
+	char * base_url ;
+	char * host ;
+} ;
+
 /* in owhttpd_present */
 enum content_type { ct_text, ct_html, ct_icon, ct_json, };
-void HTTPstart(FILE * out, const char *status, const enum content_type ct);
-void HTTPtitle(FILE * out, const char *title);
-void HTTPheader(FILE * out, const char *head);
-void HTTPfoot(FILE * out);
+void HTTPstart( struct OutputControl * oc, const char *status, const enum content_type ct);
+void HTTPtitle( struct OutputControl * oc, const char *title);
+void HTTPheader( struct OutputControl * oc, const char *head);
+void HTTPfoot( struct OutputControl * oc);
 
 /* in owhttpd_write.c */
 void PostData(struct one_wire_query *owq);
 void ChangeData(struct one_wire_query *owq);
 
 /* in owhttpd_read.c */
-void ShowDevice(FILE * out, struct parsedname *const pn);
+void ShowDevice( struct OutputControl * oc, struct parsedname *const pn);
 
 /* in owhttpd_dir.c */
 struct JsonCBstruct {
@@ -57,18 +63,17 @@ struct JsonCBstruct {
 	int not_first ;
 } ;
 
-void ShowDir(FILE * out, struct parsedname * pn);
+void ShowDir( struct OutputControl * oc, struct parsedname * pn);
 int Backup(const char *path);
-void JSON_dir_init( struct JsonCBstruct * jcbs, FILE * out ) ;
-void JSON_dir_entry( struct JsonCBstruct * jcbs, const char * format, const char * data ) ;
-void JSON_dir_finish( struct JsonCBstruct * jcbs ) ;
+void JSON_dir_init(  struct OutputControl * oc ) ;
+void JSON_dir_entry(  struct OutputControl * oc, const char * format, const char * data ) ;
+void JSON_dir_finish(  struct OutputControl * oc ) ;
 
 /* in ow_favicon.c */
-void Favicon(FILE * out);
+void Favicon( struct OutputControl * oc);
 
 /* in owhttpd_escape */
 void httpunescape(BYTE * httpstr) ;
 char * httpescape( const char * original_string ) ;
-
 
 #endif							/* OWHTTPD_H */

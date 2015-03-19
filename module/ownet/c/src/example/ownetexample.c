@@ -90,7 +90,7 @@ void Show_property(void *v, const char *filename)
 	if ( read_length >= 0 ) {
 		int i ;
 		for ( i = 0 ; i < read_length ; ++i ) {
-			if ( ! isprint(read_data[i]) ) {
+			if ( ! isprint( (int) read_data[i] ) ) {
 				read_data[i] = '.' ;
 			}
 		}

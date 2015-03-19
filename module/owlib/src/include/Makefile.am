@@ -62,6 +62,7 @@ noinst_HEADERS =           \
         ow_eds.h           \
         ow_eeef.h          \
         ow_example_slave.h \
+        ow_exec.h          \
         ow_external.h      \
         ow_fd.h            \
         ow_filetype.h      \
@@ -69,8 +70,11 @@ noinst_HEADERS =           \
         ow_generic_read.h  \
         ow_generic_write.h \
         ow_global.h        \
+        ow_inotify.h       \
         ow_integer.h       \
         ow_interface.h     \
+        ow_kevent.h        \
+        ow_launchd.h       \
         ow_localtypes.h    \
         ow_localreturns.h  \
         ow_lcd.h           \

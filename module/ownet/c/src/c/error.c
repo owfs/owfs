@@ -83,7 +83,7 @@ void print_timestamp_(const char * file, int line, const char * func, const char
 #endif
 	va_end(va);
 
-	fprintf(stderr, "%ld DEFAULT: %s %ld.%06ld\n", time(NULL), buf, tv.tv_sec, tv.tv_usec);
+	fprintf(stderr, "%ld DEFAULT: %s %ld.%06ld\n", time(NULL), buf, (long int) tv.tv_sec, (long int) tv.tv_usec);
 	fflush(stderr);
 }
 
@@ -294,7 +294,7 @@ static void ascii_print( const char * buf, int length )
 	fprintf(stderr,"\n   <");
 	for (i = 0; i < length; ++i) {
 		char c = buf[i];
-		fprintf(stderr,"%c", isprint(c) ? c : '.');
+		fprintf(stderr,"%c", isprint( (int) c) ? c : '.');
 		if(i >= ( HEX_PRINT_BYTES_PER_LINE * HEX_PRINT_MAX_LINES -1 )) {
 			/* Sorry for this, but I think it's better to strip off all huge 8192 packages in the debug-output. */
 			break;

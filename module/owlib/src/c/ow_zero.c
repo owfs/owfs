@@ -57,7 +57,7 @@ static void Announce_Post_Register(DNSServiceRef sref, DNSServiceErrorType err)
 static void *Announce(void *v)
 {
 	struct connection_out *out = v;
-	DNSServiceRef sref;
+	DNSServiceRef sref = 0;
 	DNSServiceErrorType err;
 
 	struct sockaddr sa;
@@ -109,7 +109,7 @@ static void *Announce(void *v)
 	}
 
 	Announce_Post_Register(sref, err) ;
-	LEVEL_DEBUG("Normal exit");
+	LEVEL_DEBUG("Normal completion");
 	pthread_exit(NULL);
 
 	return VOID_RETURN;

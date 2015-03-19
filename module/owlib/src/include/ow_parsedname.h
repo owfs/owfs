@@ -91,9 +91,7 @@ struct ds2409_hubs {
 
 #define EXTENSION_BYTE	-2
 #define EXTENSION_ALL	-1
-#define EXTENSION_ALL_SEPARATE	-1
-#define EXTENSION_ALL_MIXED		-1
-#define EXTENSION_ALL_AGGREGATE	-1
+#define EXTENSION_UNKNOWN -3 /* Sparse and not given yet */
 
 #define NO_FILETYPE NULL
 #define NO_SUBDIR NULL
@@ -138,7 +136,7 @@ struct parsedname {
 	struct device *selected_device;		// 1-wire device
 	struct filetype *selected_filetype;	// device property
 	int extension;				// numerical extension (for array values) or -1
-	char * sparse_name;         // text extension for a spare array value
+	char * sparse_name;         // text extension for a sparse array value
 	struct filetype *subdir;		// in-device grouping
 	int dirlength ;				// Length of just directory part of path
 	UINT ds2409_depth;			// DS2409 branching depth

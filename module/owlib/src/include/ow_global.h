@@ -56,6 +56,7 @@
 
 #define DEFAULT_USB_SCAN_INTERVAL 10 /* seconds */
 #define DEFAULT_ENET_SCAN_INTERVAL 60 /* seconds */
+#define DEFAULT_MASTERHUB_SCAN_INTERVAL 60 /* seconds */
 
 enum zero_support { zero_unknown, zero_none, zero_bonjour, zero_avahi, } ;
 
@@ -88,7 +89,6 @@ struct global {
 	enum enum_daemon_status daemon_status ;
 	int allow_external ; // allow this program to call external programs for read/write -- dangerous
 	int allow_other ;
-	ASCII *progname;
 	struct antiloop Token;
 	int uncached ; // all requests are from /uncached directory
 	int unaliased ; // all requests are from /unaliased (no alias substitution on results)
@@ -96,7 +96,6 @@ struct global {
 	int error_level_restore;
 	int error_print;
 	int fatal_debug;
-	int concurrent_connections;
 	ASCII *fatal_debug_file;
 	int readonly;
 	int max_clients;			// for ftp
@@ -124,8 +123,6 @@ struct global {
 	int timeout_persistent_high;
 	int clients_persistent_low;
 	int clients_persistent_high;
-	int usb_scan_interval ;
-	int enet_scan_interval ;
 	int pingcrazy;
 	int no_dirall;
 	int no_get;
@@ -140,6 +137,14 @@ struct global {
 	int locks ; // show mutexes
 	_FLOAT templow ;
 	_FLOAT temphigh ;
+#if OW_USB
+	libusb_context * luc ;
+#endif /* OW_USB */
+	int argc;
+	char ** argv ;
+	enum e_inet_type inet_type ;
+	enum { exit_early, exit_normal, exit_exec, } exitmode ; // is this an execpe on config file change?
+	int restart_seconds ; // time after close before execve
 };
 extern struct global Globals;
 

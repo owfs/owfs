@@ -117,7 +117,7 @@ extern int log_available;
 #endif /* OW_DEBUG */
 
 /* Make sure strings are safe for printf */
-#define SAFESTRING(x) ((x) ? (x):"")
+#define SAFESTRING(x) ((x!=NULL) ? (x):"")
 
 /* Easy way to show 64bit serial numbers */
 #define SNformat	"%.2X %.2X %.2X %.2X %.2X %.2X %.2X %.2X"

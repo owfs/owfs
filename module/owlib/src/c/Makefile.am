@@ -79,6 +79,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_ds2482.c        \
                ow_ds9097.c        \
                ow_ds1410.c        \
+               ow_ds1wm.c         \
                ow_ds9097U.c       \
                ow_ds9490.c        \
                ow_eds.c           \
@@ -89,6 +90,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_eprom_write.c   \
                ow_etherweather.c  \
                ow_example_slave.c \
+               ow_exec.c          \
                ow_exit.c          \
                ow_external.c      \
                ow_find_external.c \
@@ -110,8 +112,12 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_generic_read.c  \
                ow_get.c           \
                ow_help.c          \
+               ow_inotify.c       \
                ow_interface.c     \
                ow_iterate.c       \
+               ow_launchd.c       \
+               ow_k1wm.c          \
+               ow_kevent.c        \
                ow_lcd.c           \
                ow_lib_close.c     \
                ow_lib_setup.c     \

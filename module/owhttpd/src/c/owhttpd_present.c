@@ -1,5 +1,4 @@
 /*
-$Id$
  * http.c for owhttpd (1-wire web server)
  * By Paul Alfille 2003, using libow
  * offshoot of the owfs ( 1wire file system )
@@ -17,8 +16,9 @@ $Id$
 /* ------------ Protoypes ---------------- */
 
 	/* Utility HTML page display functions */
-void HTTPstart(FILE * out, const char *status, const enum content_type ct)
+void HTTPstart(struct OutputControl * oc, const char *status, const enum content_type ct)
 {
+	FILE * out = oc->out ;
 	char d[44];
 	time_t t = NOW_TIME;
 	size_t l = strftime(d, sizeof(d), "%a, %d %b %Y %T GMT", gmtime(&t));
@@ -49,20 +49,26 @@ void HTTPstart(FILE * out, const char *status, const enum content_type ct)
 	fprintf(out, "\r\n");
 }
 
-void HTTPtitle(FILE * out, const char *title)
+void HTTPtitle(struct OutputControl * oc, const char *title)
 {
+	FILE * out = oc->out ;
+	
 	fprintf(out, "<HTML><HEAD><TITLE>1-Wire Web: %s</TITLE></HEAD>\n", title);
 }
 
-void HTTPheader(FILE * out, const char *head)
+void HTTPheader(struct OutputControl * oc, const char *head)
 {
+	FILE * out = oc->out ;
+	
 	fprintf(out,
 			"<BODY " BODYCOLOR "><TABLE " TOPTABLE
 			"><TR><TD>OWFS</TD><TD><A HREF='/'>Bus listing</A></TD><TD><A HREF='http://www.owfs.org'>OWFS homepage</A></TD><TD><A HREF='http://www.maxim-ic.com'>Dallas/Maxim</A></TD><TD>by <A HREF='mailto://paul.alfille@gmail.com'>Paul H Alfille</A></TD></TR></TABLE>\n");
 	fprintf(out, "<H1>%s</H1><HR>\n", head);
 }
 
-void HTTPfoot(FILE * out)
+void HTTPfoot(struct OutputControl * oc)
 {
+	FILE * out = oc->out;
+	
 	fprintf(out, "</BODY></HTML>");
 }

@@ -17,11 +17,13 @@
 /* All ow library closeup */
 void LibClose(void)
 {
+	Globals.exitmode = exit_early ;
 	LEVEL_CALL("Starting Library cleanup");
 	LibStop();
 	PIDstop();
 	DeviceDestroy();
 	Detail_Close() ;
+	ArgFree() ;
 
 	_MUTEX_ATTR_DESTROY(Mutex.mattr);
 
@@ -30,13 +32,20 @@ void LibClose(void)
 	OW_Free_dnssd_library();
 #endif
 
+#if OW_USB
+	if ( Globals.luc != NULL ) {
+		libusb_exit( Globals.luc ) ;
+		Globals.luc = NULL ;
+	}
+#endif /* OW_USB */
+
 	LEVEL_CALL("Finished Library cleanup");
 	if (log_available) {
 		closelog();
 		log_available = 0;
 	}
+
 	SAFEFREE(Globals.announce_name) ;
-	SAFEFREE(Globals.progname) ;
 	SAFEFREE(Globals.fatal_debug_file) ;
 	LEVEL_DEBUG("Libraries closed");
 }
