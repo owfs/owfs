@@ -548,39 +548,37 @@ static GOOD_OR_BAD GetHostURL( struct OutputControl * oc )
 {
 	FILE * out = oc->out ;
 	char * line = NULL ;
-	char * pline ;
+	static regex_t rx_host ;
+	
+	ow_regcomp( &rx_host, "host *: *([^ ]*) *[\r\n]", REG_EXTENDED | REG_ICASE ) ;
+
 	do {
+		int maxsub = 2 ;
+		regmatch_t pmatch[maxsub+1] ;
 		size_t s ;
+
 		if ( getline( &line, &s, out ) < 0 ) {
 			free( line ) ;
 			LEVEL_DEBUG("Couldn't find Host: line in HTTP header") ;
 			return gbBAD ;
 		}
-		if ( s < 5 ) {
-			continue ; // too short for Host:
+		LEVEL_DEBUG("Test line <%s>",line ) ;
+		if ( regexec( &rx_host, line, maxsub, pmatch, 0 ) != 0 ) {
+			LEVEL_DEBUG("No match <%s>",line) ;
+			continue ;
 		}
-		for ( pline = line ; *pline != '\0' ; ++pline ) {
-			if ( pline[0] != ' ' ) {
-				if ( strncasecmp( pline, "host", 4 ) == 0 ) {
-					// Found host
-					strsep( &pline, ":" ) ; // look for ':'
-					if ( pline == NULL ) {
-						LEVEL_DEBUG("No : in Host HTTP line") ;
-						free(line) ;
-						return gbBAD ;
-					}
-					for ( ; *pline==' ' ; ++pline ) {
-						continue ;
-					}
-					oc->host = owstrdup(strsep( &pline, " \r\n" )) ;
-					LEVEL_DEBUG("Found host <%s>",oc->host) ;
-					free(line) ;
-					return gbGOOD ;				
-				} else {
-					continue ;
-				}
-			}
+		LEVEL_DEBUG("Match %d->%d",pmatch[0].rm_so,pmatch[0].rm_eo) ;
+		LEVEL_DEBUG("Match %d->%d",pmatch[1].rm_so,pmatch[1].rm_eo) ;
+		if ( pmatch[1].rm_so == -1 ) {
+			LEVEL_DEBUG("Error in host name");
+			free(line) ;
+			return gbBAD ;
 		}
+		line[pmatch[1].rm_eo] = '\0' ;
+		oc->host = owstrdup( &line[pmatch[1].rm_so] ) ;
+		LEVEL_DEBUG("Found host <%s>",oc->host) ;
+		free(line) ;
+		return gbGOOD ;				
 	} while (1) ;
 }
 
