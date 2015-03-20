@@ -28,17 +28,10 @@ static enum arg_address ArgType( const char * arg )
 	static regex_t rx_col ;
 	
 	// compile regex expressions
-	if ( 
-		BAD( ow_regcomp( &rx_dev, "/", REG_NOSUB ) )
-		||
-		BAD( ow_regcomp( &rx_num, "^[:digit:]\\{1,\\}$", REG_NOSUB ) )
-		||
-		BAD( ow_regcomp( &rx_ip, "[:digit:]\\{1,3\\}\\.[:digit:]\\{1,3\\}\\.[:digit:]\\{1,3\\}\\.[:digit:]\\{1,3\\}", REG_NOSUB ) )
-		||
-		BAD( ow_regcomp( &rx_col, ":", REG_NOSUB ) )
-	) {
-		return arg_addr_error ;
-	}
+	ow_regcomp( &rx_dev, "/", REG_NOSUB ) ;
+	ow_regcomp( &rx_num, "^[:digit:]\\{1,\\}$", REG_NOSUB ) ;
+	ow_regcomp( &rx_ip, "[:digit:]\\{1,3\\}\\.[:digit:]\\{1,3\\}\\.[:digit:]\\{1,3\\}\\.[:digit:]\\{1,3\\}", REG_NOSUB ) ;
+	ow_regcomp( &rx_col, ":", REG_NOSUB ) ;
 
 	if ( arg == NULL ) {
 		return arg_addr_null ;

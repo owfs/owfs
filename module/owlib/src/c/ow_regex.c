@@ -19,6 +19,8 @@
 // tree to hold pointers to compiled regex expressions to cache compilation and free
 void * regex_tree = NULL ;
 
+enum e_regcomp_test { e_regcomp_exists, e_regcomp_new, e_regcomp_error, } ;
+
 struct s_regex {
 	regex_t * reg ;
 } ;
@@ -39,8 +41,8 @@ static int reg_compare( const void * a, const void *b)
 	return (int) (pa->reg - pb->reg) ;
 }
 
-// Add a reg comp and return 1 or 0 if exists already
-static int regcomp_test( regex_t * reg )
+// Add a reg comp to tree if doesn't already exist
+static enum e_regcomp_test regcomp_test( regex_t * reg )
 {
 	struct s_regex * pnode = owmalloc( sizeof( struct s_regex ) ) ;
 	struct s_regex * found ;
@@ -48,7 +50,7 @@ static int regcomp_test( regex_t * reg )
 
 	if ( pnode == NULL ) {
 		LEVEL_DEBUG("memory exhuasted") ;
-		return 0 ;
+		return e_regcomp_error ;
 	}
 	
 	pnode->reg = reg ;
@@ -56,29 +58,33 @@ static int regcomp_test( regex_t * reg )
 	found = *(struct s_regex **) result ;
 	if ( found == pnode ) {
 		// new entry
-		return 1 ;
+		return e_regcomp_new ;
 	}
 	// existing entry
 	owfree( pnode ) ;
-	return 0 ;
+	return e_regcomp_exists ;
 }
 
-
-GOOD_OR_BAD ow_regcomp( regex_t * reg, const char * regex, int cflags )
+// Test if regcomp new or needs to be compiled
+void ow_regcomp( regex_t * reg, const char * regex, int cflags )
 {
-	if ( regcomp_test( reg ) ) {
-		int reg_res = regcomp( reg, regex, cflags ) ;
-		if ( reg_res == 0 ) {
-			LEVEL_DEBUG("Reg Ex expression <%s> compiled to %p\n",regex,reg) ;
-			return gbGOOD ;
-		} else {
-			char e[101];
-			regerror( reg_res, reg, e, 100 ) ;
-			LEVEL_DEBUG("Problem compiling reg expression <%s>: %s",regex, e ) ;
-			return gbBAD ;
+	switch ( regcomp_test( reg ) ) {
+		case e_regcomp_error:
+			return ;
+		case e_regcomp_exists:
+			return ;
+		case e_regcomp_new:
+		{
+			int reg_res = regcomp( reg, regex, cflags ) ;
+			if ( reg_res == 0 ) {
+				LEVEL_DEBUG("Reg Ex expression <%s> compiled to %p\n",regex,reg) ;
+			} else {
+				char e[101];
+				regerror( reg_res, reg, e, 100 ) ;
+				LEVEL_DEBUG("Problem compiling reg expression <%s>: %s",regex, e ) ;
+			}
 		}
 	}
-	return gbGOOD ;
 }
 
 // Add a reg comp and return 1 or 0 if exists already

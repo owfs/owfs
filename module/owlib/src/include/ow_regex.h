@@ -33,7 +33,7 @@
 
 #include <regex.h>
 
-GOOD_OR_BAD ow_regcomp( regex_t * preg, const char * regex, int cflags ) ;
+void ow_regcomp( regex_t * preg, const char * regex, int cflags ) ;
 void ow_regdestroy( void ) ;
 void ow_regfree( regex_t * reg ) ;
 
