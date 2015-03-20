@@ -70,7 +70,7 @@ int handle_socket(FILE * out)
 		SAFESTRING(up.cmd), SAFESTRING(up.file), SAFESTRING(up.request), SAFESTRING(up.value), SAFESTRING(up.version)
 		);
 
-		oc->base_url = owstrdup( up.file ) ;
+		oc->base_url = owstrdup( up.file==NULL ? "" : up.file ) ;
 
 		if ( BAD( GetHostURL(oc) ) ) {
 			// No command line in request
