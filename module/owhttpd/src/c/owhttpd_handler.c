@@ -549,12 +549,13 @@ static GOOD_OR_BAD GetHostURL( struct OutputControl * oc )
 	FILE * out = oc->out ;
 	char * line = NULL ;
 	static regex_t rx_host ;
+	struct ow_regmatch orm ;
 	
-	ow_regcomp( &rx_host, "host *: *([^ ]*) *[\r\n]", REG_EXTENDED | REG_ICASE ) ;
+	orm.number = 1 ;	
+	
+	ow_regcomp( &rx_host, "host *: *([^ ]+) *\r", REG_EXTENDED | REG_ICASE ) ;
 
 	do {
-		int maxsub = 2 ;
-		regmatch_t pmatch[maxsub+1] ;
 		size_t s ;
 
 		if ( getline( &line, &s, out ) < 0 ) {
@@ -563,25 +564,13 @@ static GOOD_OR_BAD GetHostURL( struct OutputControl * oc )
 			return gbBAD ;
 		}
 		LEVEL_DEBUG("Test line <%s>",line ) ;
-		if ( regexec( &rx_host, line, maxsub, pmatch, 0 ) != 0 ) {
+		if ( ow_regexec( &rx_host, line, &orm, 0 ) != 0 ) {
 			LEVEL_DEBUG("No match <%s>",line) ;
 			continue ;
 		}
-		LEVEL_DEBUG("Match %d->%d",pmatch[0].rm_so,pmatch[0].rm_eo) ;
-		LEVEL_DEBUG("Match %d->%d",pmatch[1].rm_so,pmatch[1].rm_eo) ;
-		if ( pmatch[1].rm_so == -1 ) {
-			LEVEL_DEBUG("Error in host name");
-			free(line) ;
-			return gbBAD ;
-		}
-		line[pmatch[1].rm_eo] = '\0' ;
-		oc->host = owstrdup( &line[pmatch[1].rm_so] ) ;
-		LEVEL_DEBUG("Found host <%s>",oc->host) ;
+		oc->host = owstrdup( orm.matches[1] ) ;
+		ow_regexec_free( &orm ) ;
 		free(line) ;
 		return gbGOOD ;				
 	} while (1) ;
 }
-
-
-				
-	
