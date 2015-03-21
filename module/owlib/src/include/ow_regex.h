@@ -37,4 +37,12 @@ void ow_regcomp( regex_t * preg, const char * regex, int cflags ) ;
 void ow_regdestroy( void ) ;
 void ow_regfree( regex_t * reg ) ;
 
+struct ow_regmatch {
+	int number ;
+	char ** matches ;
+} ;
+
+int ow_regexec( const regex_t * rex, const char * string, struct ow_regmatch * orm, int cflags ) ;
+void ow_regexec_free( struct ow_regmatch * orm ) ;
+
 #endif							/* OW_REGEX_H */

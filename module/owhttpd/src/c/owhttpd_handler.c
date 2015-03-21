@@ -6,7 +6,7 @@
  * GPL license ( Gnu Public Lincense )
  *
  * Based on chttpd. copyright(c) 0x7d0 greg olszewski <noop@nwonknu.org>
- *
+ *		
  */
  
 #include "owhttpd.h"

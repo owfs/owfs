@@ -30,14 +30,6 @@ static int reg_compare( const void * a, const void *b)
 	const struct s_regex * pa = (const struct s_regex *) a ;
 	const struct s_regex * pb = (const struct s_regex *) b ;
 
-/*
- 	if ( pa->reg < pb->reg ) {
-		return -1 ;
-	}
-	if ( pa->reg > pb->reg ) {
-		return 1 ;
-	}
-*/
 	return (int) (pa->reg - pb->reg) ;
 }
 
@@ -65,7 +57,9 @@ static enum e_regcomp_test regcomp_test( regex_t * reg )
 	return e_regcomp_exists ;
 }
 
-// Test if regcomp new or needs to be compiled
+// Compile a regex
+// Actually only compile if needed, check first if it's already
+// cached in the regex tree
 void ow_regcomp( regex_t * reg, const char * regex, int cflags )
 {
 	switch ( regcomp_test( reg ) ) {
@@ -86,8 +80,7 @@ void ow_regcomp( regex_t * reg, const char * regex, int cflags )
 		}
 	}
 }
-
-// Add a reg comp and return 1 or 0 if exists already
+// free a regex node (cached compiled action)
 void ow_regfree( regex_t * reg )
 {
 	struct s_regex node = { reg, } ;
@@ -100,6 +93,7 @@ void ow_regfree( regex_t * reg )
 	}
 }
 
+// Debugging to show tree contents
 static void regexaction(const void *t, const VISIT which, const int depth)
 {
 	(void) depth;
@@ -127,11 +121,70 @@ static void regexkillaction(const void *t, const VISIT which, const int depth)
 
 void ow_regdestroy( void )
 {
-	twalk( regex_tree, regexaction ) ;
+	// twalk( regex_tree, regexaction ) ;
 	twalk( regex_tree, regexkillaction ) ;
 	SAFETDESTROY( regex_tree, owfree_func ) ;
 	LEVEL_DEBUG("Regex destroy done") ;
 	regex_tree = NULL ;
 }
- 
-	
+
+// wrapper for regcomp
+// pmatch rm_so abd rm_eo handled internally
+// allocates (with owcalloc) and fills match_strings
+// Can be nmatch==0 and matched_strings==NULL for just a test with no return  
+int ow_regexec( const regex_t * rex, const char * string, struct ow_regmatch * orm, int cflags )
+{
+	if ( orm == NULL ) {
+		if ( regexec( rex, string, 0, NULL, cflags ) != 0 ) {
+			return -1 ;
+		}
+		return 0 ;
+	} else {
+		int i ;
+		int number = orm->number ;
+		
+		regmatch_t pmatch[ number + 2 ] ;
+		if ( regexec( rex, string, number+1, pmatch, cflags ) != 0 ) {
+			return -1 ;
+		}
+		orm->matches = owcalloc( sizeof( char * ) , number+1 ) ;
+		if ( orm->matches == NULL ) {
+			LEVEL_DEBUG("Memory allocation error");
+			return -1 ;
+		}
+		
+		for ( i=0 ; i < number ; ++i ) {
+			orm->matches[i] = NULL ;
+		}
+
+		for ( i=0 ; i < number ; ++i ) {
+			int s = pmatch[i+1].rm_so ;
+			int e = pmatch[i+1].rm_eo ;
+			if ( s != -1 && e != -1 ) {
+				int l = e - s + 1  ;
+				orm->matches[i] = owmalloc( l ) ;
+				if ( orm->matches[i] == NULL ) {
+					LEVEL_DEBUG("Memory problem") ;
+					ow_regexec_free( orm )  ;
+					return -1 ;
+				}
+				memcpy( orm->matches[i], &string[s], l-1 ) ;
+				orm->matches[i][l] = '\0' ;
+			}
+		}
+		return 0 ;
+	}
+}		
+
+void ow_regexec_free( struct ow_regmatch * orm )
+{
+	if ( orm != NULL ) {
+		int i ;
+		for ( i = 0 ; i < orm->number ; ++ i ) {
+			if ( orm->matches[i] != NULL ) {
+				owfree( orm->matches[i] ) ;
+			}
+		}
+		owfree( orm->matches ) ;
+	}
+}
