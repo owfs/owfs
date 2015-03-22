@@ -132,7 +132,8 @@ void Parse_Address( char * address, struct address_pair * ap )
 			Parse_Single_Address( &(ap->third) ) ;
 		}
 	}
-		
+	
+	ow_regexec_free( &orm ) ;	
 }
 
 void Free_Address( struct address_pair * ap )
