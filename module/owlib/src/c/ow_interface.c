@@ -185,8 +185,8 @@ static struct filetype interface_settings[] = {
 
 	/* Link/LinkUSB AUX line control */
 	{"link", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_LINK, NO_FILETYPE_DATA, },
-	{"link/auxout", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_w_LINK_aux, VISIBLE_LINK, NO_FILETYPE_DATA, },
-	{"link/auxin", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_LINK_aux, NO_WRITE_FUNCTION, VISIBLE_LINK, NO_FILETYPE_DATA, },
+	{"link/auxctrl", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_w_LINK_aux, VISIBLE_LINK, NO_FILETYPE_DATA, },
+	{"link/auxsense", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_LINK_aux, NO_WRITE_FUNCTION, VISIBLE_LINK, NO_FILETYPE_DATA, },
 
 	{"ha5", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_HA5, NO_FILETYPE_DATA, },
 	{"ha5/checksum", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, FS_r_yesno, FS_w_yesno, VISIBLE_HA5, {.s=offsetof(struct connection_in,master.ha5.checksum), }, },
