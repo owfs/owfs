@@ -1,5 +1,4 @@
 /*
-$Id$
     OWFS -- One-Wire filesystem
     OWHTTPD -- One-Wire Web Server
     Written 2003 Paul H Alfille
@@ -20,39 +19,45 @@ static void Parse_Single_Address( struct address_entry * ae ) ;
 
 static void Parse_Single_Address( struct address_entry * ae )
 {
-	int q1,q2,q3,q4 ;
+	static regex_t rx_pa_none ;
+	static regex_t rx_pa_all ;
+	static regex_t rx_pa_scan ;
+	static regex_t rx_pa_star ;
+	static regex_t rx_pa_quad ;
+	static regex_t rx_pa_num ;
+		
+	ow_regcomp( &rx_pa_none, "^$", REG_NOSUB ) ;
+	ow_regcomp( &rx_pa_all, "^all$", REG_NOSUB | REG_ICASE ) ;
+	ow_regcomp( &rx_pa_scan, "^scan$", REG_NOSUB | REG_ICASE ) ;
+	ow_regcomp( &rx_pa_star, "^\\*$", REG_NOSUB ) ;
+	ow_regcomp( &rx_pa_quad, "^[[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3}$", REG_NOSUB ) ;
+	ow_regcomp( &rx_pa_num, "^-?[[:digit:]]+$", REG_NOSUB ) ;
+
 	if ( ae->alpha == NULL  ) {
 		// null entry
 		ae->type = address_none ;
-	} else if ( ae->alpha[0] == '\0' ) {
-		// blank entry (actually no trim or whitespace)
+	} else if ( ow_regexec( &rx_pa_none, ae->alpha, NULL ) == 0 ) {
 		ae->type = address_none ;
-	} else if ( strncasecmp( ae->alpha, "all", 3 ) == 0 ) {
+		LEVEL_DEBUG("None <%s>",ae->alpha);
+	} else if ( ow_regexec( &rx_pa_all, ae->alpha, NULL ) == 0 ) {
 		ae->type = address_all ;
-	} else if ( strncasecmp( ae->alpha, "scan", 4 ) == 0 ) {
+		LEVEL_DEBUG("All <%s>",ae->alpha);
+	} else if ( ow_regexec( &rx_pa_scan, ae->alpha, NULL ) == 0 ) {
 		ae->type = address_scan ;
-	} else if ( strncasecmp( ae->alpha, "*", 1 ) == 0 ) {
+		LEVEL_DEBUG("Scan <%s>",ae->alpha);
+	} else if ( ow_regexec( &rx_pa_star, ae->alpha, NULL ) == 0 ) {
 		ae->type = address_asterix ;
+		LEVEL_DEBUG("Star <%s>",ae->alpha);
+	} else if ( ow_regexec( &rx_pa_quad, ae->alpha, NULL ) == 0 ) {
+		ae->type = address_dottedquad ;
+		LEVEL_DEBUG("IP <%s>",ae->alpha);
+	} else if ( ow_regexec( &rx_pa_num, ae->alpha, NULL ) == 0 ) {
+		ae->type = address_numeric ;
+		ae->number = atoi(ae->alpha ) ;
+		LEVEL_DEBUG("Num <%s> %d",ae->alpha,ae->number);
 	} else {
-		switch( sscanf( ae->alpha, "%i.%i.%i.%i", &q1, &q2, &q3, &q4 ) ) {
-		case 4:
-			ae->type = address_dottedquad ;
-			ae->number = q1 ;
-			break ;
-		case 3:
-		case 2:
-			ae->number = q1 ;
-			ae->type = address_alpha ;
-			break ;
-		case 1:
-			ae->type = address_numeric ;
-			ae->number = q1 ;
-			break ;
-		case 0:
-		default:
-			ae->type = address_alpha ;
-			break ;
-		}
+		ae->type = address_alpha ;
+		LEVEL_DEBUG("Text <%s>",ae->alpha);
 	}
 }
 
@@ -62,8 +67,14 @@ static void Parse_Single_Address( struct address_entry * ae )
 */
 void Parse_Address( char * address, struct address_pair * ap )
 {
-	char * colon ;
-	char * colon2 ;
+	static regex_t rx_pa_one ;
+	static regex_t rx_pa_two ;
+	static regex_t rx_pa_three ;
+	struct ow_regmatch orm ;
+	
+	ow_regcomp( &rx_pa_one, "^ *([^ ]+)[ \r]*$", 0 ) ;
+	ow_regcomp( &rx_pa_two, "^ *([^ ]+) *: *([^ ]+)[ \r]*$", 0 ) ;
+	ow_regcomp( &rx_pa_three, "^ *([^ ]+) *: *([^ ]+) *: *([^ ]+)[ \r]*$", 0 ) ;
 
 	// Set up address structure into previously allocated structure
 	if ( ap == NULL ) {
@@ -79,46 +90,49 @@ void Parse_Address( char * address, struct address_pair * ap )
 
 	// copy the text string
 	// All entries will point into this text copy
+	// Note that this is a maximum length, paring off spaces and colon will make room for extra \0
 	ap->first.alpha = owstrdup(address) ;
 	if ( ap->first.alpha == NULL ) {
 		return ;
 	}
 
-	colon = strchr( ap->first.alpha, ':' ) ;
-
-	if ( colon != NULL ) { // 1st colon exists
-		// Colon exists, second entry, so add a null at colon to separate the string.
-		*colon = '\0' ;
-		// second part starts after colon position
-		ap->second.alpha = colon + 1 ; // part of first.alpha
+	// test out the various matches
+	orm.number = 3 ;
+	if ( ow_regexec( &rx_pa_three, address, &orm ) == 0 ) {
+		ap->entries = 3 ;
+	} else {
+		orm.number = 2 ;
+		if ( ow_regexec( &rx_pa_two, address, &orm ) == 0 ) {
+			ap->entries = 2 ;
+		} else {
+			orm.number = 1 ;
+			if ( ow_regexec( &rx_pa_one, address, &orm ) == 0 ) {
+				ap->entries = 1 ;
+			} else {
+				return ;
+			}
+		}
 	}
+			
+	// Now copy and parse
+	strcpy( ap->first.alpha, orm.matches[1] ) ;
 	Parse_Single_Address( &(ap->first) ) ;
+	LEVEL_DEBUG("First <%s>",ap->first.alpha);
 
-	if ( colon == NULL ) {
-		// no colon, so only one entry
-		ap->entries = 1 ;
-		return ;
-	}
-	
-	colon2 = strchr( ap->second.alpha, ':' ) ;
+	if ( ap->entries > 1 ) {
+		ap->second.alpha = ap->first.alpha + strlen(ap->first.alpha) + 1 ;
+		strcpy( ap->second.alpha, orm.matches[2] ) ;
+		LEVEL_DEBUG("Second <%s>",ap->second.alpha);
+		Parse_Single_Address( &(ap->second) ) ;
 
-	if ( colon2 != NULL ) { // 2nd colon exists
-		// Colon exists, third entry, so add a null at colon to separate the string.
-		*colon2 = '\0' ;
-		// third part starts after colon position
-		ap->third.alpha = colon2 + 1 ; // still part of first.alpha
+		if ( ap->entries > 2 ) {
+			ap->third.alpha = ap->second.alpha + strlen(ap->second.alpha) + 1 ;
+			strcpy( ap->third.alpha, orm.matches[3] ) ;
+			LEVEL_DEBUG("Third <%s>",ap->third.alpha);
+			Parse_Single_Address( &(ap->third) ) ;
+		}
 	}
-	Parse_Single_Address( &(ap->second) ) ;
-
-	if ( colon2 == NULL ) {
-		// no colon2, so only two entries
-		ap->entries = 2 ;
-		return ;
-	}
-	
-	// third part starts after colon2 position
-	ap->entries = 3 ;
-	Parse_Single_Address( &(ap->third) ) ;
+		
 }
 
 void Free_Address( struct address_pair * ap )

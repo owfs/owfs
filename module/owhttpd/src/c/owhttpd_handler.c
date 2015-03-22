@@ -553,7 +553,7 @@ static GOOD_OR_BAD GetHostURL( struct OutputControl * oc )
 	
 	orm.number = 1 ;	
 	
-	ow_regcomp( &rx_host, "host *: *([^ ]+) *\r", REG_EXTENDED | REG_ICASE ) ;
+	ow_regcomp( &rx_host, "host *: *([^ ]+) *\r", REG_ICASE ) ;
 
 	do {
 		size_t s ;
@@ -564,7 +564,7 @@ static GOOD_OR_BAD GetHostURL( struct OutputControl * oc )
 			return gbBAD ;
 		}
 		LEVEL_DEBUG("Test line <%s>",line ) ;
-		if ( ow_regexec( &rx_host, line, &orm, 0 ) != 0 ) {
+		if ( ow_regexec( &rx_host, line, &orm ) != 0 ) {
 			LEVEL_DEBUG("No match <%s>",line) ;
 			continue ;
 		}

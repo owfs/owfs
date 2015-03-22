@@ -174,12 +174,12 @@ static void ShowReadonly(struct OutputControl * oc, struct one_wire_query *owq)
 	case ft_bitfield:
 		if (pn->extension >= 0) {
 			switch (OWQ_buffer(owq)[0]) {
-			case '0':
-				fprintf(out, "NO  (0)");
-				break;
-			case '1':
-				fprintf(out, "YES (1)");
-				break;
+				case '0':
+					fprintf(out, "NO  (0)");
+					break;
+				case '1':
+					fprintf(out, "YES (1)");
+					break;
 			}
 			break;
 		}
@@ -302,25 +302,24 @@ static void ShowWriteonly(struct OutputControl * oc, struct one_wire_query *owq)
 	struct parsedname * pn = PN(owq) ;
 	const char *file = FS_DirName(pn);
 	
-fprintf(stderr,"XXXXXXX Showing %s (%s) Extension %d\n",pn->path,file,pn->extension); 
 	switch (pn->selected_filetype->format) {
-	case ft_binary:
-		fprintf(out,
-				"<CODE><FORM METHOD='GET' ACTION='http://%s%s'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",oc->host, oc->base_url, 
-				file, (int) (OWQ_size(owq) >> 5));
-		Upload(oc,pn) ;
-		break;
-	case ft_yesno:
-	case ft_bitfield:
-		if (pn->extension >= 0) {
+		case ft_binary:
 			fprintf(out,
-					"<FORM METHOD='GET' ACTION='http://%s%s'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='ON'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='OFF'></FORM>", oc->host, oc->base_url, file, file);
+					"<CODE><FORM METHOD='GET' ACTION='http://%s%s'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",oc->host, oc->base_url, 
+					file, (int) (OWQ_size(owq) >> 5));
+			Upload(oc,pn) ;
 			break;
-		}
-		// fall through
-	default:
-		fprintf(out, "<FORM METHOD='GET' ACTION='http://%s%s'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>", oc->host, oc->base_url, file);
-		break;
+		case ft_yesno:
+		case ft_bitfield:
+			if (pn->extension >= 0) {
+				fprintf(out,
+						"<FORM METHOD='GET' ACTION='http://%s%s'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='ON'><INPUT TYPE='SUBMIT' NAME='%s' VALUE='OFF'></FORM>", oc->host, oc->base_url, file, file);
+				break;
+			}
+			// fall through
+		default:
+			fprintf(out, "<FORM METHOD='GET' ACTION='http://%s%s'><INPUT TYPE='TEXT' NAME='%s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>", oc->host, oc->base_url, file);
+			break;
 	}
 }
 

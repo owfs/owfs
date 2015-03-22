@@ -42,7 +42,7 @@ struct ow_regmatch {
 	char ** matches ;
 } ;
 
-int ow_regexec( const regex_t * rex, const char * string, struct ow_regmatch * orm, int cflags ) ;
+int ow_regexec( const regex_t * rex, const char * string, struct ow_regmatch * orm ) ;
 void ow_regexec_free( struct ow_regmatch * orm ) ;
 
 #endif							/* OW_REGEX_H */

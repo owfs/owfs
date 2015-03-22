@@ -69,9 +69,9 @@ void ow_regcomp( regex_t * reg, const char * regex, int cflags )
 			return ;
 		case e_regcomp_new:
 		{
-			int reg_res = regcomp( reg, regex, cflags ) ;
+			int reg_res = regcomp( reg, regex, cflags | REG_EXTENDED ) ;
 			if ( reg_res == 0 ) {
-				LEVEL_DEBUG("Reg Ex expression <%s> compiled to %p\n",regex,reg) ;
+				LEVEL_DEBUG("Reg Ex expression <%s> compiled to %p",regex,reg) ;
 			} else {
 				char e[101];
 				regerror( reg_res, reg, e, 100 ) ;
@@ -132,10 +132,10 @@ void ow_regdestroy( void )
 // pmatch rm_so abd rm_eo handled internally
 // allocates (with owcalloc) and fills match_strings
 // Can be nmatch==0 and matched_strings==NULL for just a test with no return  
-int ow_regexec( const regex_t * rex, const char * string, struct ow_regmatch * orm, int cflags )
+int ow_regexec( const regex_t * rex, const char * string, struct ow_regmatch * orm )
 {
 	if ( orm == NULL ) {
-		if ( regexec( rex, string, 0, NULL, cflags | REG_NOSUB | REG_EXTENDED ) != 0 ) {
+		if ( regexec( rex, string, 0, NULL, 0 ) != 0 ) {
 			return -1 ;
 		}
 		return 0 ;
@@ -144,7 +144,7 @@ int ow_regexec( const regex_t * rex, const char * string, struct ow_regmatch * o
 		int number = orm->number ;
 		
 		regmatch_t pmatch[ number + 2 ] ;
-		if ( regexec( rex, string, number+1, pmatch, cflags | REG_EXTENDED ) != 0 ) {
+		if ( regexec( rex, string, number+1, pmatch, 0 ) != 0 ) {
 			LEVEL_DEBUG("Not found");
 			return -1 ;
 		}
@@ -162,16 +162,16 @@ int ow_regexec( const regex_t * rex, const char * string, struct ow_regmatch * o
 			int s = pmatch[i].rm_so ;
 			int e = pmatch[i].rm_eo ;
 			if ( s != -1 && e != -1 ) {
-				int l = e - s + 1  ;
-				orm->matches[i] = owmalloc( l ) ;
+				int l = e - s   ;
+				orm->matches[i] = owmalloc( l+1 ) ;
 				if ( orm->matches[i] == NULL ) {
 					LEVEL_DEBUG("Memory problem") ;
 					ow_regexec_free( orm )  ;
 					return -1 ;
 				}
-				memcpy( orm->matches[i], &string[s], l-1 ) ;
-				LEVEL_DEBUG("%d: %d->%d found <%s>",i,s,e,orm->matches[i]) ;
+				memcpy( orm->matches[i], &string[s], l ) ;
 				orm->matches[i][l] = '\0' ;
+				LEVEL_DEBUG("%d: %d->%d found <%s>",i,s,e,orm->matches[i]) ;
 			}
 		}
 		return 0 ;

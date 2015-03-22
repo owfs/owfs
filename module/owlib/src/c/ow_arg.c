@@ -29,19 +29,19 @@ static enum arg_address ArgType( const char * arg )
 	
 	// compile regex expressions
 	ow_regcomp( &rx_dev, "/", REG_NOSUB ) ;
-	ow_regcomp( &rx_num, "^[:digit:]\\{1,\\}$", REG_NOSUB ) ;
-	ow_regcomp( &rx_ip, "[:digit:]\\{1,3\\}\\.[:digit:]\\{1,3\\}\\.[:digit:]\\{1,3\\}\\.[:digit:]\\{1,3\\}", REG_NOSUB ) ;
+	ow_regcomp( &rx_num, "^[:digit:]+$", REG_NOSUB ) ;
+	ow_regcomp( &rx_ip, "[:digit:]{1,3}\\.[:digit:]{1,3}\\.[:digit:]{1,3}\\.[:digit:]{1,3}", REG_NOSUB ) ;
 	ow_regcomp( &rx_col, ":", REG_NOSUB ) ;
 
 	if ( arg == NULL ) {
 		return arg_addr_null ;
-	} else if ( regexec( &rx_ip, arg, 0, NULL, 0 ) == 0 ) {
+	} else if ( ow_regexec( &rx_ip, arg, NULL ) == 0 ) {
 		return arg_addr_ip ;
-	} else if ( regexec( &rx_col, arg, 0, NULL, 0 ) == 0 ) {
+	} else if ( ow_regexec( &rx_col, arg, NULL ) == 0 ) {
 		return arg_addr_colon ;
-	} else if ( regexec( &rx_dev, arg, 0, NULL, 0 ) == 0 ) {
+	} else if ( ow_regexec( &rx_dev, arg, NULL ) == 0 ) {
 		return arg_addr_device ;
-	} else if ( regexec( &rx_num, arg, 0, NULL, 0 ) == 0 ) {
+	} else if ( ow_regexec( &rx_num, arg, NULL ) == 0 ) {
 		return arg_addr_number ;
 	}
 	return arg_addr_other ;
