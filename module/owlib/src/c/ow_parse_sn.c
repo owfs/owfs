@@ -14,48 +14,39 @@
 #include "owfs_config.h"
 #include "ow.h"
 
+
 /* Fill get serikal number from a character string */ 
 enum parse_serialnumber Parse_SerialNumber(char *sn_char, BYTE * sn)
 {
-	ASCII ID[14];
-	int i;
-
-	memset( sn, 0, SERIAL_NUMBER_SIZE ) ;
+	static regex_t rx_sn_parse ;
+	struct ow_regmatch orm ;
+	
+	ow_regcomp( &rx_sn_parse, "^([[:xdigit:]]{2})\\.?([[:xdigit:]]{12})\\.?([[:xdigit:]]{2}){0,1}$", 0 ) ;
+	orm.number = 3 ;
+	
 	if ( sn_char == NULL ) {
 		return sn_null ;
 	}
 
-	for (i = 0; i < 14; ++i, ++sn_char) {	/* get ID number */
-		if (*sn_char == '.') { // ignore dots
-			++sn_char;
-		}
-		if (isxdigit(*sn_char)) {
-			ID[i] = *sn_char;
-		} else {
-			return sn_not_sn; // non-hex
-		}
+	if ( ow_regexec( &rx_sn_parse, sn_char, &orm ) != 0 ) {
+		return sn_not_sn ;
 	}
-	sn[0] = string2num(&ID[0]);
-	sn[1] = string2num(&ID[2]);
-	sn[2] = string2num(&ID[4]);
-	sn[3] = string2num(&ID[6]);
-	sn[4] = string2num(&ID[8]);
-	sn[5] = string2num(&ID[10]);
-	sn[6] = string2num(&ID[12]);
+		
+	sn[0] = string2num(orm.matches[1]);
+	sn[1] = string2num(&orm.matches[2][0]);
+	sn[2] = string2num(&orm.matches[2][2]);
+	sn[3] = string2num(&orm.matches[2][4]);
+	sn[4] = string2num(&orm.matches[2][6]);
+	sn[5] = string2num(&orm.matches[2][8]);
+	sn[6] = string2num(&orm.matches[2][10]);
 	sn[7] = CRC8compute(sn, SERIAL_NUMBER_SIZE-1, 0);
-	if (*sn_char == '.') {
-		++sn_char;
-	}
-	// Check CRC8 if given
-	if (isxdigit(sn_char[0]) && isxdigit(sn_char[1])) {
-		char crc[2];
-		num2string(crc, sn[SERIAL_NUMBER_SIZE-1]);
-		if (strncasecmp(crc, sn_char, 2)) {
+	if (orm.matches[3] != NULL) {
+		// CRC given
+		if ( string2num(orm.matches[3]) != sn[7] ) {
 			return sn_invalid;
 		}
-		sn_char += 2 ;
 	}
-	return ( *sn_char == '\0' ) ? sn_valid : sn_not_sn ;
+	return sn_valid ;
 }
 
 // returns number of valid bytes in serial number
