@@ -92,16 +92,19 @@ int Fuse_add(char *opt, struct Fuse_option *fo)
 char *Fuse_arg(char *opt_arg, char *entryname)
 {
 	char *ret = NULL;
-	int len = strlen(opt_arg);
-	if (len < 3 || opt_arg[0] != '"' || opt_arg[len - 1] != '"') {
+	static regex_t rx_farg ;
+	struct ow_regmatch orm ;
+	
+	orm.number = 1 ;
+	
+	ow_regcomp( &rx_farg, "^\".+\"$", 0 ) ;
+	
+	if ( ow_regexec( &rx_farg, opt_arg, &orm ) != 0 ) {
 		fprintf(stderr, "Put the %s value in quotes. \"%s\"", entryname, opt_arg);
 		return NULL;
 	}
-	ret = owstrdup(&opt_arg[1]);	// start after first quote
-	if (ret == NULL) {
-		fprintf(stderr, "Insufficient memory to store %s options: %s", entryname, opt_arg);
-		return NULL;
-	}
-	ret[len - 2] = '\0';		// pare off trailing quote
+	ret = owstrdup(orm.matches[1]);	// start after first quote
+	ow_regexec_free( &orm ) ;
+	
 	return ret;
 }

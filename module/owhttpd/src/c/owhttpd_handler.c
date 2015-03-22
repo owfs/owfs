@@ -6,7 +6,7 @@
  * GPL license ( Gnu Public Lincense )
  *
  * Based on chttpd. copyright(c) 0x7d0 greg olszewski <noop@nwonknu.org>
- *
+ *		
  */
  
 #include "owhttpd.h"
@@ -70,7 +70,7 @@ int handle_socket(FILE * out)
 		SAFESTRING(up.cmd), SAFESTRING(up.file), SAFESTRING(up.request), SAFESTRING(up.value), SAFESTRING(up.version)
 		);
 
-		oc->base_url = owstrdup( up.file ) ;
+		oc->base_url = owstrdup( up.file==NULL ? "" : up.file ) ;
 
 		if ( BAD( GetHostURL(oc) ) ) {
 			// No command line in request
@@ -548,42 +548,29 @@ static GOOD_OR_BAD GetHostURL( struct OutputControl * oc )
 {
 	FILE * out = oc->out ;
 	char * line = NULL ;
-	char * pline ;
+	static regex_t rx_host ;
+	struct ow_regmatch orm ;
+	
+	orm.number = 1 ;	
+	
+	ow_regcomp( &rx_host, "host *: *([^ ]+) *\r", REG_ICASE ) ;
+
 	do {
 		size_t s ;
+
 		if ( getline( &line, &s, out ) < 0 ) {
 			free( line ) ;
 			LEVEL_DEBUG("Couldn't find Host: line in HTTP header") ;
 			return gbBAD ;
 		}
-		if ( s < 5 ) {
-			continue ; // too short for Host:
+		LEVEL_DEBUG("Test line <%s>",line ) ;
+		if ( ow_regexec( &rx_host, line, &orm ) != 0 ) {
+			LEVEL_DEBUG("No match <%s>",line) ;
+			continue ;
 		}
-		for ( pline = line ; *pline != '\0' ; ++pline ) {
-			if ( pline[0] != ' ' ) {
-				if ( strncasecmp( pline, "host", 4 ) == 0 ) {
-					// Found host
-					strsep( &pline, ":" ) ; // look for ':'
-					if ( pline == NULL ) {
-						LEVEL_DEBUG("No : in Host HTTP line") ;
-						free(line) ;
-						return gbBAD ;
-					}
-					for ( ; *pline==' ' ; ++pline ) {
-						continue ;
-					}
-					oc->host = owstrdup(strsep( &pline, " \r\n" )) ;
-					LEVEL_DEBUG("Found host <%s>",oc->host) ;
-					free(line) ;
-					return gbGOOD ;				
-				} else {
-					continue ;
-				}
-			}
-		}
+		oc->host = owstrdup( orm.matches[1] ) ;
+		ow_regexec_free( &orm ) ;
+		free(line) ;
+		return gbGOOD ;				
 	} while (1) ;
 }
-
-
-				
-	

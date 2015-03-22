@@ -2,6 +2,13 @@
     OW -- One-Wire filesystem
     version 0.4 7/2/2003
 
+    Function naming scheme:
+    OW -- Generic call to interaface
+    LI -- LINK commands
+    L1 -- 2480B commands
+    FS -- filesystem commands
+    UT -- utility functions
+
     Written 2003 Paul H Alfille
         Fuse code based on "fusexmp" {GPL} by Miklos Szeredi, mszeredi@inf.bme.hu
         Serial code based on "xt" {GPL} by David Querbach, www.realtime.bc.ca
@@ -18,28 +25,24 @@
     GNU General Public License for more details.
 
     Other portions based on Dallas Semiconductor Public Domain Kit,
-    Implementation:
-    2006 dirblob
 */
 
-#ifndef OW_CHARBLOB_H			/* tedious wrapper */
-#define OW_CHARBLOB_H
+// Not intended to be stand-alone -- called from ow.h
+#ifndef OW_REGEX_H			/* tedious wrapper */
+#define OW_REGEX_H
 
-#define NO_CHARBLOB	NULL
+#include <regex.h>
 
-struct charblob {
-	int troubled;
-	size_t allocated;
-	size_t used;
-	ASCII *blob;
-};
+void ow_regcomp( regex_t * preg, const char * regex, int cflags ) ;
+void ow_regdestroy( void ) ;
+void ow_regfree( regex_t * reg ) ;
 
-void CharblobClear(struct charblob *cb);
-void CharblobInit(struct charblob *cb);
-int CharblobPure(struct charblob *cb);
-int CharblobAdd(const ASCII * a, size_t s, struct charblob *cb);
-int CharblobAddChar(const ASCII a, struct charblob *cb);
-ASCII * CharblobData(struct charblob * cb);
-size_t CharblobLength( struct charblob * cb );
+struct ow_regmatch {
+	int number ;
+	char ** matches ;
+} ;
 
-#endif							/* OW_CHARBLOB_H */
+int ow_regexec( const regex_t * rex, const char * string, struct ow_regmatch * orm ) ;
+void ow_regexec_free( struct ow_regmatch * orm ) ;
+
+#endif							/* OW_REGEX_H */

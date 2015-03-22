@@ -274,6 +274,9 @@ time_t timegm(struct tm *tm);
 /* Many mutexes separated out for readability */
 #include "ow_mutexes.h"
 
+// regular expressions
+#include "ow_regex.h"
+
 /* Special checks for config file changes -- OS specific */
  #ifdef HAVE_SYS_EVENT_H
   /* BSD and OSX */
@@ -348,7 +351,6 @@ struct connection_out;
 
 /* device display format */
 enum deviceformat { fdi, fi, fdidc, fdic, fidc, fic };
-
 /* OWSERVER messages */
 #include "ow_message.h"
 
