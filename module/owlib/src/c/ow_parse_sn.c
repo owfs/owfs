@@ -43,9 +43,11 @@ enum parse_serialnumber Parse_SerialNumber(char *sn_char, BYTE * sn)
 	if (orm.matches[3] != NULL) {
 		// CRC given
 		if ( string2num(orm.matches[3]) != sn[7] ) {
+			ow_regexec_free( &orm ) ;
 			return sn_invalid;
 		}
 	}
+	ow_regexec_free( &orm ) ;
 	return sn_valid ;
 }
 
