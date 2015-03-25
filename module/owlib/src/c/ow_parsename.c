@@ -41,7 +41,7 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn);
 static enum parse_enum Parse_RealDeviceSN(enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn);
 static enum parse_enum Parse_External_Device( char *filename, struct parsedname *pn) ;
-static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn);
+static enum parse_enum Parse_Bus( INDEX_OR_ERROR bus_number, struct parsedname *pn);
 static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_Alias_Known( char *filename, enum parse_pass remote_status, struct parsedname *pn);
 static void ReplaceAliasInPath( char * filename, struct parsedname * pn);
@@ -341,41 +341,68 @@ static enum parse_enum set_type( enum ePN_type epntype, struct parsedname * pn )
 // Early parsing -- only bus entries, uncached and text may have preceeded
 static enum parse_enum Parse_Unspecified(char *pathnow, enum parse_pass remote_status, struct parsedname *pn)
 {
-	if (strncasecmp(pathnow, "bus.", 4) == 0) {
-		return Parse_Bus(pathnow, pn);
+	static regex_t rx_bus ;
+	static regex_t rx_set ;
+	static regex_t rx_sta ;
+	static regex_t rx_str ;
+	static regex_t rx_sys ;
+	static regex_t rx_int ;
+	static regex_t rx_tex ;
+	static regex_t rx_jso ;
+	static regex_t rx_unc ;
+	static regex_t rx_una ;
+	
+	struct ow_regmatch orm ;
+	orm.number = 1 ; // for bus
+	
+	ow_regcomp( &rx_bus, "^bus\\.([[:digit:]]+)/?", REG_ICASE ) ;
+	ow_regcomp( &rx_set, "^settings/?", REG_ICASE | REG_NOSUB ) ;
+	ow_regcomp( &rx_sta, "^statistics/?", REG_ICASE | REG_NOSUB ) ;
+	ow_regcomp( &rx_str, "^structure/?", REG_ICASE | REG_NOSUB ) ;
+	ow_regcomp( &rx_sys, "^system/?", REG_ICASE | REG_NOSUB ) ;
+	ow_regcomp( &rx_int, "^interface/?", REG_ICASE | REG_NOSUB ) ;
+	ow_regcomp( &rx_tex, "^text/?", REG_ICASE | REG_NOSUB ) ;
+	ow_regcomp( &rx_jso, "^json/?", REG_ICASE | REG_NOSUB ) ;
+	ow_regcomp( &rx_unc, "^uncached/?", REG_ICASE | REG_NOSUB ) ;
+	ow_regcomp( &rx_una, "^unaliased/?", REG_ICASE | REG_NOSUB ) ;
+	
+	if ( ow_regexec( &rx_bus, pathnow, &orm ) == 0) {
+		INDEX_OR_ERROR bus_number = (INDEX_OR_ERROR) atoi(orm.match[1]) ;
+		ow_regexec_free( &orm ) ;
+		return Parse_Bus( bus_number, pn);
 
-	} else if (strcasecmp(pathnow, "settings") == 0) {
+	} else if (ow_regexec( &rx_set, pathnow, NULL ) == 0) {
 		return set_type( ePN_settings, pn ) ;
 
-	} else if (strcasecmp(pathnow, "statistics") == 0) {
+	} else if (ow_regexec( &rx_sta, pathnow, NULL ) == 0) {
 		return set_type( ePN_statistics, pn ) ;
 
-	} else if (strcasecmp(pathnow, "structure") == 0) {
+	} else if (ow_regexec( &rx_str, pathnow, NULL ) == 0) {
 		return set_type( ePN_structure, pn ) ;
 
-	} else if (strcasecmp(pathnow, "system") == 0) {
+	} else if (ow_regexec( &rx_sys, pathnow, NULL ) == 0) {
 		return set_type( ePN_system, pn ) ;
 
-	} else if (strcasecmp(pathnow, "interface") == 0) {
+	} else if (ow_regexec( &rx_int, pathnow, NULL ) == 0) {
 		if (!SpecifiedBus(pn)) {
 			return parse_error;
 		}
 		pn->type = ePN_interface;
 		return parse_nonreal;
 
-	} else if (strcasecmp(pathnow, "text") == 0) {
+	} else if (ow_regexec( &rx_tex, pathnow, NULL ) == 0) {
 		pn->state |= ePS_text;
 		return parse_first;
 
-	} else if (strcasecmp(pathnow, "json") == 0) {
+	} else if (ow_regexec( &rx_jso, pathnow, NULL ) == 0) {
 		pn->state |= ePS_json;
 		return parse_first;
 
-	} else if (strcasecmp(pathnow, "uncached") == 0) {
+	} else if (ow_regexec( &rx_unc, pathnow, NULL ) == 0) {
 		pn->state |= ePS_uncached;
 		return parse_first;
 
-	} else if (strcasecmp(pathnow, "unaliased") == 0) {
+	} else if (ow_regexec( &rx_una, pathnow, NULL ) == 0) {
 		pn->state |= ePS_unaliased;
 		return parse_first;
 
@@ -387,7 +414,11 @@ static enum parse_enum Parse_Unspecified(char *pathnow, enum parse_pass remote_s
 
 static enum parse_enum Parse_Branch(char *pathnow, enum parse_pass remote_status, struct parsedname *pn)
 {
-	if (strcasecmp(pathnow, "alarm") == 0) {
+	static regex_t rx_ala ;
+	
+	ow_regcomp( &rx_ala, "^alarm\?", REG_ICASE | REG_NOSUB ) ;
+	
+	if (ow_regexec( &rx_ala, pathnow, NULL ) == 0) {
 		pn->state |= ePS_alarm;
 		pn->type = ePN_real;
 		return parse_real;
@@ -397,27 +428,41 @@ static enum parse_enum Parse_Branch(char *pathnow, enum parse_pass remote_status
 
 static enum parse_enum Parse_Real(char *pathnow, enum parse_pass remote_status, struct parsedname *pn)
 {
-	if (strcasecmp(pathnow, "simultaneous") == 0) {
+	static regex_t rx_sim ;
+	static regex_t rx_the ;
+	static regex_t rx_tex ;
+	static regex_t rx_jso ;
+	static regex_t rx_unc ;
+	static regex_t rx_una ;
+	
+	ow_regcomp( &rx_sim, "^simultaneous/?", REG_ICASE | REG_NOSUB ) ;
+	ow_regcomp( &rx_the, "^thermostat/?", REG_ICASE | REG_NOSUB ) ;
+	ow_regcomp( &rx_tex, "^text/?", REG_ICASE | REG_NOSUB ) ;
+	ow_regcomp( &rx_jso, "^json/?", REG_ICASE | REG_NOSUB ) ;
+	ow_regcomp( &rx_unc, "^uncached/?", REG_ICASE | REG_NOSUB ) ;
+	ow_regcomp( &rx_una, "^unaliased/?", REG_ICASE | REG_NOSUB ) ;
+	
+	if (ow_regexec( &rx_sim, pathnow, NULL ) == 0) {
 		pn->selected_device = DeviceSimultaneous;
 		return parse_prop;
 
-	} else if (strcasecmp(pathnow, "text") == 0) {
+	} else if (ow_regexec( &rx_tex, pathnow, NULL ) == 0) {
 		pn->state |= ePS_text;
 		return parse_real;
 
-	} else if (strcasecmp(pathnow, "json") == 0) {
+	} else if (ow_regexec( &rx_jso, pathnow, NULL ) == 0) {
 		pn->state |= ePS_json;
 		return parse_real;
 
-	} else if (strcasecmp(pathnow, "thermostat") == 0) {
+	} else if (ow_regexec( &rx_the, pathnow, NULL ) == 0) {
 		pn->selected_device = DeviceThermostat;
 		return parse_prop;
 
-	} else if (strcasecmp(pathnow, "uncached") == 0) {
+	} else if (ow_regexec( &rx_unc, pathnow, NULL ) == 0) {
 		pn->state |= ePS_uncached;
 		return parse_real;
 
-	} else if (strcasecmp(pathnow, "unaliased") == 0) {
+	} else if (ow_regexec( &rx_una, pathnow, NULL ) == 0) {
 		pn->state |= ePS_unaliased;
 		return parse_real;
 
@@ -428,19 +473,29 @@ static enum parse_enum Parse_Real(char *pathnow, enum parse_pass remote_status, 
 
 static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn)
 {
-	if (strcasecmp(pathnow, "text") == 0) {
+	static regex_t rx_tex ;
+	static regex_t rx_jso ;
+	static regex_t rx_unc ;
+	static regex_t rx_una ;
+	
+	ow_regcomp( &rx_tex, "^text/?", REG_ICASE | REG_NOSUB ) ;
+	ow_regcomp( &rx_jso, "^json/?", REG_ICASE | REG_NOSUB ) ;
+	ow_regcomp( &rx_unc, "^uncached/?", REG_ICASE | REG_NOSUB ) ;
+	ow_regcomp( &rx_una, "^unaliased/?", REG_ICASE | REG_NOSUB ) ;
+
+	if (ow_regexec( &rx_tex, pathnow, NULL )  == 0) {
 		pn->state |= ePS_text;
 		return parse_nonreal;
 
-	} else if (strcasecmp(pathnow, "json") == 0) {
+	} else if (ow_regexec( &rx_jso, pathnow, NULL )  == 0) {
 		pn->state |= ePS_json;
 		return parse_nonreal;
 
-	} else if (strcasecmp(pathnow, "uncached") == 0) {
+	} else if (ow_regexec( &rx_unc, pathnow, NULL )  == 0) {
 		pn->state |= ePS_uncached;
 		return parse_nonreal;
 
-	} else if (strcasecmp(pathnow, "unaliased") == 0) {
+	} else if (ow_regexec( &rx_una, pathnow, NULL )  == 0) {
 		pn->state |= ePS_unaliased;
 		return parse_nonreal;
 
@@ -452,16 +507,15 @@ static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn)
 }
 
 /* We've reached a /bus.n entry */
-static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
+static enum parse_enum Parse_Bus( INDEX_OR_ERROR bus_number, struct parsedname *pn)
 {
-	char *found;
-	INDEX_OR_ERROR bus_number;
-	/* Processing for bus.X directories -- eventually will make this more generic */
-	if ( !isdigit( (int) pathnow[4] ) ) {
-		return parse_error;
-	}
+	static regex_t rx_p_bus ;
+	struct ow_regmatch orm ;
+	
+	ow_regcomp( &rx_p_bus, "^/bus\\.[[:digit:]]+/?", REG_ICASE ) ;
+	orm.number = 0 ;
 
-	bus_number = atoi(&pathnow[4]);
+	/* Processing for bus.X directories -- eventually will make this more generic */
 	if ( INDEX_NOT_VALID(bus_number) ) {
 		return parse_error;
 	}
@@ -491,18 +545,16 @@ static enum parse_enum Parse_Bus(char *pathnow, struct parsedname *pn)
 	}
 
 	/* Create the path without the "bus.x" part in pn->path_to_server */
-	if ( (found = strstr(pn->path, "/bus.")) ) {
-		int length = found - pn->path;
-		if ((found = strchr(found + 1, '/'))) {	// more after bus
-			strcpy(&(pn->path_to_server[length]), found);	// copy rest
-		} else {
-			pn->path_to_server[length] = '\0';	// add final null
-		}
+	if ( ow_regexec( &rx_p_bus, pn->path, &orm ) == 0 ) {
+		strcpy( pn->path_to_server, orm.pre[0] ) ;
+		strcat( pn->path_to_server, "/" ) ;
+		strcat( pn->path_to_server, orm.post[0] ) ;
+		ow_regexec_free( &orm ) ;
 	}
 	return parse_first;
 }
 
-// search path for this exact mathing path segment
+// search path for this exact matching path segment
 static char * find_segment_in_path( char * segment, char * path )
 {
 	int segment_length = strlen(segment) ;
@@ -532,7 +584,7 @@ static char * find_segment_in_path( char * segment, char * path )
 static void ReplaceAliasInPath( char * filename, struct parsedname * pn)
 {
 	int alias_len = strlen(filename) ;
-
+	
 	// check total length
 	if ( strlen(pn->path_to_server) + 14 - alias_len <= PATH_MAX ) {
 		// find the alias
@@ -666,9 +718,6 @@ static enum parse_enum Parse_External_Device( char *filename, struct parsedname 
 
 
 /* Parse Name (non-device name) part of string */
-/* Return -ENOENT if not a valid name
-   return 0 if good
-*/
 static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn)
 {
 	//printf("Parse_NonRealDevice: [%s] [%s]\n", filename, pn->path);

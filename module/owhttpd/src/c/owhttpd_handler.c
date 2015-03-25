@@ -568,7 +568,7 @@ static GOOD_OR_BAD GetHostURL( struct OutputControl * oc )
 			LEVEL_DEBUG("No match <%s>",line) ;
 			continue ;
 		}
-		oc->host = owstrdup( orm.matches[1] ) ;
+		oc->host = owstrdup( orm.match[1] ) ;
 		ow_regexec_free( &orm ) ;
 		free(line) ;
 		return gbGOOD ;				

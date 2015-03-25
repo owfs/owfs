@@ -103,7 +103,7 @@ char *Fuse_arg(char *opt_arg, char *entryname)
 		fprintf(stderr, "Put the %s value in quotes. \"%s\"", entryname, opt_arg);
 		return NULL;
 	}
-	ret = owstrdup(orm.matches[1]);	// start after first quote
+	ret = owstrdup(orm.match[1]);	// start after first quote
 	ow_regexec_free( &orm ) ;
 	
 	return ret;

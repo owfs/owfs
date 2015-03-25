@@ -39,7 +39,9 @@ void ow_regfree( regex_t * reg ) ;
 
 struct ow_regmatch {
 	int number ;
-	char ** matches ;
+	char ** pre ;
+	char ** match ;
+	char ** post ;
 } ;
 
 int ow_regexec( const regex_t * rex, const char * string, struct ow_regmatch * orm ) ;

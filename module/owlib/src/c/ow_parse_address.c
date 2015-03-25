@@ -115,19 +115,19 @@ void Parse_Address( char * address, struct address_pair * ap )
 	}
 			
 	// Now copy and parse
-	strcpy( ap->first.alpha, orm.matches[1] ) ;
+	strcpy( ap->first.alpha, orm.match[1] ) ;
 	Parse_Single_Address( &(ap->first) ) ;
 	LEVEL_DEBUG("First <%s>",ap->first.alpha);
 
 	if ( ap->entries > 1 ) {
 		ap->second.alpha = ap->first.alpha + strlen(ap->first.alpha) + 1 ;
-		strcpy( ap->second.alpha, orm.matches[2] ) ;
+		strcpy( ap->second.alpha, orm.match[2] ) ;
 		LEVEL_DEBUG("Second <%s>",ap->second.alpha);
 		Parse_Single_Address( &(ap->second) ) ;
 
 		if ( ap->entries > 2 ) {
 			ap->third.alpha = ap->second.alpha + strlen(ap->second.alpha) + 1 ;
-			strcpy( ap->third.alpha, orm.matches[3] ) ;
+			strcpy( ap->third.alpha, orm.match[3] ) ;
 			LEVEL_DEBUG("Third <%s>",ap->third.alpha);
 			Parse_Single_Address( &(ap->third) ) ;
 		}

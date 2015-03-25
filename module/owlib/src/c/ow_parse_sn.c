@@ -32,17 +32,17 @@ enum parse_serialnumber Parse_SerialNumber(char *sn_char, BYTE * sn)
 		return sn_not_sn ;
 	}
 		
-	sn[0] = string2num(orm.matches[1]);
-	sn[1] = string2num(&orm.matches[2][0]);
-	sn[2] = string2num(&orm.matches[2][2]);
-	sn[3] = string2num(&orm.matches[2][4]);
-	sn[4] = string2num(&orm.matches[2][6]);
-	sn[5] = string2num(&orm.matches[2][8]);
-	sn[6] = string2num(&orm.matches[2][10]);
+	sn[0] = string2num(orm.match[1]);
+	sn[1] = string2num(&orm.match[2][0]);
+	sn[2] = string2num(&orm.match[2][2]);
+	sn[3] = string2num(&orm.match[2][4]);
+	sn[4] = string2num(&orm.match[2][6]);
+	sn[5] = string2num(&orm.match[2][8]);
+	sn[6] = string2num(&orm.match[2][10]);
 	sn[7] = CRC8compute(sn, SERIAL_NUMBER_SIZE-1, 0);
-	if (orm.matches[3] != NULL) {
+	if (orm.match[3] != NULL) {
 		// CRC given
-		if ( string2num(orm.matches[3]) != sn[7] ) {
+		if ( string2num(orm.match[3]) != sn[7] ) {
 			ow_regexec_free( &orm ) ;
 			return sn_invalid;
 		}
