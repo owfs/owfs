@@ -728,97 +728,128 @@ static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn
 
 static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 {
-	char *dot = filename;
+	struct device * pdev = pn->selected_device ;
+	struct filetype * ft ;
+	
+	static regex_t rx_extension ;
+	static regex_t rx_all ;
+	static regex_t rx_byte ;
+	static regex_t rx_number ;
+	static regex_t rx_letter ;
+	int extension_given ;
 
+	struct ow_regmatch orm ;
+	orm.number = 0 ;
+	
+	ow_regcomp( &rx_extension, "\\.", 0 ) ; 
+	ow_regcomp( &rx_all, "\\.all$", REG_ICASE ) ; 
+	ow_regcomp( &rx_byte, "\\.byte$", REG_ICASE ) ; 
+	ow_regcomp( &rx_number, "\\.[[:digit:]]+$", 0 ) ; 
+	ow_regcomp( &rx_letter, "\\.[[:alpha:]]$", REG_ICASE ) ; 
+	
 	//printf("FilePart: %s %s\n", filename, pn->path);
 
 	// Special case for remote device. Use distant data
-	if ( pn->selected_device == &RemoteDevice ) {
+	if ( pdev == &RemoteDevice ) {
 		// remote device, no known sn, can't handle a property
 		return parse_error ;
 	}
 
 	// separate filename.dot
-	filename = strsep(&dot, ".");
-	//printf("FP name=%s, dot=%s\n", filename, dot);
-
-	/* Match to known filetypes for this device */
-	pn->selected_filetype =
-		 bsearch(filename, pn->selected_device->filetype_array,
-				 (size_t) pn->selected_device->count_of_filetypes, sizeof(struct filetype), filetype_cmp) ;
-				 
-	if ( pn->selected_filetype == NO_FILETYPE ) {
+//	filename = strsep(&dot, ".");
+	if ( ow_regexec( &rx_extension, filename, &orm ) == 0 ) {
+		// extension given
+		extension_given = 1 ;
+		ft =
+			 bsearch(orm.pre[0], pdev->filetype_array,
+					 (size_t) pdev->count_of_filetypes, sizeof(struct filetype), filetype_cmp) ;
+		ow_regexec_free( &orm ) ;
+	} else {
+		// no extension given
+		extension_given = 0 ;
+		ft =
+			 bsearch(filename, pdev->filetype_array,
+					 (size_t) pdev->count_of_filetypes, sizeof(struct filetype), filetype_cmp) ;
+	}
+	
+	pn->selected_filetype = ft ;			 
+	if (ft == NO_FILETYPE ) {
 		LEVEL_DEBUG("Unknown property for this device %s",SAFESTRING(filename) ) ;
 		return parse_error;			/* filetype not found */
 	}
 		
 	//printf("FP known filetype %s\n",pn->selected_filetype->name) ;
 	/* Filetype found, now process extension */
-	if (dot == NULL || dot[0] == '\0') {	/* no extension */
-		if (pn->selected_filetype->ag != NON_AGGREGATE) {
+	if (extension_given==0) {	/* no extension */
+		if (ft->ag != NON_AGGREGATE) {
 			return parse_error;	/* aggregate filetypes need an extension */
 		}
 		pn->extension = 0;	/* default when no aggregate */
 
 	// Non-aggregate cannot have an extension
-	} else if (pn->selected_filetype->ag == NON_AGGREGATE) {
+	} else if (ft->ag == NON_AGGREGATE) {
 		return parse_error;	/* An extension not allowed when non-aggregate */
 
 	// Sparse uses the extension verbatim (text or number)
-	} else if (pn->selected_filetype->ag->combined==ag_sparse)  { /* Sparse */
-		if (pn->selected_filetype->ag->letters == ag_letters) {	/* text string */
+	} else if (ft->ag->combined==ag_sparse)  { /* Sparse */
+		if (ft->ag->letters == ag_letters) {	/* text string */
 			pn->extension = 0;	/* text extension, not number */
-			pn->sparse_name = owstrdup(dot) ;
+			ow_regexec( &rx_extension, filename, &orm ) ; // don't need to test -- already succesful
+			pn->sparse_name = owstrdup(orm.post[0]) ;
+			ow_regexec_free( &orm ) ;
 			LEVEL_DEBUG("Sparse alpha extension found: <%s>",pn->sparse_name);
 		} else {			/* Numbers */
-			char *p;
-			//printf("FP numbers\n") ;
-			pn->extension = strtol(dot, &p, 0);	/* Number conversion */
-			if ((p == dot) || ((pn->extension == 0) && (errno == -EINVAL))) {
-				LEVEL_DEBUG("Sparse numeric extension bad: <%s>",dot);
-				return parse_error;	/* Bad number */
+			if ( ow_regexec( &rx_number, filename, &orm ) == 0 ) { 
+				pn->extension = atoi( &orm.match[0][1] );	/* Number conversion */
+				ow_regexec_free( &orm ) ;
+				LEVEL_DEBUG("Sparse numeric extension found: <%ld>",(long int) pn->extension);
+			} else {
+				LEVEL_DEBUG("Non numeric extension for %s",filename ) ;
+				return parse_error ;
 			}
-			LEVEL_DEBUG("Sparse numeric extension found: <%ld>",(long int) pn->extension);
 		}
 
 	// Non-sparse "ALL"
-	} else if (strcasecmp(dot, "ALL") == 0) {
+	} else if (ow_regexec( &rx_all, filename, NULL ) == 0) {
 		//printf("FP ALL\n");
 		pn->extension = EXTENSION_ALL;	/* ALL */
 	
 	// Non-sparse "BYTE"
-	} else if (pn->selected_filetype->format == ft_bitfield && strcasecmp(dot, "BYTE") == 0) {
+	} else if (ft->format == ft_bitfield && ow_regexec( &rx_byte, filename, NULL) == 0) {
 		pn->extension = EXTENSION_BYTE;	/* BYTE */
 		//printf("FP BYTE\n") ;
 
 	// Non-sparse extension -- interpret and check bounds
 	} else {				/* specific extension */
-		if (pn->selected_filetype->ag->letters == ag_letters) {	/* Letters */
+		if (ft->ag->letters == ag_letters) {	/* Letters */
 			//printf("FP letters\n") ;
-			if ( (strlen(dot) != 1) || !isupper( (int) dot[0] ) ) {
+			if ( ow_regexec( &rx_letter, filename, &orm ) == 0 ) {
+				pn->extension = toupper(orm.match[0][1]) - 'A';	/* Letter extension */
+				ow_regexec_free( &orm ) ;
+			} else {
 				return parse_error;
 			}
-			pn->extension = dot[0] - 'A';	/* Letter extension */
 		} else {			/* Numbers */
-			char *p;
-			//printf("FP numbers\n") ;
-			pn->extension = strtol(dot, &p, 0);	/* Number conversion */
-			if ((p == dot) || ((pn->extension == 0) && (errno == -EINVAL))) {
-				return parse_error;	/* Bad number */
+			if ( ow_regexec( &rx_number, filename, &orm ) == 0 ) { 
+				pn->extension = atoi( &orm.match[0][1] );	/* Number conversion */
+				ow_regexec_free( &orm ) ;
+			} else {
+				return parse_error;
 			}
 		}
 		//printf("FP ext=%d nr_elements=%d\n", pn->extension, pn->selected_filetype->ag->elements) ;
 		/* Now check range */
 		if ((pn->extension < 0)
-			|| (pn->extension >= pn->selected_filetype->ag->elements)) {
+			|| (pn->extension >= ft->ag->elements)) {
 			//printf("FP Extension out of range %d %d %s\n", pn->extension, pn->selected_filetype->ag->elements, pn->path);
+			LEVEL_DEBUG("Extension %d out of range",pn->extension ) ;
 			return parse_error;	/* Extension out of range */
 		}
 		//printf("FP in range\n") ;
 	}
 
 	//printf("FP Good\n") ;
-	switch (pn->selected_filetype->format) {
+	switch (ft->format) {
 	case ft_directory:		// aux or main
 		if ( pn->type == ePN_structure ) {
 			// special case, structure for aux and main
@@ -837,7 +868,7 @@ static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 		return parse_branch;
 	case ft_subdir:
 		//printf("PN %s is a subdirectory\n", filename);
-		pn->subdir = pn->selected_filetype;
+		pn->subdir = ft;
 		pn->selected_filetype = NO_FILETYPE;
 		return parse_subprop;
 	default:
