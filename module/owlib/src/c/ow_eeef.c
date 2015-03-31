@@ -31,6 +31,7 @@ WRITE_FUNCTION(FS_w_hub_config);
 READ_FUNCTION(FS_r_channels);
 WRITE_FUNCTION(FS_w_channels);
 READ_FUNCTION(FS_short);
+READ_FUNCTION(FS_r_multitemp) ;
 
 READ_FUNCTION(FS_r_variable);
 WRITE_FUNCTION(FS_w_variable);
@@ -40,6 +41,7 @@ static enum e_visibility VISIBLE_EF_MOISTURE( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EF_HUB( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EF_BAROMETER( const struct parsedname * pn ) ;
 static enum e_visibility VISIBLE_EF_HUMIDITY( const struct parsedname * pn ) ;
+static enum e_visibility VISIBLE_EF_MULTITEMP( const struct parsedname * pn ) ;
 
 enum e_EF_type {
 	eft_UVI = 1,
@@ -49,6 +51,7 @@ enum e_EF_type {
 	eft_HUB = 5,
 	eft_BAR = 6,
 	eft_HUM = 7,
+	eft_TMP = 9,
 } ;
 
 enum e_cal_type {
@@ -118,6 +121,9 @@ enum e_cal_type {
 #define _EEEF_GET_RAW_HUMIDITY 0x22
 #define _EEEF_GET_TC_HUMIDITY_OFFSET 0x24
 #define _EEEF_SET_TC_HUMIDITY_OFFSET 0xA4
+
+#define _EEEF_GET_TEMPERATURE_IN_C 0x21
+#define _EEEF_GET_TEMPERATURE_IN_F 0x22
 
 struct location_pair {
 	BYTE read ;
@@ -282,6 +288,7 @@ DeviceEntry(EE, HobbyBoards_EE, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 static struct aggregate AMOIST = { 4, ag_numbers, ag_aggregate, };
 static struct aggregate AHUB = { 4, ag_numbers, ag_aggregate, };
+static struct aggregate ATMP = { 6, ag_numbers, ag_aggregate, };
 static struct filetype HobbyBoards_EF[] = {
 	F_STANDARD_NO_TYPE,
 	{"version", _EEEF_version_length, NON_AGGREGATE, ft_ascii, fc_link, FS_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
@@ -321,6 +328,15 @@ static struct filetype HobbyBoards_EF[] = {
 	{"barometer/pressure", PROPERTY_LENGTH_PRESSURE, NON_AGGREGATE, ft_pressure, fc_volatile, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_BAROMETER, {.v=&lp_pressure,}, } ,
 	{"barometer/pressure_altitude", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_volatile, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_BAROMETER, {.v=&lp_pressurealtitude,}, } ,
 	{"barometer/altitude", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_integer, fc_volatile, FS_r_variable, FS_w_variable, VISIBLE_EF_BAROMETER, {.v=&lp_altitude,}, } ,
+	
+	{"multitemp", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_MULTITEMP, NO_FILETYPE_DATA, },
+	{"multitemp/polling_frequency", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_MULTITEMP, {.v=&lp_polling, }, } ,
+	{"multitemp/polling_available", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_MULTITEMP, {.v=&lp_available_polling, }, } ,
+	{"multitemp/location", _EEEF_LOCATION_LENGTH, NON_AGGREGATE, ft_ascii, fc_stable, FS_r_variable, FS_w_variable, VISIBLE_EF_MULTITEMP, {.v=&lp_location,}, } ,
+	{"multitemp/config", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_variable, NO_WRITE_FUNCTION, VISIBLE_EF_MULTITEMP, {.v=&lp_config, }, } ,
+	{"multitemp/reboot", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_w_variable, VISIBLE_EF_MULTITEMP, {.v=&lp_reboot,}, } ,
+	{"multitemp/reset", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_w_variable, VISIBLE_EF_MULTITEMP, {.v=&lp_factory,}, } ,
+	{"multitemp/temperature", PROPERTY_LENGTH_TEMP, &ATMP, ft_temperature, fc_volatile, FS_r_multitemp, NO_WRITE_FUNCTION, VISIBLE_EF_MULTITEMP, NO_FILETYPE_DATA, } ,
 	
 	{"hub", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EF_HUB, NO_FILETYPE_DATA, },
 	{"hub/config", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_hub_config, FS_w_hub_config, INVISIBLE, NO_FILETYPE_DATA, },
@@ -406,6 +422,16 @@ static enum e_visibility VISIBLE_EF_HUB( const struct parsedname * pn )
 	}
 }
 
+static enum e_visibility VISIBLE_EF_MULTITEMP( const struct parsedname * pn )
+{
+	switch ( VISIBLE_EF(pn) ) {
+		case eft_TMP:
+			return visible_now ;
+		default:
+			return visible_not_now ;
+	}
+}
+
 /* ------- Functions ------------ */
 
 /* prototypes */
@@ -460,6 +486,8 @@ static ZERO_OR_ERROR FS_localtype(struct one_wire_query *owq)
             return OWQ_format_output_offset_and_size_z("HB_SNIFFER", owq) ;
         case eft_HUB:
             return OWQ_format_output_offset_and_size_z("HB_HUB", owq) ;
+        case eft_TMP:
+            return OWQ_format_output_offset_and_size_z("HB_MULTITEMP", owq) ;
         default:
             return FS_type(owq);
     }
@@ -475,6 +503,23 @@ static ZERO_OR_ERROR FS_r_sensor(struct one_wire_query *owq)
 	OWQ_array_I(owq, 1) = (uint8_t) w[1] ;
 	OWQ_array_I(owq, 2) = (uint8_t) w[2] ;
 	OWQ_array_I(owq, 3) = (uint8_t) w[3] ;
+
+	return 0 ;
+}
+
+static ZERO_OR_ERROR FS_r_multitemp(struct one_wire_query *owq)
+{
+	int bytes = 6 * 2 ; // 6 2-byte words, little endian in deci-degrees
+	BYTE t[bytes] ;
+	
+	RETURN_ERROR_IF_BAD( OW_read( _EEEF_GET_TEMPERATURE_IN_C, t, bytes, PN(owq) ) ) ;
+
+	OWQ_array_F(owq, 0) = ( (_FLOAT) (UT_int16( &t[ 0] )) ) / 10. ;
+	OWQ_array_F(owq, 1) = ( (_FLOAT) (UT_int16( &t[ 2] )) ) / 10. ;
+	OWQ_array_F(owq, 2) = ( (_FLOAT) (UT_int16( &t[ 4] )) ) / 10. ;
+	OWQ_array_F(owq, 3) = ( (_FLOAT) (UT_int16( &t[ 6] )) ) / 10. ;
+	OWQ_array_F(owq, 4) = ( (_FLOAT) (UT_int16( &t[ 8] )) ) / 10. ;
+	OWQ_array_F(owq, 5) = ( (_FLOAT) (UT_int16( &t[10] )) ) / 10. ;
 
 	return 0 ;
 }
