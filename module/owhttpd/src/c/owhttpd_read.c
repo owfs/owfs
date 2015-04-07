@@ -134,15 +134,17 @@ static void Upload( struct OutputControl * oc, const struct parsedname * pn )
 
 static void Extension( struct OutputControl * oc, const struct parsedname * pn )
 {
+	static regex_t rx_extension ;
 	FILE * out = oc->out ;
 	const char * file = FS_DirName(pn);
-	char * file_copy = owstrdup(file) ;
-	char * extension = file_copy ;
+	struct ow_regmatch orm ;
+	orm.number = 0 ;
 	
-	file_copy = strsep( &extension, "." ) ;
-	
-	fprintf(out, "<CODE><FORM METHOD='GET' ACTION='http://%s%s'><INPUT NAME='EXTENSION' TYPE='TEXT' SIZE='30' VALUE='%s.' ID='EXTENSION'><INPUT TYPE='SUBMIT' VALUE='EXTENSION'></FORM>", oc->host, oc->base_url, file_copy);
-	owfree(file_copy) ;
+	ow_regcomp( &rx_extension, "\.", 0 ) ;
+	if ( ow_regexec( &rx_extension, file, &orm ) == 0 ) {
+		fprintf(out, "<CODE><FORM METHOD='GET' ACTION='http://%s%s'><INPUT NAME='EXTENSION' TYPE='TEXT' SIZE='30' VALUE='%s.' ID='EXTENSION'><INPUT TYPE='SUBMIT' VALUE='EXTENSION'></FORM>", oc->host, oc->base_url, orm.pre[0] );
+		ow_regexec_free( &orm ) ;
+	}
 }
 
 /* Device entry -- table line for a filetype */
