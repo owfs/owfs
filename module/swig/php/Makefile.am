@@ -22,6 +22,7 @@ AM_CFLAGS = -fexceptions \
 	-I$(top_srcdir)/src/include \
 	-I$(top_srcdir)/module/owlib/src/include \
 	${EXTRACFLAGS} \
+	${LIBUSB_CFLAGS} \
 	${PTHREAD_CFLAGS} \
 	@PHPINC@
 

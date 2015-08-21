@@ -40,6 +40,7 @@ AM_CFLAGS = -I../owlib/src/include \
 	-Wstrict-prototypes \
 	-Wredundant-decls \
 	${EXTRACFLAGS} \
+	${LIBUSB_CFLAGS} \
 	${PTHREAD_CFLAGS} \
 	$(TCL_DEFS) \
 	$(TCL_SHLIB_CFLAGS) \

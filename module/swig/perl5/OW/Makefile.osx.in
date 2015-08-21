@@ -9,7 +9,7 @@ WriteMakefile(
     'VERSION'	=>	q[@VERSION@],
 # Avoid compilation problem for Fedora Core 1 and Slackware 10.2
     'DEFINE'    =>	q[@PTHREAD_CFLAGS@ -D_FILE_OFFSET_BITS=64 -DSKIP_SEARCH_H @DEFS@],
-    'INC'       =>	q[-I../../../../src/include -I../../../owlib/src/include @CPPFLAGS@],
+    'INC'       =>	q[-I../../../../src/include -I../../../owlib/src/include @CPPFLAGS@ @LIBUSB_CFLAGS@],
 # Default value for LDDLFLAGS is $Config{lddlflags}="-shared -L/usr/local/lib"
 # but we want rpath to be @libdir@ or @exec_prefix@/lib
     'LDDLFLAGS' =>      q[-bundle -flat_namespace -undefined suppress -Wl,-L../../../owlib/src/c/.libs],
