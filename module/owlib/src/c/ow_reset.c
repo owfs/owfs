@@ -20,6 +20,12 @@ RESET_TYPE BUS_reset(const struct parsedname *pn)
 	struct connection_in * in = pn->selected_connection ;
 	STAT_ADD1_BUS(e_bus_resets, in);
 
+	// External adapter has no reset routine at all, so sort it out here.
+	if ((in->iroutines.reset) == NO_RESET_ROUTINE) {
+		return BUS_RESET_OK ;
+	}
+
+	// Switch by result of adapter reset routine.
 	switch ( (in->iroutines.reset) (pn) ) {
 	case BUS_RESET_OK:
 		in->reconnect_state = reconnect_ok;	// Flag as good!
