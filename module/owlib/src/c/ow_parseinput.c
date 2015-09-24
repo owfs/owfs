@@ -78,6 +78,12 @@ ZERO_OR_ERROR OWQ_parse_input(struct one_wire_query *owq)
 			return FS_input_array_with_commas(owq);
 		}
 	default:
+		// Sort out locally unknown filetype.
+		if (OWQ_pn(owq).selected_filetype == NO_FILETYPE) {
+			return -ENOENT;
+		}
+
+		// Switch by known filetype.
 		switch (OWQ_pn(owq).selected_filetype->format) {
 		case ft_integer:
 			return FS_input_integer(owq);

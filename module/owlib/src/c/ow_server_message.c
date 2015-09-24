@@ -69,7 +69,7 @@ SIZE_OR_ERROR ServerRead(struct one_wire_query *owq)
 	sm.offset = OWQ_offset(owq);
 
 	// Alias should show local understanding except if bus.x specified
-	if ( pn_file_entry->selected_filetype->format == ft_alias && ! SpecifiedRemoteBus(pn_file_entry) ) {
+	if ( (pn_file_entry->selected_filetype != NULL) && (pn_file_entry->selected_filetype->format == ft_alias && ! SpecifiedRemoteBus(pn_file_entry) )) {
 		ignore_result = FS_r_alias( owq ) ;
 		return OWQ_length(owq) ;
 	}
