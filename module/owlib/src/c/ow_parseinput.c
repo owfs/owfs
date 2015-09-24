@@ -80,7 +80,7 @@ ZERO_OR_ERROR OWQ_parse_input(struct one_wire_query *owq)
 	default:
 		// Sort out locally unknown filetype.
 		if (OWQ_pn(owq).selected_filetype == NO_FILETYPE) {
-			return -ENOENT;
+			return FS_input_ascii(owq);
 		}
 
 		// Switch by known filetype.

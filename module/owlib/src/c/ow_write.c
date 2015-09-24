@@ -91,7 +91,7 @@ SIZE_OR_ERROR FS_write_postparse(struct one_wire_query *owq)
 		return -EROFS;			// read-only invokation
 	}
 
-	if (IsDir(pn)) {
+	if (IsDir(pn) && !(BusIsServer(pn->selected_connection))) {
 		LEVEL_DEBUG("Attempt to write to a directory.");
 		return -EISDIR;			// not a file
 	}

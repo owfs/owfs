@@ -38,13 +38,15 @@ static void getdircallback( void * v, const struct parsedname * const pn_entry )
 	}
 }
 
-static void getdir( struct charblob * cb, struct one_wire_query * owq ) 
-{  
-	if ( FS_dir( getdircallback, cb, PN(owq) ) != 0 ) {
+static int getdir( struct charblob * cb, struct one_wire_query * owq ) 
+{
+	int ret = 0;
+	if ( (ret = FS_dir( getdircallback, cb, PN(owq) )) != 0 ) {
 		CharblobClear( cb ) ;
 	} else if ( CharblobLength(cb) == 0 ) {
 		CharblobAddChar( '\0', cb) ;
 	}
+	return ret;
 }
 
 static char * copy_buffer( char * data, int size )
@@ -83,19 +85,42 @@ SIZE_OR_ERROR FS_get(const char *path, char **return_buffer, size_t * buffer_len
 		return -ENOENT;
 	}
 
-	if ( IsDir( PN(owq) ) ) { /* A directory of some kind */
+	// Check for known type.
+	if ( (PN(owq)->selected_filetype) != NO_FILETYPE ) { 
+		// local owlib knows the type. 
+		if ( IsDir( PN(owq) ) ) { /* A directory of some kind */
+			struct charblob cb ;
+			CharblobInit(&cb) ;
+			getdir( &cb, owq ) ;
+			size = CharblobLength(&cb) ;
+			*return_buffer = copy_buffer( CharblobData(&cb), size ) ;
+			CharblobClear(&cb) ;
+		} else { /* A regular file  -- so read */
+			if ( GOOD(OWQ_allocate_read_buffer(owq)) ) { // make the space in the buffer
+				size = FS_read_postparse(owq) ;
+				*return_buffer = copy_buffer( OWQ_buffer(owq), size ) ;
+			}
+		}
+	} else {
+		// local owlib doesn't know the type.
 		struct charblob cb ;
 		CharblobInit(&cb) ;
-		getdir( &cb, owq ) ;
-		size = CharblobLength(&cb) ;
-		*return_buffer = copy_buffer( CharblobData(&cb), size ) ;
-		CharblobClear( &cb ) ;
-	} else { /* A regular file  -- so read */
-		if ( GOOD(OWQ_allocate_read_buffer(owq)) ) { // make the space in the buffer
-			size = FS_read_postparse(owq) ;
-			*return_buffer = copy_buffer( OWQ_buffer(owq), size ) ;
+
+		// Try directory first.
+		if (getdir( &cb, owq ) != -ENOTDIR) {
+			// Is a directory.
+			size = CharblobLength(&cb) ;
+			*return_buffer = copy_buffer( CharblobData(&cb), size ) ;
+		} else {
+			// Is not a directory. Try file.
+			if ( GOOD(OWQ_allocate_read_buffer(owq)) ) { // make the space in the buffer
+				size = FS_read_postparse(owq) ;
+				*return_buffer = copy_buffer( OWQ_buffer(owq), size ) ;
+			}
 		}
-	}
+		CharblobClear(&cb) ;
+	}	
+
 	// the buffer is allocated by getdir or getval
 	OWQ_destroy(owq);
 

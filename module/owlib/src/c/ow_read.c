@@ -68,11 +68,6 @@ SIZE_OR_ERROR FS_read_postparse(struct one_wire_query *owq)
 	struct parsedname *pn = PN(owq);
 	SIZE_OR_ERROR read_or_error;
 
-	// ServerRead jumps in here, perhaps with non-file entry
-	if (pn->selected_device == NO_DEVICE || pn->selected_filetype == NO_FILETYPE) {
-		return -EISDIR;
-	}
-
 	/* Normal read. Try three times */
 	LEVEL_DEBUG("%s", pn->path);
 	STATLOCK;
@@ -83,7 +78,12 @@ SIZE_OR_ERROR FS_read_postparse(struct one_wire_query *owq)
 	/* First try */
 	STAT_ADD1(read_tries[0]);
 
-	read_or_error = (pn->type == ePN_real) ? FS_read_real(owq) : FS_r_virtual(owq);
+	// ServerRead jumps in here, perhaps with non-file entry
+	if (pn->selected_device == NO_DEVICE || pn->selected_filetype == NO_FILETYPE) {
+		read_or_error = FS_r_given_bus(owq);
+	} else {
+		read_or_error = (pn->type == ePN_real) ? FS_read_real(owq) : FS_r_virtual(owq);
+	}
 
 	STATLOCK;
 	if (read_or_error >= 0) {
