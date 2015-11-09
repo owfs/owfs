@@ -732,7 +732,11 @@ GOOD_OR_BAD owopt(const int option_char, const char *arg)
 		break;
 	case e_debug:
 		// shortcut for --foreground --error_level=9
+#if OW_DEBUG
 		printf("DEBUG MODE\n");
+#else
+		printf("DEBUG MODE disabled at compile time. Sorry.\n");
+#endif /* OW_DEBUG */
 		printf("libow version:\n\t" VERSION "\n");
 		switch (Globals.daemon_status) {
 			case e_daemon_want_bg:
