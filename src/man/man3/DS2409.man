@@ -79,7 +79,9 @@ Reading the branch properties returns which branch (if any) is connected to the 
 is an aggregate of the properties, comma separated. It is an atomic operation.
 .br
 .I BYTE
-is an aggregate of the branches as a byte, A is bit 0.
+is an aggregate of the branches as a byte,
+.I main
+is bit 0. It is an atomic operation.
 .SS control
 .I read-write, unsigned integer
 .br
@@ -131,7 +133,7 @@ is an aggregate of the properties, comma separated. It is an atomic operation.
 .I BYTE
 is an aggregate of the branches as a byte,
 .I main
-is bit 0.
+is bit 0. It is an atomic operation.
 .SS clearevent
 .I write-only, yes-no
 .br
@@ -162,7 +164,9 @@ branch pin. Valid only when the branch is switched out. Value returned is 0 (low
 is an aggregate of the properties, comma separated. It is an atomic operation.
 .br
 .I BYTE
-is an aggregate of the branches as a byte, A is bit 0.
+is an aggregate of the branches as a byte,
+.I main
+is bit 0. It is an atomic operation.
 .SH STANDARD PROPERTIES
 .so man3/standard.3so
 .SH ALARMS
