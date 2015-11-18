@@ -88,29 +88,26 @@ static GOOD_OR_BAD OW_w_control(const UINT data, const struct parsedname *pn);
 /* discharge 2409 lines */
 static ZERO_OR_ERROR FS_discharge(struct one_wire_query *owq)
 {
+	/* Ignore if not really meant to trigger. */
 	if ( OWQ_Y(owq)==0 ) {
-		// didn't really ask for it.
 		return 0;
 	}
-	if ( BAD( OW_discharge(PN(owq)) ) ) {
-		return -EINVAL;
-	}
-	return 0;
+
+	/* Discharge and return status. */
+	return GB_to_Z_OR_E(OW_discharge(PN(owq)));
 }
 
 /* Clear 2409 event flags */
 /* Added by Jan Kandziora */
 static ZERO_OR_ERROR FS_clearevent(struct one_wire_query *owq)
 {
-	
+	/* Ignore if not really meant to trigger. */
 	if ( OWQ_Y(owq)==0 ) {
-		// didn't really ask for it.
 		return 0;
 	}
-	if ( BAD( OW_clearevent(PN(owq)) ) ) {
-		return -EINVAL;
-	}
-	return 0;
+
+	/* Clear event and return status. */
+	return GB_to_Z_OR_E(OW_clearevent(PN(owq)));
 }
 
 /* 2409 switch -- branch pin voltage */
@@ -216,7 +213,7 @@ static GOOD_OR_BAD OW_clearevent(const struct parsedname *pn)
 	};
 
 	// Could certainly couple this with next transaction
-	 return BUS_transaction(t, pn) ;
+	return BUS_transaction(t, pn) ;
 }
 
 static GOOD_OR_BAD OW_w_control(const UINT data, const struct parsedname *pn)
