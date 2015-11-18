@@ -50,6 +50,7 @@ READ_FUNCTION(FS_r_control);
 WRITE_FUNCTION(FS_w_control);
 READ_FUNCTION(FS_r_sensed);
 READ_FUNCTION(FS_r_branch);
+WRITE_FUNCTION(FS_w_branch);
 READ_FUNCTION(FS_r_event);
 
 /* ------- Structures ----------- */
@@ -61,7 +62,7 @@ static struct filetype DS2409[] = {
 	{"clearevent", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, NO_READ_FUNCTION, FS_clearevent, VISIBLE, NO_FILETYPE_DATA, },
 	{"control", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_control, FS_w_control, VISIBLE, NO_FILETYPE_DATA, },
 	{"sensed", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_sensed, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"branch", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_branch, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"branch", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_branch, FS_w_branch, VISIBLE, NO_FILETYPE_DATA, },
 	{"event", PROPERTY_LENGTH_BITFIELD, &A2409, ft_bitfield, fc_volatile, FS_r_event, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"aux", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {.i=eBranch_aux}, },
 	{"main", 0, NON_AGGREGATE, ft_directory, fc_volatile, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, {.i=eBranch_main}, },
@@ -77,6 +78,7 @@ static GOOD_OR_BAD OW_r_control(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_discharge(const struct parsedname *pn);
 static GOOD_OR_BAD OW_clearevent(const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_control(const UINT data, const struct parsedname *pn);
+static GOOD_OR_BAD OW_select_branch(const UINT data, const struct parsedname *pn);
 
 #define _1W_STATUS_READ_WRITE  0x5A
 #define _1W_ALL_LINES_OFF      0x66
@@ -137,6 +139,22 @@ static ZERO_OR_ERROR FS_r_branch(struct one_wire_query *owq)
 
 	return 0;
 }
+
+static ZERO_OR_ERROR FS_w_branch(struct one_wire_query *owq)
+{
+	switch (OWQ_U(owq)) {
+		case 0:
+			/* Select no branch. */
+			return GB_to_Z_OR_E(OW_clearevent(PN(owq)));
+		case 1:
+		case 2:
+			/* Explicitely select main or aux branch. */
+			return GB_to_Z_OR_E(OW_select_branch(OWQ_U(owq),PN(owq)));
+	}
+
+	/* Other values are invalid. */
+	return -EINVAL;
+}	
 
 /* 2409 switch -- event status */
 static ZERO_OR_ERROR FS_r_event(struct one_wire_query *owq)
@@ -246,4 +264,26 @@ static GOOD_OR_BAD OW_r_control(BYTE * data, const struct parsedname *pn)
 	};
 
 	return BUS_transaction(t, pn) ;
+}
+
+static GOOD_OR_BAD OW_select_branch(const UINT data, const struct parsedname *pn)
+{
+	BYTE command[] = { 0, _1W_SMART_ON_MAIN, _1W_SMART_ON_AUX };
+	BYTE sel[] = { 0x00, 0xff, };
+	BYTE info[2];
+ 	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE2(sel),
+		TRXN_READ2(info),
+		TRXN_END,
+	};
+
+	/* Select path. */
+	sel[0] = command[data];
+
+	/* Select branch. */
+	RETURN_BAD_IF_BAD(BUS_transaction(t, pn)) ;
+
+	/* Check whether the branch switching had succeeded. */
+	return info[1] == sel[0] ? gbGOOD : gbBAD;
 }

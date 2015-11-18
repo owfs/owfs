@@ -50,16 +50,31 @@ network branch. It is implicitly accessed (via the
 .I aux smart-on
 command) when it is listed or devices on this branch are addressed.
 .SS branch.0 branch.1 branch.ALL branch.BYTE
-.I read-only, yes-no
+.I read-write, yes-no
 .br
-Is the branch (
+Writing a value of
+.I 1
+to the branch properties explicitely selects the meant branch (
 .I 0=main
 or
 .I 1=aux
-) currently connected to the master bus? Value returned is 1 (yes) or 0 (no). The
+). Writing 
+.I 0
+deselects the branch.
+This is an addition to the directory branch selection scheme available by simply accessing the
+.I main
+and
+.I aux
+directories. Both ways to select a branch coexist nicely but the latest scheme used wins.
+Attempting to select both branches, either by setting both bits at the same time or subsequently, fails.
+Clearing both branch selection bits, either by clearing both bits at the same time or subsequently,
+resets the event flags inside the
 .I DS2409
-should not allow both to be on simultaneously.
-.br
+as a side effect.
+Reading the branch properties returns which branch (if any) is connected to the master bus.
+.P
+.B After using the directory branch selection scheme, both branches are deselected automatically.
+.P
 .I ALL
 is an aggregate of the properties, comma separated. It is an atomic operation.
 .br
@@ -103,6 +118,13 @@ flag for the branch been triggered? A negative edge on the disconnected branch (
 or
 .I 1=aux
 ) sets the flag. This is achieved by e.g. connecting an iButton to the branch. Value returned is 1 (yes) or 0 (no).
+.P
+After accessing the 
+.I main
+or
+.I aux
+directory, both branches are deselected automatically and thus, the event flags and alarm state are cleared.
+.P
 .I ALL
 is an aggregate of the properties, comma separated. It is an atomic operation.
 .br
@@ -135,7 +157,7 @@ Voltage sensed at the
 or
 .I 1=aux
 branch pin. Valid only when the branch is switched out. Value returned is 0 (low) or 1 (high).
-.br
+.P
 .I ALL
 is an aggregate of the properties, comma separated. It is an atomic operation.
 .br
