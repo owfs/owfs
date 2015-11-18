@@ -118,11 +118,13 @@ static ZERO_OR_ERROR FS_r_sensed(struct one_wire_query *owq)
 {
 	BYTE data = 0 ;
 
-//    y[0] = data&0x02 ? 1 : 0 ;
-//    y[1] = data&0x08 ? 1 : 0 ;
-	OWQ_U(owq) = ((data >> 1) & 0x01) | ((data >> 2) & 0x02);
+	/* Read control/status byte from chip. */
+	RETURN_ERROR_IF_BAD( OW_r_control(&data, PN(owq)) );
 
-	return GB_to_Z_OR_E( OW_r_control(&data, PN(owq))) ;
+	/* Put sense bits from status byte into result. */
+	OWQ_U(owq) = ((data >> 1) & 0x01) | ((data >> 2) & 0x02) ;
+
+	return 0;
 }
 
 /* 2409 switch -- branch status  -- note that bit value is reversed */
@@ -130,11 +132,13 @@ static ZERO_OR_ERROR FS_r_branch(struct one_wire_query *owq)
 {
 	BYTE data = 0 ;
 
-//    y[0] = data&0x01 ? 0 : 1 ;
-//    y[1] = data&0x04 ? 0 : 1 ;
+	/* Read control/status byte from chip. */
+	RETURN_ERROR_IF_BAD( OW_r_control(&data, PN(owq)) );
+
+	/* Put branch status bits from status byte into result. */
 	OWQ_U(owq) = (((data) & 0x01) | ((data >> 1) & 0x02)) ^ 0x03;
 
-	return GB_to_Z_OR_E(OW_r_control(&data, PN(owq))) ;
+	return 0;
 }
 
 /* 2409 switch -- event status */
@@ -142,11 +146,13 @@ static ZERO_OR_ERROR FS_r_event(struct one_wire_query *owq)
 {
 	BYTE data = 0 ;
 
-//    y[0] = data&0x10 ? 1 : 0 ;
-//    y[1] = data&0x20 ? 1 : 0 ;
+	/* Read control/status byte from chip. */
+	RETURN_ERROR_IF_BAD( OW_r_control(&data, PN(owq)) );
+
+	/* Put sense bits from status byte into result. */
 	OWQ_U(owq) = (data >> 4) & 0x03;
 
-	return GB_to_Z_OR_E(OW_r_control(&data, PN(owq))) ;
+	return 0;
 }
 
 /* 2409 switch -- control pin state */
@@ -155,9 +161,13 @@ static ZERO_OR_ERROR FS_r_control(struct one_wire_query *owq)
 	BYTE data = 0 ;
 	UINT control[] = { 2, 3, 0, 1, };
 
+	/* Read control/status byte from chip. */
+	RETURN_ERROR_IF_BAD( OW_r_control(&data, PN(owq)) );
+
+	/* Put control pin state from status byte into result. */
 	OWQ_U(owq) = control[data >> 6];
 
-	return GB_to_Z_OR_E(OW_r_control(&data, PN(owq))) ;
+	return 0;
 }
 
 /* 2409 switch -- control pin state */
