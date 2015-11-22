@@ -54,8 +54,6 @@
 #define OW_USB_CYCLE_H
 
 #if OW_USB
-#include <sys/types.h> // Mac needs this before <usb.h> according to Peter Peter Radcliffe's work
-#include <usb.h>
 
 /* All the rest of the code sees is the DS9490_detect routine and the iroutine structure */
 
