@@ -78,10 +78,17 @@ SIZE_OR_ERROR FS_read_postparse(struct one_wire_query *owq)
 	/* First try */
 	STAT_ADD1(read_tries[0]);
 
-	// ServerRead jumps in here, perhaps with non-file entry
+	/* Check file type. */
 	if (pn->selected_device == NO_DEVICE || pn->selected_filetype == NO_FILETYPE) {
-		read_or_error = FS_r_given_bus(owq);
+		if (KnownBus(pn) && BusIsServer(pn->selected_connection)) {
+			/* Pass unknown remote filetype to remote owserver. */
+			read_or_error = FS_r_given_bus(owq);
+		} else {
+			/* Local unknown filetypes are directories. */
+			return -EISDIR;
+		}	
 	} else {
+		/* Local known filetypes are handled here. */
 		read_or_error = (pn->type == ePN_real) ? FS_read_real(owq) : FS_r_virtual(owq);
 	}
 
