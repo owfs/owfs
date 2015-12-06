@@ -241,7 +241,7 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 			owfree(nlp.nlm) ;
 			return nrs_nodev ;
 		}
-		if ( nrs_callback == NULL ) { // status message
+		if ( nrs_callback == NULL ) { // bus reset
 			owfree(nlp.nlm) ;
 			return nrs_complete ;
 		}
@@ -250,7 +250,7 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 		nrs_callback( &nlp, v, pn ) ;
 		LEVEL_DEBUG("Called nrs_callback");
 		owfree(nlp.nlm) ;
-		if ( nlp.cn->ack != 0 ) {
+		if ( nlp.cn->seq != nlp.cn->ack ) {
 			if ( nlp.w1m->type == W1_LIST_MASTERS ) {
 				continue ; // look for more data
 			}
@@ -258,7 +258,7 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 				continue ; // look for more data
 			}
 		}
-		nrs_callback = NULL ; // now look for status message
+		return nrs_complete ; // status message
 	}
 	return nrs_timeout ;
 }
