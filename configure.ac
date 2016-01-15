@@ -69,6 +69,8 @@ AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
 AC_PATH_PROG([SWIG],[swig],,$PATH)dnl
 AC_PATH_PROG([SOELIM],[soelim])
 AM_CONDITIONAL([SOELIM], [test -n "${SOELIM}"])
+# This macro should appair before any other PKG_* macro
+PKG_PROG_PKG_CONFIG
 
 # Check for additional programs
 
@@ -1201,9 +1203,11 @@ if test "${ENABLE_AVAHI}" != "false"; then
 	# ultimate test to see if libavahi is found after AC_CHECK_LIB
 	if test "X${LIBAVAHI_CONFIG}" == "X"; then
 
+	    PKG_CHECK_MODULES([LIBAVAHI], [avahi-client], [ dnl ok, avahi found with pkg-config
+	    ],[ dnl else trying basic detection
 		AC_CHECK_LIB(avahi-common,avahi_threaded_poll_new,[
 			AC_CHECK_LIB(avahi-client,avahi_client_new,[
-				LIBAVAHI_LIBS="-lavahi-client -lavahi-client"],[
+				LIBAVAHI_LIBS="-lavahi-client -lavahi-common"],[
 				AC_MSG_WARN([Cannot find libavahi-client])
 				if test "${ENABLE_AVAHI}" = "true" ; then
 					AC_MSG_ERROR([libavahi must be installed to use a Avahi zero-configuration])
@@ -1220,6 +1224,7 @@ if test "${ENABLE_AVAHI}" != "false"; then
 				ENABLE_AVAHI=false
 			fi
 		],)
+	    ])
 
 	fi
 
@@ -1542,7 +1547,6 @@ AC_SEARCH_LIBS(nanosleep, rt posix4, AC_DEFINE(HAVE_NANOSLEEP, 1, [Define if you
 #AC_SEARCH_LIBS(clock_gettime, rt posix4, AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Define if you have clock_gettime]))
 
 # systemd support (see man 7 daemon)
-PKG_PROG_PKG_CONFIG
 AC_ARG_WITH([systemdsystemunitdir],
        [AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files])],,
        [with_systemdsystemunitdir=auto])
