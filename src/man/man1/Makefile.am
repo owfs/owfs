@@ -11,7 +11,7 @@ SOFILES = \
 ## man files that need no preprocessing
 dist_man1_MANS = \
     libowcapi.1 \
-    owdir.1 owget.1 owread.1 owwrite.1 owpresent.1 \
+    owdir.1 owget.1 owread.1 owwrite.1 owpresent.1 owexist.1 \
     ownetapi.1 ownetlib.1 libownet.1
 ## file to include in distribution
 EXTRA_DIST = $(SOFILES) $(MANFILES)

@@ -10,7 +10,7 @@
 '\"
 .TH OWSHELL 1 2004 "OWSHELL Manpage" "One-Wire File System"
 .SH NAME
-owdir, owread, owwrite, owget, owpresent \- lightweight owserver access
+owdir, owread, owwrite, owget, owexist, owpresent \- lightweight owserver access
 .SH SYNOPSIS
 .SS Minimal options
 .B owdir
