@@ -714,9 +714,6 @@ if test "${ENABLE_OWPYTHON}" = "true" ; then
 	m4_include(module/swig/python/python.m4)
 	AC_MSG_RESULT(Looking for location of Python executable)
 	SC_PATH_PYTHON
-	AC_SUBST(PYCFLAGS)
-	AC_SUBST(PYLDFLAGS)
-	AC_SUBST(PYLIB)
 	AC_SUBST(PYVERSION)
 	AC_SUBST(PYSITEDIR)
 	AC_SUBST(PYTHONDYNAMICLINKING)
@@ -1536,11 +1533,23 @@ AC_FUNC_STRTOD
 AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo gethostbyname2_r gethostbyaddr_r gethostbyname_r getservbyname_r getopt getopt_long gettimeofday inet_ntop inet_pton memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul twalk tsearch tfind tdelete tdestroy vasprintf strsep vsprintf vsnprintf writev getline])
 
+save_LIBS="$LIBS"
+DL_LIBS=""
 if test "${ENABLE_ZERO}" = "true" ; then
-	AC_SEARCH_LIBS(dlopen, dl, AC_DEFINE(HAVE_DLOPEN, 1, [Define if you have dlopen]))
+	AC_SEARCH_LIBS(dlopen, dl,
+		DL_LIBS="-ldl"
+		AC_DEFINE(HAVE_DLOPEN, 1, [Define if you have dlopen]))
 fi
+AC_SUBST([DL_LIBS])
+LIBS="$save_LIBS"
 
-AC_SEARCH_LIBS(lrint, m, AC_DEFINE(HAVE_LRINT, 1, [Define if you have lrint]))
+save_LIBS="$LIBS"
+M_LIBS=""
+AC_SEARCH_LIBS(lrint, m,
+       M_LIBS="-lm"
+       AC_DEFINE(HAVE_LRINT, 1, [Define if you have lrint]))
+AC_SUBST([M_LIBS])
+LIBS="$save_LIBS"
 
 AC_SEARCH_LIBS(nanosleep, rt posix4, AC_DEFINE(HAVE_NANOSLEEP, 1, [Define if you have nanosleep]))
 # clock_gettime needed if real-time wait is needed for sem_timedwait. gettimeofday is enough.
@@ -1561,7 +1570,12 @@ AS_IF([test "x$def_systemdsystemunitdir" = "x"],
 AS_IF([test "x$with_systemdsystemunitdir" != "xno"],
        [AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])])
 AM_CONDITIONAL([HAVE_SYSTEMD], [test "x$with_systemdsystemunitdir" != "xno"])
-AC_CHECK_LIB([rt],[mq_getattr])
+save_LIBS="$LIBS"
+MQ_LIBS=""
+AC_SEARCH_LIBS([mq_getattr], [rt],
+		[MQ_LIBS="-lrt"])
+AC_SUBST([MQ_LIBS])
+LIBS="$save_LIBS"
 
 AC_CONFIG_FILES([
 	Makefile

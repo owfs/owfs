@@ -23,9 +23,8 @@ AM_CFLAGS = -I../include \
 	-Wcast-align \
 	-Wstrict-prototypes \
 	-Wredundant-decls \
-	${EXTRACFLAGS} \
-	${LIBUSB_CFLAGS} \
-	${PTHREAD_CFLAGS}
+	${PTHREAD_CFLAGS} \
+	${EXTRACFLAGS}
 
-LDADD = -low ${LIBUSB_LIBS} ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
+LDADD = -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 

@@ -73,9 +73,6 @@ def write_configuration(define_macros, include_dirs, libraries, library_dirs,
     print >> out, "extra_objects", extra_objects
     out.close()
 
-
-enable_usb = '@ENABLE_USB@'
-enable_mt = '@ENABLE_MT@'
 have_darwin = '@HAVE_DARWIN@'
 have_freebsd = '@HAVE_FREEBSD@'
 
@@ -89,41 +86,11 @@ bsd_fixes = have_darwin == 'true' or have_freebsd == 'true'
 # supporting MacOSX.
 
 my_extra_compile_args = [ '-D_FILE_OFFSET_BITS=64' ]
-if len('@PYCFLAGS@') > 0:
-	my_extra_compile_args = my_extra_compile_args + string.split('@PYCFLAGS@', ' ')
-
-if len('@PIC_FLAGS@') > 0:
-	my_extra_compile_args = my_extra_compile_args + string.split('@PIC_FLAGS@', ' ')
 
 my_extra_link_args = [ ]
-if enable_usb == 'true':
-    if len('@LIBUSB_CFLAGS@') > 1:
-	my_extra_compile_args = my_extra_compile_args + string.split('@LIBUSB_CFLAGS@', ' ')
-
-if enable_usb == 'true':
-    if len('@LIBUSB_LIBS@') > 1:
-	my_extra_link_args = my_extra_link_args + string.split('@LIBUSB_LIBS@', ' ')
-
-if enable_mt == 'true':
-    if len('@PTHREAD_CFLAGS@') > 1:
-	my_extra_compile_args = my_extra_compile_args + string.split('@PTHREAD_CFLAGS@', ' ')
-
-if enable_mt == 'true':
-    if len('@PTHREAD_LIBS@') > 1:
-	my_extra_link_args = my_extra_link_args + string.split('@PTHREAD_LIBS@', ' ')
 
 if bsd_fixes:
     my_extra_link_args = my_extra_link_args + string.split('../../owlib/src/c/.libs/libow.so', ' ')
-
-if len('@PYLDFLAGS@') > 1:
-	my_extra_link_args = my_extra_link_args + string.split('@PYLDFLAGS@', ' ')
-
-ARCH=""
-my_platform = '@LIBPOSTFIX@'
-#my_platform = [ platform.machine() ]
-if my_platform == "x86_64" or my_platform == "amd64" or my_platform == "64":
-    print "64bit system detected"
-    ARCH = "x64"
 
 my_libraries = [ 'ow' ]
 
@@ -164,7 +131,7 @@ my_extra_compile_args = [ arg for arg in my_extra_compile_args if len(arg) > 1 ]
 my_extra_link_args = [ arg for arg in my_extra_link_args if len(arg) > 1 ]
 my_include_dirs = [ '../../owlib/src/include', '../../../src/include' ]
 my_library_dirs = [ '../../owlib/src/c/.libs' ]
-my_runtime_library_dirs = [ '@LIBDIR@' ]
+my_runtime_library_dirs = [ ]
 
 sources = [ 'ow_wrap.c' ]
 

@@ -8,9 +8,8 @@ LIBOW = ../../owlib/src/c/libow.la
 ow_wrap.c: ../ow.i ${LIBOW}
 	$(SWIG) -python -o $@ ../ow.i
 
-OW.py: ow_wrap.c setup.py
-	LDFLAGS="$(PYLDFLAGS) ${PTHREAD_LIBS} ${LIBUSB_LIBS} ${LD_EXTRALIBS}" CFLAGS="$(PYCFLAGS) $(PIC_FLAGS)" $(PYTHON) setup.py build
-#	$(PYTHON) setup.py build
+OW.py: ow_wrap.c setup.py $(LIBOW)
+	CFLAGS="" $(PYTHON) setup.py build
 
 install-data-local:
 #	OpenSUSE is buggy and install libraries at /usr/local.

@@ -26,7 +26,7 @@ AM_CFLAGS = -fexceptions \
 	${PTHREAD_CFLAGS} \
 	@PHPINC@
 
-LDADD = -L../../owlib/src/c -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
+LDADD = -L../../owlib/src/c -low
 
 nodist_libowphp_la_SOURCES = ow_wrap.c php_OW.h
 

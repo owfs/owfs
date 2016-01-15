@@ -42,11 +42,10 @@ AM_CFLAGS = -I../include \
 	-Wcast-align \
 	-Wstrict-prototypes \
 	-Wredundant-decls \
-	${EXTRACFLAGS} \
 	${PTHREAD_CFLAGS} \
-	${LIBUSB_CFLAGS}
+	${EXTRACFLAGS}
 
-LDADD = -low ${LIBUSB_LIBS} ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
+LDADD = -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 
 #if HAVE_CYGWIN
 #NOWINE=1

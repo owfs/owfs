@@ -1,5 +1,6 @@
 #!/usr/bin/perl -w
 
+use Config ;
 use ExtUtils::MakeMaker ;
 
 WriteMakefile(
@@ -12,8 +13,10 @@ WriteMakefile(
     'INC'       =>	q[-I../../../../src/include -I../../../owlib/src/include @CPPFLAGS@ @LIBUSB_CFLAGS@],
 # Default value for LDDLFLAGS is $Config{lddlflags}="-shared -L/usr/local/lib"
 # but we want rpath to be @libdir@ or @exec_prefix@/lib
-    'LDDLFLAGS' =>      q[-shared -L../../../owlib/src/c/.libs -Wl,-rpath=@prefix@/lib],
-    'LIBS'      =>	q[-L../../../owlib/src/c/.libs -low @PTHREAD_LIBS@ @LIBS@],
+# Also adding flags for hardening (Debian)
+    'LDDLFLAGS' =>      "$ENV{DEB_LDFLAGS} -shared -L../../../owlib/src/c/.libs",
+    'CCFLAGS'   =>      "$Config{ccflags} $ENV{DEB_CFLAGS} $ENV{DEB_CPPFLAGS}",
+    'LIBS'      =>	q[-L../../../owlib/src/c/.libs -low],
     'OBJECT'	=>	'ow_wrap.o',
     'NAME'      =>	'OW',
 	'POLLUTE'	=>  1,

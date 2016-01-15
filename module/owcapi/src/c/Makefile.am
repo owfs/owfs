@@ -11,7 +11,7 @@ if HAVE_DEBIAN
 # Debian patch
  libowcapi_la_LDFLAGS = -low -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PTHREAD_LIBS} ${LD_EXTRALIBS} -shared -shrext .so
 else
- libowcapi_la_LDFLAGS = -low -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PTHREAD_LIBS} ${LIBUSB_LIBS} ${LD_EXTRALIBS} -shared -shrext .so
+ libowcapi_la_LDFLAGS = -low -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) -release $(LT_RELEASE) ${PTHREAD_LIBS} ${LD_EXTRALIBS} -shared -shrext .so
 endif
 endif
 
