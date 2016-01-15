@@ -454,10 +454,14 @@ Set conditional alarm to trigger if corresponding flag is set. Also must set hig
 .SS EDS006X/set_alarm/light_hi EDS006X/set_alarm/light_low
 .SS EDS0070/set_alarm/vib_hi EDS0070/set_alarm/vib_low
 .SS EDS007X/set_alarm/resistance_hi EDS007X/set_alarm/resistance_low
-.SS EDS0080/set_alarm/current_hi.[0-7|ALL|BYTE] EDS0080/set_alarm/current_low.[0-7|ALL|BYTE]
-.SS EDS0082/set_alarm/volts_hi.[0-7|ALL|BYTE] EDS0082/set_alarm/volts_low.[0-7|ALL|BYTE]
-.SS EDS0083/set_alarm/current_hi.[0-3|ALL|BYTE] EDS0083/set_alarm/current_low.[0-3|ALL|BYTE]
-.SS EDS0085/set_alarm/volts_hi.[0-3|ALL|BYTE] EDS0085/set_alarm/volts_low.[0-3|ALL|BYTE]
+.SS EDS0080/set_alarm/current_hi.[0-7|ALL|BYTE]
+.SS EDS0080/set_alarm/current_low.[0-7|ALL|BYTE]
+.SS EDS0082/set_alarm/volts_hi.[0-7|ALL|BYTE]
+.SS EDS0082/set_alarm/volts_low.[0-7|ALL|BYTE]
+.SS EDS0083/set_alarm/current_hi.[0-3|ALL|BYTE]
+.SS EDS0083/set_alarm/current_low.[0-3|ALL|BYTE]
+.SS EDS0085/set_alarm/volts_hi.[0-3|ALL|BYTE]
+.SS EDS0085/set_alarm/volts_low.[0-3|ALL|BYTE]
 .I read-write, yes-no
 .br
 Flag to set corresponding out-of-range alarm. "1" turns on flag, and "0" turns off.
@@ -481,10 +485,14 @@ the alarm flags.
 .SS EDS006X/alarm/light_hi EDS006X/alarm/light_low
 .SS EDS0070/alarm/vib_hi EDS007X/alarm/vib_low
 .SS EDS007X/alarm/resistance_hi EDS007X/alarm/resistance_low
-.SS EDS0080/alarm/current_hi.[0-7|ALL|BYTE] EDS0080/alarm/current_low.[0-7|ALL|BYTE]
-.SS EDS0082/alarm/volts_hi.[0-7|ALL|BYTE] EDS0082/alarm/volts_low.[0-7|ALL|BYTE]
-.SS EDS0083/alarm/current_hi.[0-3|ALL|BYTE] EDS0083/alarm/current_low.[0-3|ALL|BYTE]
-.SS EDS0085/alarm/volts_hi.[0-3|ALL|BYTE] EDS0085/alarm/volts_low.[0-3|ALL|BYTE]
+.SS EDS0080/alarm/current_hi.[0-7|ALL|BYTE]
+.SS EDS0080/alarm/current_low.[0-7|ALL|BYTE]
+.SS EDS0082/alarm/volts_hi.[0-7|ALL|BYTE]
+.SS EDS0082/alarm/volts_low.[0-7|ALL|BYTE]
+.SS EDS0083/alarm/current_hi.[0-3|ALL|BYTE]
+.SS EDS0083/alarm/current_low.[0-3|ALL|BYTE]
+.SS EDS0085/alarm/volts_hi.[0-3|ALL|BYTE]
+.SS EDS0085/alarm/volts_low.[0-3|ALL|BYTE]
 .SS EDS0090/alarm/hi[0-7|ALL] EDS0090/alarm/low[0-7|ALL]
 .I read-only, yes-no
 .br

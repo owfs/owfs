@@ -10,7 +10,8 @@
 '\"
 .TH HobbyBoards_EE/EF 3  2009 "OWFS Manpage" "One-Wire File System"
 .SH NAME
-.TP UVI, Moisture, Barometer, HUB
+.TP
+.B UVI, Moisture, Barometer, HUB
 \- HobbyBoards EE/EF Microprocessor-based slaves:
 Ultra Violet (UV) Index sensor,
 Soil and Leaf moisture measurements,

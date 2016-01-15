@@ -12,7 +12,7 @@
 .SH NAME
 .TP
 .B DS18B20
-Programmable Resolution 1-Wire Digital Thermometer
+\- Programmable Resolution 1-Wire Digital Thermometer
 .TP
 .B MAX31820
 Ambient Temperature Sensor
