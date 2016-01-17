@@ -54,7 +54,7 @@ command) when it is listed or devices on this branch are addressed.
 .br
 Writing a value of
 .I 1
-to the branch properties explicitely selects the meant branch (
+to the branch properties explicitly selects the meant branch (
 .I 0=main
 or
 .I 1=aux
