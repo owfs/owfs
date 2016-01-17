@@ -141,6 +141,9 @@ AM_CONDITIONAL(HAVE_FREEBSD, test "${HAVE_FREEBSD}" = "true")
 AC_CHECK_FUNCS(launch_activate_socket)
 # AC_CHECK_HEADERS(launch.h)
 
+AM_CPPFLAGS=""
+AC_SUBST([AM_CPPFLAGS])
+
 PIC_FLAGS=""
 if test "$lt_prog_compiler_pic_works" = yes; then
 	PIC_FLAGS="$lt_prog_compiler_pic"
@@ -1147,6 +1150,8 @@ AC_SUBST(LIBUSB_CFLAGS)
 AC_SUBST(LIBUSB_LIBS)
 AC_SUBST(ENABLE_USB)
 AM_CONDITIONAL(ENABLE_USB, test "${ENABLE_USB}" = "true")
+
+AM_CPPFLAGS="$AM_CPPFLAGS $LIBUSB_CFLAGS"
 
 # Check for Avahi enabled
 ENABLE_AVAHI=auto
