@@ -50,12 +50,20 @@ void COM_slurp( struct connection_in * connection ) {
 			LEVEL_DEBUG("Unimplemented");
 			return ;
 		case ct_serial:
+		case ct_ftdi:
 			usec = 100000 ; // timeout increased for slurp based on Johan Strom's recommendation
 			break ;
 	}
 
 	if ( BAD( COM_test(connection) ) ) {
 		return ;
+	}
+
+	if( connection->pown->type == ct_ftdi ) {
+#if OW_FTDI
+		owftdi_slurp(connection, 1000);
+#endif
+		return;
 	}
 
 	Slurp( connection->pown->file_descriptor, usec ) ;

@@ -71,6 +71,13 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 			}
 			break ;
 		}
+		case ct_ftdi:
+		{
+#if OW_FTDI
+			size_t actual = owftdi_read(data, length, connection);
+			return actual == (ssize_t) length ? gbGOOD : gbBAD ;
+#endif
+		}
 	}
 	return gbBAD ;
 }

@@ -47,6 +47,10 @@ GOOD_OR_BAD COM_change( struct connection_in *connection)
 			return gbGOOD ;
 		case ct_serial:
 			return serial_change( connection ) ;
+		case ct_ftdi:
+#if OW_FTDI
+			return owftdi_change( connection ) ;
+#endif
 		case ct_unknown:
 		case ct_none:
 		default:
@@ -77,6 +81,7 @@ void COM_set_standard( struct connection_in *connection)
 			break ;
 
 		case ct_serial:
+		case ct_ftdi:
 		default:
 			pin->timeout.tv_sec = Globals.timeout_serial ;
 			pin->timeout.tv_usec = 0 ;

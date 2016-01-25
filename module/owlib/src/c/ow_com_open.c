@@ -13,6 +13,7 @@
 #include "ow.h"
 #include "ow_connection.h"
 #include "ow_w1.h"
+#include "ow_ftdi.h"
 
 #ifdef HAVE_LINUX_LIMITS_H
 #include <linux/limits.h>
@@ -64,6 +65,10 @@ GOOD_OR_BAD COM_open(struct connection_in *connection)
 			return gbBAD ;
 		case ct_serial:
 			return serial_open( head_in ) ;
+		case ct_ftdi:
+#if OW_FTDI
+			return owftdi_open( head_in ) ;
+#endif /* OW_FTDI */
 		case ct_unknown:
 		case ct_none:
 		default:

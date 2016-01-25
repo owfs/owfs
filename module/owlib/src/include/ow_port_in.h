@@ -48,6 +48,7 @@ enum bus_mode {
 	bus_tester,
 	bus_mock,
 	bus_link,
+	bus_linkusb,
 	bus_masterhub,
 	bus_pbm,
 	bus_etherweather,
@@ -73,6 +74,7 @@ enum com_type {
 	ct_i2c,
 	ct_usb,
 	ct_netlink,
+	ct_ftdi,
 	ct_none,
 } ;
 

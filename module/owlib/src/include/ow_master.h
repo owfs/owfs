@@ -122,6 +122,9 @@ enum e_link_t_mode { e_link_t_unknown, e_link_t_extra, e_link_t_none } ;
 struct master_link {
 	enum e_link_t_mode tmode ; // extra ',' before tF0 command
 	enum e_link_t_mode qmode ; //extra '?' after b command
+#if OW_FTDI
+	struct ftdi_context *ftdic;
+#endif
 };
 
 // Embedded Data Systems HA5 hub

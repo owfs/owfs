@@ -118,6 +118,7 @@ struct LINK_id LINK_id_tbl[] = {
 	{"VM12", "LINK OEM v1.2", adapter_LINK_12},
 	{"1.3", "LinkUSB V1.3", adapter_LINK_13},
 	{"1.4", "LinkUSB V1.4", adapter_LINK_14},
+	{"1.5", "LinkUSB V1.5", adapter_LINK_15},
 	{"0", "0", 0}
 };
 
@@ -136,6 +137,7 @@ static void LINKE_setroutines(struct connection_in *in);
 
 static RESET_TYPE LINK_reset_in(struct connection_in * in);
 static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in) ;
+static GOOD_OR_BAD LINK_detect_serial0(struct connection_in * in, int timeout_secs) ;
 static GOOD_OR_BAD LINK_detect_net(struct connection_in * in) ;
 static GOOD_OR_BAD LINK_version(struct connection_in * in) ;
 
@@ -256,58 +258,125 @@ GOOD_OR_BAD LINK_detect(struct port_in *pin)
 			
 
 		case ct_serial:
-			pin->baud = B9600 ;
+		case ct_ftdi:
+		{
+			/* The LINK (both regular and USB) can run in different baud modes.
+			 * On power reset it will always use 9600bps, but it can be configured for other
+			 * baud rates by sending different commands.
+			 * For ct_serial links we use 9600bps, but for the improved ct_ftdi we
+			 * go ahead and improve the speed as well, trying to keep it at 19200bps.
+			 *
+			 * The Link DOES support higher baud rates (38400, 56700), BUT then we have
+			 * to enforce output throttling in order to not overflow the 1-Wire bus...
+			 * So, keep it at 19200.
+			 *
+			 * To avoid trouble, let the older serial devices use 9600 for now...
+			 */
+			RETURN_BAD_IF_BAD(LINK_detect_serial(in));
 
-			pin->flow = flow_first ;
-			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
+#if 0
+			// Note! This has not been tested with anything but LinkUSB 1.5
+			if(pin->type != ct_ftdi)
+				return gbGOOD;
+#endif
 
-			LEVEL_DEBUG("Second attempt at serial LINK setup");
-			pin->flow = flow_second ;
-			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
+			LEVEL_DEBUG("Reconfiguring found LinkUSB to 19200bps");
+			pin->baud = B19200;
+			LINK_set_baud(in);
 
-			LEVEL_DEBUG("Third attempt at serial LINK setup");
-			pin->flow = flow_first ;
-			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
-
-			LEVEL_DEBUG("Fourth attempt at serial LINK setup");
-			pin->flow = flow_second ;
-			RETURN_GOOD_IF_GOOD( LINK_detect_serial(in) ) ;
-			break ;
+			// ensure still found
+			RETURN_GOOD_IF_GOOD( LINK_version(in) ) ;
+			ERROR_CONNECT("LINK baud reconfigure failed, cannot find it after 19200 change.");
+			break;
+		}
 
 		default:
 			return gbBAD ;
 	}
 	return gbBAD ;
 }
+/* Detect serial device by probing with different baud-rates. Calls LINK_detect_serial0 */
+static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in) {
+	/* LINK docs does not say anything about flow control. Studying the LinkOEM
+	 * datasheet however, indicates that we only have Tx and Rx; no RTS/CTS.
+	 * And it does not mention XON/XOFF..
+	 * And it works fine with no flow control... So, let's go with no flow control.
+	 *
+	 * For startup detection, we first try with 9600, then 19200. We do however
+	 * force a shorter timeout, the standard 5s is pretty overkill..
+	 */
+	int i;
+	struct port_in * pin = in->pown ;
+	speed_t bauds[] = {B9600, B19200, B38400
+#ifdef B57600
+, B57600
+#endif
+		, 0};
+#define SHORT_TIMEOUT 1
 
-static GOOD_OR_BAD LINK_detect_serial(struct connection_in * in)
+	/* A break should put the Link in 9600...
+	 * However, the LinkUSB v1.5 fails to do this, unless we are in byte mode.
+	 * If we are, it reacts to break, and changes to 9600..
+	 * But, in plain command mode, break does not work.
+	 *
+	 * iButtonLink said they would investige this bug(?), but never replied.
+	 */
+	COM_break( in ) ;
+
+	i=0;
+	// First try quickly in all baudrates with no flow control
+	while((pin->baud = bauds[i++]) != 0) {
+		pin->flow = flow_none;
+		LEVEL_DEBUG("Detecting %s LINK using %d bps",
+				(pin->type == ct_serial ? "serial" : "ftdi"),
+				COM_BaudRate(pin->baud));
+		RETURN_GOOD_IF_GOOD( LINK_detect_serial0(in, SHORT_TIMEOUT) ) ;
+	}
+
+	i=0;
+	// No? Try different flow controls then (the way it was done in the old code..)
+	while((pin->baud = bauds[i++]) != 0) {
+		LEVEL_DEBUG("Second attempt at serial LINK setup, %d bps", COM_BaudRate(pin->baud));
+		pin->flow = flow_first;
+		RETURN_GOOD_IF_GOOD( LINK_detect_serial0(in, Globals.timeout_serial) ) ;
+
+		LEVEL_DEBUG("Third attempt at serial LINK setup");
+		pin->flow = flow_second ;
+		RETURN_GOOD_IF_GOOD( LINK_detect_serial0(in, Globals.timeout_serial) ) ;
+	}
+
+	return gbBAD;
+}
+
+/* Detect serial device with a specific configured baud-rate */
+static GOOD_OR_BAD LINK_detect_serial0(struct connection_in * in, int timeout_secs)
 {
 	struct port_in * pin = in->pown ;
 	/* Set up low-level routines */
 	LINK_setroutines(in);
-	pin->timeout.tv_sec = Globals.timeout_serial ;
+	pin->timeout.tv_sec = timeout_secs ;
 	pin->timeout.tv_usec = 0 ;
 
 	/* Open the com port */
 	RETURN_BAD_IF_BAD(COM_open(in)) ;
-	
-	//COM_break( in ) ;
+
+	COM_break( in ) ; // BREAK also sends it into command mode, if in another mode
 	LEVEL_DEBUG("Slurp in initial bytes");
 	LINK_slurp( in ) ;
-	UT_delay(100) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
+	UT_delay(100) ; // based on https://web.archive.org/web/20080624060114/http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89
 	LINK_slurp( in ) ;
 	
 	RETURN_GOOD_IF_GOOD( LINK_version(in) ) ;
-	LEVEL_DEFAULT("LINK detection error");
+	LEVEL_DEFAULT("LINK detection error, trying powercycle");
 	
 	serial_powercycle(in) ;
 	LEVEL_DEBUG("Slurp in initial bytes");
 	LINK_slurp( in ) ;
-	UT_delay(100) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
+	UT_delay(100) ; // based on https://web.archive.org/web/20080624060114/http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89
 	LINK_slurp( in ) ;
 	
 	RETURN_GOOD_IF_GOOD( LINK_version(in) ) ;
-	LEVEL_DEFAULT("LINK detection error");
+	LEVEL_DEFAULT("LINK detection error, giving up");
 	COM_close(in) ;
 	return gbBAD;
 }
@@ -322,7 +391,7 @@ static GOOD_OR_BAD LINK_detect_net(struct connection_in * in)
 
 	/* Open the tcp port */
 	RETURN_BAD_IF_BAD( COM_open(in) ) ;
-	
+
 	LEVEL_DEBUG("Slurp in initial bytes");
 //	LINK_slurp( in ) ;
 	UT_delay(1000) ; // based on http://morpheus.wcf.net/phpbb2/viewtopic.php?t=89&sid=3ab680415917a0ebb1ef020bdc6903ad
@@ -422,6 +491,7 @@ static GOOD_OR_BAD LINK_version(struct connection_in * in)
 static void LINK_set_baud(struct connection_in * in)
 {
 	struct port_in * pin = in->pown ;
+	int send_break = 0;
 	char * speed_code ;
 
 	if ( pin->type == ct_telnet ) {
@@ -431,13 +501,14 @@ static void LINK_set_baud(struct connection_in * in)
 
 	COM_BaudRestrict( &(pin->baud), B9600, B19200, B38400, B57600, 0 ) ;
 
-	LEVEL_DEBUG("to %d",COM_BaudRate(pin->baud));
+	LEVEL_DEBUG("LINK set baud to %d",COM_BaudRate(pin->baud));
 	// Find rate parameter
 	switch ( pin->baud ) {
 		case B9600:
-			COM_break(in) ;
-			LINK_flush(in);
-			return ;
+			// Put in Byte mode, and then send break.
+			speed_code = "b";
+			send_break = 1;
+			break;
 		case B19200:
 			speed_code = "," ;
 			break ;
@@ -464,6 +535,9 @@ static void LINK_set_baud(struct connection_in * in)
 		return ;
 	}
 
+	if(send_break)  {
+		COM_break(in);
+	}
 
 	// Send configuration change
 	LINK_flush(in);
@@ -780,10 +854,21 @@ GOOD_OR_BAD LINK_aux_read(int *level_out, struct connection_in * in) {
 }
 
 
-static void LINK_close(struct connection_in *in)
-{
+static void LINK_close(struct connection_in *in) {
+	struct port_in * pin = in->pown ;
+	if ( pin->state == cs_virgin ) {
+		LEVEL_DEBUG("LINK_close called on already closed connection");
+		return ;
+	}
+
+	if(pin->baud != B9600) {
+		// Ensure we reset it to 9600bps to speed up detection on next startup
+		LEVEL_DEBUG("Reconfiguring adapeter to 9600bps before closing");
+		pin->baud = B9600;
+		LINK_set_baud(in);
+	}
+
 	// the standard COM_free routine cleans up the connection
-	(void) in ;
 }
 
 static GOOD_OR_BAD LINK_PowerByte(const BYTE data, BYTE * resp, const UINT delay, const struct parsedname *pn)

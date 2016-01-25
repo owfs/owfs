@@ -12,6 +12,7 @@
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
+#include "ow_ftdi.h"
 
 #ifdef HAVE_LINUX_LIMITS_H
 #include <linux/limits.h>
@@ -38,6 +39,7 @@ GOOD_OR_BAD COM_test( struct connection_in * connection )
 			LEVEL_DEBUG("Unimplemented!!!");
 			return gbBAD ;
 		case ct_serial:
+		case ct_ftdi:
 			break ;
 	}
 
@@ -72,6 +74,11 @@ void COM_flush( const struct connection_in *connection)
 			return ;
 		case ct_serial:
 			tcflush( connection->pown->file_descriptor, TCIOFLUSH);
+			return;
+		case ct_ftdi:
+#if OW_FTDI
+			owftdi_flush(connection);
+#endif
 			break ;
 	}
 }
@@ -103,6 +110,11 @@ void COM_break(struct connection_in *in)
 			return ;
 		case ct_serial:
 			tcsendbreak(in->pown->file_descriptor, 0);
+			return;
+		case ct_ftdi:
+#if OW_FTDI
+			owftdi_break(in);
+#endif
 			break ;
 	}
 }

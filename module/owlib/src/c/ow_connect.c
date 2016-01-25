@@ -208,6 +208,10 @@ void RemoveIn( struct connection_in * conn )
 		return ;
 	}
 
+	/* Close master-specific resources. This may do writes
+	 * and what-not that expects the conn to be kept setup. */
+	BUS_close(conn) ;
+
 	// owning port
 	pin = conn->pown ;
 
@@ -242,8 +246,8 @@ void RemoveIn( struct connection_in * conn )
 	_MUTEX_DESTROY(conn->dev_mutex);
 	SAFETDESTROY( conn->dev_db, owfree_func);
 
-	/* Close master-specific resources */
-	BUS_close(conn) ;
+	/* Free port */
+	COM_free( conn ) ;
 
 	/* Next free up internal resources */
 	SAFEFREE( DEVICENAME(conn) ) ;
@@ -258,9 +262,6 @@ void RemovePort( struct port_in * pin )
 	if ( pin == NULL ) {
 		return ;
 	}
-
-	/* Free port */
-	COM_free( pin->first ) ;
 
 	/* First delete connections */
 	while ( pin->first != NO_CONNECTION ) {
