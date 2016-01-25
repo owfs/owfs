@@ -274,12 +274,6 @@ GOOD_OR_BAD LINK_detect(struct port_in *pin)
 			 */
 			RETURN_BAD_IF_BAD(LINK_detect_serial(in));
 
-#if 0
-			// Note! This has not been tested with anything but LinkUSB 1.5
-			if(pin->type != ct_ftdi)
-				return gbGOOD;
-#endif
-
 			LEVEL_DEBUG("Reconfiguring found LinkUSB to 19200bps");
 			pin->baud = B19200;
 			LINK_set_baud(in);
@@ -863,7 +857,7 @@ static void LINK_close(struct connection_in *in) {
 
 	if(pin->baud != B9600) {
 		// Ensure we reset it to 9600bps to speed up detection on next startup
-		LEVEL_DEBUG("Reconfiguring adapeter to 9600bps before closing");
+		LEVEL_DEBUG("Reconfiguring adapter to 9600bps before closing");
 		pin->baud = B9600;
 		LINK_set_baud(in);
 	}

@@ -69,7 +69,6 @@ static void arg_data( const char * arg, struct port_in * pin )
 // Test whether address is a serial port, or a serial over telnet (ser2net)
 static GOOD_OR_BAD Serial_or_telnet( const char * arg, struct connection_in * in )
 {
-		LEVEL_DEBUG("arg %s is %d", arg,  ArgType(arg));
 	switch( ArgType(arg) ) {
 		case arg_addr_null:
 		case arg_addr_error:
