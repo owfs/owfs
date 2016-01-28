@@ -54,6 +54,7 @@
 #include <config.h>
 #include "owfs_config.h"
 #include "ow_connection.h"
+#include "ow_minmax.h"
 
 #if OW_FTDI
 //#define BENCH
@@ -426,7 +427,7 @@ SIZE_OR_ERROR owftdi_read(BYTE * data, size_t requested_size, struct connection_
 			 * Testing shows that we usually get our data within one or two loops
 			 * in normal situations, so this isn't really heavy busyloading.
 			 */
-			usleep(MIN(timeleft, (retries < 10) ? 200 : 1000));
+			usleep(min(timeleft, (retries < 10) ? 200 : 1000));
 			retries++;
 			continue;
 		}
@@ -493,7 +494,7 @@ void owftdi_slurp(struct connection_in *in, uint64_t usec) {
 	}
 
 	// Allow for at least 2 rounds of latency timeouts.. or we seem to miss \n in 19200 sometimes..
-	usec = MAX(usec, 2*1000);
+	usec = max(usec, 2*1000);
 
 	// USB block transfer timeout
 	int prev_timeout = FTDIC(in)->usb_read_timeout;
@@ -522,7 +523,7 @@ void owftdi_slurp(struct connection_in *in, uint64_t usec) {
 				return;
 			}
 
-			usleep(MIN(timeleft, 200));
+			usleep(min(timeleft, 200));
 			continue;
 		}
 
