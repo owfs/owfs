@@ -74,6 +74,7 @@ module/owshell/src/c/owget
 module/owshell/src/c/owpresent
 module/owshell/src/c/owread
 module/owshell/src/c/owwrite
+module/owshell/src/c/owusbprobe
 module/owtcl/ow.tcl.h
 module/owtcl/pkgIndex.tcl
 module/swig/perl5/OW/Makefile.PL
