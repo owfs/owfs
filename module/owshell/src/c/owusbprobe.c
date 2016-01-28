@@ -153,7 +153,7 @@ static void describe_device(const dev_info *dev) {
 	int vid = dev->idVendor, pid = dev->idProduct;
 
 	log("> Vendor ID    : 0x%04x               Product ID   : 0x%04x", vid, pid);
-	log("  Manufacturer : %- 20s Description  : %-30s", dev->manufacturer, dev->description);
+	log("  Manufacturer : %-20s Description  : %-30s", dev->manufacturer, dev->description);
 	log("  Serial       : %-20s Bus: %d, Addr: %d\n", dev->serial, dev->busNo, dev->devAddr);
 
 	// Compare vid/pid with known device list
