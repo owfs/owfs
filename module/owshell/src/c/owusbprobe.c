@@ -184,10 +184,10 @@ static void describe_device(const dev_info *dev) {
 
 		// XXX: This is pretty undeterministic between reboots etc...
 		log("You may put the following in your owfs.conf:\n");
-		log("  usb = %d:%d\n", dev->devAddr, dev->busNo);
+		log("  usb = %d:%d\n", dev->busNo, dev->devAddr);
 
 		log("Or, if running from command line:\n");
-		log("  --usb %d:%d", dev->devAddr, dev->busNo);
+		log("  --usb %d:%d", dev->busNo, dev->devAddr);
 	}else{
 		log("This device is not a known compatible device.");
 	}
