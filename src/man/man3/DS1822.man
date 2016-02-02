@@ -19,6 +19,8 @@ Thermometer.
 [.]XXXXXXXXXXXX[XX][/[
 .so man3/temperatures_mini.3so
 |
+.B latesttemp
+|
 .B die
 |
 .B power
@@ -49,7 +51,13 @@ Is the chip powered externally (=1) or from the parasitically from the data bus 
 Measured temperature with 12 bit resolution. 
 .SS temperature9 temperature10 temperature11 temperature12
 .I read-only, floating point
+.br
 Measured temperature at 9 to 12 bit resolution. There is a tradeoff of time versus accuracy in the temperature measurement.
+.SS latesttemp
+.I read-only, floating point
+.br
+Measured temperature at 9 to 12 bit resolution, depending on the resolution of the latest conversion on this chip. Reading this node will never trigger a temperature conversion. Intended for use in conjunction with
+.B /simultaneous/temperature.
 .SS fasttemp
 .I read-only, floating point
 .br

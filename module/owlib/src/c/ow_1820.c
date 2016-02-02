@@ -46,8 +46,10 @@
 /* DS18S20&2 Temperature */
 // READ_FUNCTION( FS_tempdata ) ;
 READ_FUNCTION(FS_10temp);
+READ_FUNCTION(FS_10latesttemp);
 READ_FUNCTION(FS_10temp_link);
 READ_FUNCTION(FS_22temp);
+READ_FUNCTION(FS_22latesttemp);
 READ_FUNCTION(FS_thermocouple);
 READ_FUNCTION(FS_fasttemp);
 READ_FUNCTION(FS_slowtemp);
@@ -101,6 +103,7 @@ static struct filetype DS18S20[] = {
 	{"temperature11", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_10temp_link, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 	{"temperature12", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_10temp_link, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 	{"fasttemp",      PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_10temp_link, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
+	{"latesttemp",    PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_10latesttemp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {.i=1}, },
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {.i=0}, },
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
@@ -124,6 +127,7 @@ static struct filetype DS18B20[] = {
 	{"temperature11", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_22temp, NO_WRITE_FUNCTION, VISIBLE, {.i=11}, },
 	{"temperature12", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_22temp, NO_WRITE_FUNCTION, VISIBLE, {.i=12}, },
 	{"fasttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_fasttemp, NO_WRITE_FUNCTION, VISIBLE, {.i=9}, },
+	{"latesttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_22latesttemp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {.i=1}, },
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {.i=0}, },
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
@@ -146,6 +150,7 @@ static struct filetype DS1822[] = {
 	{"temperature11", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_22temp, NO_WRITE_FUNCTION, VISIBLE, {.i=11}, },
 	{"temperature12", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_22temp, NO_WRITE_FUNCTION, VISIBLE, {.i=12}, },
 	{"fasttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_fasttemp, NO_WRITE_FUNCTION, VISIBLE, {.i=9}, },
+	{"latesttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_22latesttemp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {.i=1}, },
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {.i=0}, },
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
@@ -170,6 +175,7 @@ static struct filetype DS1825[] = {
 	{"temperature11", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_22temp, NO_WRITE_FUNCTION, VISIBLE_DS1825, {.i=11}, },
 	{"temperature12", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_22temp, NO_WRITE_FUNCTION, VISIBLE, {.i=12}, },
 	{"fasttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_fasttemp, NO_WRITE_FUNCTION, VISIBLE_DS1825, {.i=9}, },
+	{"latesttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_22latesttemp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE_DS1825, {.i=1}, },
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE_DS1825, {.i=0}, },
 	{"thermocouple", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_thermocouple, NO_WRITE_FUNCTION, VISIBLE_MAX31850, {.i=12}, },
@@ -197,6 +203,7 @@ static struct filetype DS28EA00[] = {
 	{"temperature11", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_22temp, NO_WRITE_FUNCTION, VISIBLE, {.i=11}, },
 	{"temperature12", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_22temp, NO_WRITE_FUNCTION, VISIBLE, {.i=12}, },
 	{"fasttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_fasttemp, NO_WRITE_FUNCTION, VISIBLE, {.i=9}, },
+	{"latesttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_22latesttemp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE_DS1825, {.i=1}, },
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE_DS1825, {.i=0}, },
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
@@ -289,8 +296,10 @@ enum temperature_problem_flag { allow_85C, deny_85C, } ;
 /* ------- Functions ------------ */
 
 /* DS1820*/
+static GOOD_OR_BAD OW_10latesttemp(_FLOAT * temp, enum temperature_problem_flag accept_85C, const struct parsedname *pn);
 static GOOD_OR_BAD OW_10temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, const struct parsedname *pn);
 static GOOD_OR_BAD OW_thermocouple(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, const struct parsedname *pn);
+static GOOD_OR_BAD OW_22latesttemp(_FLOAT * temp, enum temperature_problem_flag accept_85C, const struct parsedname *pn);
 static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, const struct parsedname *pn);
 static GOOD_OR_BAD OW_power(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn);
@@ -365,6 +374,11 @@ static ZERO_OR_ERROR FS_10temp(struct one_wire_query *owq)
 	return GB_to_Z_OR_E(OW_10temp(&OWQ_F(owq), allow_85C, 0, pn));
 }
 
+static ZERO_OR_ERROR FS_10latesttemp(struct one_wire_query *owq)
+{
+	return GB_to_Z_OR_E(OW_10latesttemp(&OWQ_F(owq), 1, PN(owq)));
+}
+
 static ZERO_OR_ERROR FS_10temp_link(struct one_wire_query *owq)
 {
 	return FS_r_sibling_F(&OWQ_F(owq),"temperature",owq) ;
@@ -386,6 +400,11 @@ static ZERO_OR_ERROR FS_22temp(struct one_wire_query *owq)
 	}
 	// third pass, accept 85C
 	return GB_to_Z_OR_E(OW_22temp(&OWQ_F(owq), allow_85C, 0, pn));
+}
+
+static ZERO_OR_ERROR FS_22latesttemp(struct one_wire_query *owq)
+{
+	return GB_to_Z_OR_E(OW_22latesttemp(&OWQ_F(owq), 1, PN(owq)));
 }
 
 // use sibling function for fasttemp to keep cache value consistent
@@ -839,13 +858,11 @@ static GOOD_OR_BAD OW_temperature_ready( enum temperature_problem_flag accept_85
 }
 
 /* DS18S20 */
-/* get the temp from the scratchpad buffer after starting a conversion and waiting */
-static GOOD_OR_BAD OW_10temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, const struct parsedname *pn)
+/* get the temp from the scratchpad buffer */
+static GOOD_OR_BAD OW_10latesttemp(_FLOAT * temp, enum temperature_problem_flag accept_85C, const struct parsedname *pn)
 {
 	BYTE data[SCRATCHPAD_LENGTH];
 	struct tempresolution * Resolution = &ResolutionS ;
-
-	RETURN_BAD_IF_BAD( OW_temperature_ready( accept_85C, simul_good, Resolution, pn ) ) ;
 
 	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
 
@@ -864,14 +881,22 @@ static GOOD_OR_BAD OW_10temp(_FLOAT * temp, enum temperature_problem_flag accept
 	return gbBAD ;
 }
 
-static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, const struct parsedname *pn)
+/* get the temp from the scratchpad buffer after starting a conversion and waiting */
+static GOOD_OR_BAD OW_10temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, const struct parsedname *pn)
+{
+	struct tempresolution * Resolution = &ResolutionS ;
+
+	RETURN_BAD_IF_BAD( OW_temperature_ready( accept_85C, simul_good, Resolution, pn ) ) ;
+
+	return OW_10latesttemp(temp, accept_85C, pn);
+}
+
+static GOOD_OR_BAD OW_22latesttemp(_FLOAT * temp, enum temperature_problem_flag accept_85C, const struct parsedname *pn)
 {
 	BYTE data[SCRATCHPAD_LENGTH];
 	struct tempresolution *Resolution ;
 	
 	RETURN_BAD_IF_BAD( OW_set_resolution( &Resolution, pn ) ) ; 
-
-	RETURN_BAD_IF_BAD( OW_temperature_ready( accept_85C, simul_good, Resolution, pn ) ) ;
 
 	RETURN_BAD_IF_BAD( OW_r_scratchpad(data, pn) ) ;
 
@@ -881,6 +906,17 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 		return gbGOOD;
 	}
 	return gbBAD ;
+}
+
+static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept_85C, int simul_good, const struct parsedname *pn)
+{
+	struct tempresolution *Resolution ;
+	
+	RETURN_BAD_IF_BAD( OW_set_resolution( &Resolution, pn ) ) ; 
+
+	RETURN_BAD_IF_BAD( OW_temperature_ready( accept_85C, simul_good, Resolution, pn ) ) ;
+
+	return OW_22latesttemp(temp, accept_85C, pn);
 }
 
 /* MAX31850 Thermocouple */
