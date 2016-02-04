@@ -54,7 +54,6 @@
 #include <config.h>
 #include "owfs_config.h"
 #include "ow_connection.h"
-#include "ow_minmax.h"
 
 #if OW_FTDI
 //#define BENCH
@@ -67,6 +66,14 @@
 #include <inttypes.h>
 
 #include "ow_ftdi.h"
+
+static inline int min(int a, int b) {
+	return (a > b) ? b : a;
+}
+
+static inline int max(int a, int b) {
+	return (a > b) ? a : b;
+}
 
 #define FTDIC(in) ((in)->master.link.ftdic)
 static GOOD_OR_BAD owftdi_open_device(struct connection_in *in, const char *description) ;
