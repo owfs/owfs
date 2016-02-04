@@ -31,6 +31,15 @@
 #define DS2490_USB_VENDOR  0x04FA
 #define DS2490_USB_PRODUCT 0x2490
 
+#ifdef __FreeBSD__
+#define TTY_EXAMPLE "/dev/cuaUX"
+#define ACM_EXAMPLE "/dev/cuaX"
+#else
+// Linux
+#define TTY_EXAMPLE "/dev/ttyUSBx"
+#define ACM_EXAMPLE "/dev/ttyACMx"
+#endif
+
 
 #include <libusb.h>
 
@@ -180,7 +189,7 @@ static void describe_device(const dev_info *dev) {
 		log("For any serial type device, you should be able to use the above addressing.");
 
 	}else if(vid == DS2490_USB_VENDOR && pid == DS2490_USB_PRODUCT) {
-		log("This device is identified as a DS2490 USB adapter.\n");
+		log("This device is identified as a DS2490 / DS9490 USB adapter.\n");
 
 		// XXX: This is pretty undeterministic between reboots etc...
 		log("You may put the following in your owfs.conf:\n");
@@ -188,6 +197,27 @@ static void describe_device(const dev_info *dev) {
 
 		log("Or, if running from command line:\n");
 		log("  --usb %d:%d", dev->busNo, dev->devAddr);
+	}else if(vid == 0x067B && pid == 0x2303) {
+		log("This device is identified as a generic Prolific USB adapter.\n"
+				"It MAY be a DS9481 adapter. If it is, you need to use the DS2480B device, \n"
+				"and point it to the appropriate %s device.\n", TTY_EXAMPLE);
+
+		log("You may put the following in your owfs.conf:\n");
+		log("  device = %s\n", TTY_EXAMPLE);
+
+		log("Or, if running from command line:\n");
+		log("  --device %s", TTY_EXAMPLE);
+
+	}else if(vid == 0x0B6A && pid == 0x5A03) {
+		log("This device is identified as a DS18E17 / DS9481P-300 USB adapter.");
+		log("To use this, you need to use the DS2480B device, and point it to\n"
+				"the appropriate %s device\n", ACM_EXAMPLE);
+
+		log("You may put the following in your owfs.conf:\n");
+		log("  device = %s\n", ACM_EXAMPLE);
+
+		log("Or, if running from command line:\n");
+		log("  --device %s", ACM_EXAMPLE);
 	}else{
 		log("This device is not a known compatible device.");
 	}
