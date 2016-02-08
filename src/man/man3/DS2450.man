@@ -22,6 +22,10 @@
 .B volt.[A-D|ALL]
 |
 .B volt2.[A-D|ALL]
+|
+.B latestvolt.[A-D|ALL]
+|
+.B latestvolt2.[A-D|ALL]
 ]]
 .PP
 .B 20
@@ -29,6 +33,10 @@
 .B 8bit/volt.[A-D|ALL]
 |
 .B 8bit/volt2.[A-D|ALL]
+|
+.B 8bit/latestvolt.[A-D|ALL]
+|
+.B 8bit/latestvolt2.[A-D|ALL]
 ]]
 .PP
 .B 20
@@ -131,19 +139,16 @@ is an aggregate of the voltages. Readings are made separately.
 .SS power
 .I read-write, yes-no
 .br
-Is the
+Configure whether the
 .I DS2450
-externally powered? (As opposed to parasitically powered from the data line).
+is externally powered (as opposed to parasitically powered from the data line).
 .br
-The analog A/D  will be kept on continuously. And the bus will be released during a conversion allowing other devices to communicate.
+If configured as powered, the A/D coverter will be set to continuous sampling, and the bus will be released during a single conversion allowing other devices to communicate.
 .br
-Set true (1) only if Vcc powered (not parasitically powered). Unfortunately, the
+Setting this to 1 when no power is applied to the chip's Vcc will result in wrong voltage readouts.
+Setting this to 0 when power is applied to the chip's Vcc allows a simultaneous conversion trigger on all
 .I DS2450
-cannot sense it's powered state. This flag must be explicitly written, and thus is a potential source of error if incorrectly set.
-.br
-It is always safe to leave
-.I power
-set to the default 0 (off) state.
+on a bus. The (always safe) default is 0.
 .SS set_alarm/high.A ... set_alarm/high.D set_alarm/high.ALL
 .SS set_alarm/low.A ... set_alarm/low.D set_alarm/low.ALL
 .I read-write, yes-no
@@ -178,33 +183,33 @@ is first powered up, and will match the alarm state until explicitly cleared. (B
 .br
 The purpose of the POR is to alert the user that the chip is not yet fully configured, especially alarm thresholds and enabling.
 .SS volt.A ... volt.D volt.ALL
-.SS 8bit/volt.A ... 8bit/volt.D 8bit/volt.ALL
-.I read-only, floating point
-.br
-Voltage read, 16 bit resolution (or 8 bit for the 
-.I 8bit
-directory). Range 0 - 5.10V.
-.br
-Output (
-.I PIO
-) is specifically disabled.
-.br
-.I ALL
-is an aggregate of the voltages. Readings are made separately.
 .SS volt2.A ... volt2.D volt2.ALL
+.SS 8bit/volt.A ... 8bit/volt.D 8bit/volt.ALL
 .SS 8bit/volt2.A ... 8bit/volt2.D 8bit/volt2.ALL
 .I read-only, floating point
 .br
-Voltage read, 16 bit resolution (or 8 bit for the 
-.I 8bit
-directory). Range 0 - 2.55V.
-.br
-Output (
+Reading one of these nodes triggers a conversion on the specified voltage input(s) with the selected resolution (16 or 8 bit) and returns the sampled voltage(s) with the selected scaling (0 - 5.10V or 0 - 2.55V).
+The conversion time is about 1.4ms per input for 16-bit and 0.8ms per input for 8-bit.
+The output feature (
 .I PIO
-) is specifically disabled.
+) is disabled by reading the corresponding node.
 .br
 .I ALL
-is an aggregate of the voltages. Readings are made separately.
+is an aggregate of the voltages. Sampling is controlled by the chip and done in the order A, B, C, D, one after another.
+.SS latestvolt.A ... latestvolt.D latestvolt.ALL
+.SS latestvolt2.A ... latestvolt2.D latestvolt2.ALL
+.SS 8bit/latestvolt.A ... 8bit/latestvolt.D 8bit/latestvolt.ALL
+.SS 8bit/latestvolt2.A ... 8bit/latestvolt2.D 8bit/latestvolt2.ALL
+.I read-only, floating point
+.br
+Returns previously measured voltage on the specified input(s) with the selected scaling (0 - 5.10V or 0 - 2.55V).
+Resolution and scaling are set by sampling a voltage, not here; the correct latestvolt nodes have to be read to make the result meaningful.
+.br
+.I ALL
+is an aggregate of the voltages and returns all voltage values from the chip.
+.br
+Reading these nodes will never trigger a voltage conversion. Intended for use in conjunction with
+.B /simultaneous/voltage.
 .SH CO2 (Carbon Dioxide) SENSOR PROPERTIES
 The CO2 sensor is a device constructed from a SenseAir K30 and a
 .I DS2450

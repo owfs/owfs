@@ -50,6 +50,7 @@ WRITE_FUNCTION(FS_w_page);
 READ_FUNCTION(FS_r_mem);
 WRITE_FUNCTION(FS_w_mem);
 READ_FUNCTION(FS_volts);
+READ_FUNCTION(FS_latestvolts);
 READ_FUNCTION(FS_r_power);
 WRITE_FUNCTION(FS_w_power);
 READ_FUNCTION(FS_r_enable);
@@ -103,11 +104,13 @@ static struct filetype DS2450[] = {
 	{"PIO", PROPERTY_LENGTH_YESNO, &A2450, ft_yesno, fc_stable, FS_r_PIO, FS_w_PIO, VISIBLE, {.i=0}, },
 	{"volt", PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {.i=r_5V_16bit}, },
 	{"volt2", PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {.i=r_2V_16bit}, },
-
+	{"latestvolt", PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_volatile, FS_latestvolts, NO_WRITE_FUNCTION, VISIBLE, {.i=r_5V_16bit}, },
+	{"latestvolt2", PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_volatile, FS_latestvolts, NO_WRITE_FUNCTION, VISIBLE, {.i=r_2V_16bit}, },
 	{"8bit", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"8bit/volt", PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {.i=r_5V_8bit}, },
 	{"8bit/volt2", PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {.i=r_2V_8bit}, },
-
+	{"8bit/latestvolt", PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_volatile, FS_latestvolts, NO_WRITE_FUNCTION, VISIBLE, {.i=r_5V_8bit}, },
+	{"8bit/latestvolt2", PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_volatile, FS_latestvolts, NO_WRITE_FUNCTION, VISIBLE, {.i=r_2V_8bit}, },
 	{"set_alarm", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"set_alarm/volthigh", PROPERTY_LENGTH_FLOAT, &A2450, ft_float, fc_stable, FS_r_setvolt, FS_w_setvolt, VISIBLE, {.i=V5_ae_high}, },
 	{"set_alarm/volt2high", PROPERTY_LENGTH_FLOAT, &A2450, ft_float, fc_stable, FS_r_setvolt, FS_w_setvolt, VISIBLE, {.i=V2_ae_high}, },
@@ -297,12 +300,39 @@ static ZERO_OR_ERROR FS_w_mem(struct one_wire_query *owq)
 }
 
 /* 2450 A/D */
+static ZERO_OR_ERROR FS_latestvolts(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	_FLOAT V[4] ;
+
+	if ( BAD( OW_volts( V, pn ) )) {
+		return -EINVAL ;
+	}
+	switch ( pn->selected_filetype->data.i ) {
+		case r_2V_8bit:
+		case r_2V_16bit:
+			OWQ_array_F(owq, 0) = V[0]*.5;
+			OWQ_array_F(owq, 1) = V[1]*.5;
+			OWQ_array_F(owq, 2) = V[2]*.5;
+			OWQ_array_F(owq, 3) = V[3]*.5;
+			break ;
+		case r_5V_8bit:
+		case r_5V_16bit:
+		default:
+			OWQ_array_F(owq, 0) = V[0];
+			OWQ_array_F(owq, 1) = V[1];
+			OWQ_array_F(owq, 2) = V[2];
+			OWQ_array_F(owq, 3) = V[3];
+			break ;
+	}
+	return 0 ;
+}
+
 static ZERO_OR_ERROR FS_volts(struct one_wire_query *owq)
 {
 	struct parsedname *pn = PN(owq);
 	int resolution ;
 	int range ;
-	_FLOAT V[4] ;
 
 	switch ( pn->selected_filetype->data.i ) {
 		case r_2V_8bit:
@@ -333,28 +363,8 @@ static ZERO_OR_ERROR FS_volts(struct one_wire_query *owq)
 	if ( BAD( OW_convert( OWQ_SIMUL_TEST(owq), (int)(.5+.16+4.*resolution*.08), pn) )) {
 		return -EINVAL ;
 	}	
-	
-	if ( BAD( OW_volts( V, pn ) )) {
-		return -EINVAL ;
-	}
-	switch ( pn->selected_filetype->data.i ) {
-		case r_2V_8bit:
-		case r_2V_16bit:
-			OWQ_array_F(owq, 0) = V[0]*.5;
-			OWQ_array_F(owq, 1) = V[1]*.5;
-			OWQ_array_F(owq, 2) = V[2]*.5;
-			OWQ_array_F(owq, 3) = V[3]*.5;
-			break ;
-		case r_5V_8bit:
-		case r_5V_16bit:
-		default:
-			OWQ_array_F(owq, 0) = V[0];
-			OWQ_array_F(owq, 1) = V[1];
-			OWQ_array_F(owq, 2) = V[2];
-			OWQ_array_F(owq, 3) = V[3];
-			break ;
-	}
-	return 0 ;
+
+	return FS_latestvolts( owq );
 }
 
 static ZERO_OR_ERROR FS_r_setvolt(struct one_wire_query *owq)
