@@ -49,6 +49,7 @@
 READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
 READ_FUNCTION(FS_temp);
+READ_FUNCTION(FS_latesttemp);
 READ_FUNCTION(FS_volts);
 READ_FUNCTION(FS_Humid);
 READ_FUNCTION(FS_Humid_1735);
@@ -95,6 +96,7 @@ static struct filetype DS2437[] = {
 	{"VDD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {.i=voltage_source_VAD}, },
 	{"VAD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {.i=voltage_source_VAD}, },
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"latesttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_latesttemp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Current, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"IAD", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {.i=0}, },
 	{"CA", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {.i=1}, },
@@ -123,6 +125,7 @@ static struct filetype DS2438[] = {
 	{"VDD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {.i=voltage_source_VDD}, },
 	{"VAD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {.i=voltage_source_VAD}, },
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"latesttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_latesttemp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_Humid, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Current, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"IAD", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {.i=0}, },
@@ -181,6 +184,7 @@ DeviceEntryExtended(26, DS2438, DEV_temp | DEV_volt, NO_GENERIC_READ, NO_GENERIC
 /* DS2438 */
 static GOOD_OR_BAD OW_r_page(BYTE * p, const int page, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_page(const BYTE * p, const int page, const struct parsedname *pn);
+static GOOD_OR_BAD OW_latesttemp(_FLOAT * T, const struct parsedname *pn);
 static GOOD_OR_BAD OW_temp(_FLOAT * T, int simul_good, const struct parsedname *pn);
 static GOOD_OR_BAD OW_volts(_FLOAT * V, enum voltage_source src, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_int(int *I, const UINT address, const struct parsedname *pn);
@@ -286,6 +290,11 @@ static ZERO_OR_ERROR FS_temp(struct one_wire_query *owq)
 		return 0 ;
 	}
 	return GB_to_Z_OR_E( OW_temp(&OWQ_F(owq), 0, PN(owq)) ) ;
+}
+
+static ZERO_OR_ERROR FS_latesttemp(struct one_wire_query *owq)
+{
+	return GB_to_Z_OR_E( OW_latesttemp(&OWQ_F(owq), PN(owq)) );
 }
 
 static ZERO_OR_ERROR FS_volts(struct one_wire_query *owq)
@@ -812,9 +821,20 @@ static GOOD_OR_BAD OW_w_page(const BYTE * p, const int page, const struct parsed
 	return BUS_transaction(t, pn) ;
 }
 
-static GOOD_OR_BAD OW_temp(_FLOAT * T, int simul_good, const struct parsedname *pn)
+static GOOD_OR_BAD OW_latesttemp(_FLOAT * T, const struct parsedname *pn)
 {
 	BYTE data[9];
+
+	// read back registers
+	RETURN_BAD_IF_BAD(OW_r_page(data, 0, pn)) ;
+
+	//*T = ((int)((signed char)data[2])) + .00390625*data[1] ;
+	T[0] = UT_int16(&data[1]) / 256.0;
+	return gbGOOD;
+}
+
+static GOOD_OR_BAD OW_temp(_FLOAT * T, int simul_good, const struct parsedname *pn)
+{
 	UINT delay = 10 ;
 	static BYTE t[] = { _1W_CONVERT_T, };
 	struct transaction_log tconvert[] = {
@@ -830,12 +850,7 @@ static GOOD_OR_BAD OW_temp(_FLOAT * T, int simul_good, const struct parsedname *
 		RETURN_BAD_IF_BAD(BUS_transaction(tconvert, pn)) ;
 	}
 
-	// read back registers
-	RETURN_BAD_IF_BAD(OW_r_page(data, 0, pn)) ;
-
-	//*T = ((int)((signed char)data[2])) + .00390625*data[1] ;
-	T[0] = UT_int16(&data[1]) / 256.0;
-	return gbGOOD;
+	return OW_latesttemp( T, pn );
 }
 
 static GOOD_OR_BAD OW_set_AD( enum voltage_source src, const struct parsedname *pn)

@@ -39,6 +39,8 @@
 |
 .B temperature
 |
+.B latesttemp
+|
 .B udate
 |
 .B VAD
@@ -112,6 +114,11 @@ or
 .B owhttpd(1)
 for choices. Default is Celsius.
 Conversion takes ~20 msec.
+.SS latesttemp
+.I read-only, floating point
+.br
+Latest measured temperature. Reading this node will never trigger a temperature conversion. Intended for use in conjunction with
+.B /simultaneous/temperature.
 .SS VAD VDD
 .I read-only, floating point
 .br
