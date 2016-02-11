@@ -35,12 +35,9 @@
 
 #if 1 || OW_USB
 
-#define DS2490_USB_VENDOR  0x04FA
-#define DS2490_USB_PRODUCT 0x2490
-
 #if defined(__FreeBSD__)
 #define TTY_EXAMPLE "/dev/cuaUx"
-#define ACM_EXAMPLE "/dev/cuaUx" // TODO: Verify
+#define ACM_EXAMPLE "/dev/cuaUx"
 #elif defined(__APPLE__)
 #define TTY_EXAMPLE "/dev/cu.xxx"
 #define ACM_EXAMPLE "/dev/cu.xxx"
@@ -53,15 +50,15 @@
 #include <libusb.h>
 
 
-// Struct which we gather and store device info into.
-// This can house either USB or TTY names. It's not very memory efficient but
-// in our very specific case we don't care.
+/* Struct which we gather and store device info into.
+ * This can house either USB or TTY names. */
 typedef struct dev_info_s {
-
+	// USB only
 	int idVendor, idProduct;
-	int devAddr, busNo;
+	int devAddr, busNo, usbNr;
 	unsigned char manufacturer[255], description[255];
 
+	// Either USB serial, or TTY name.
 	union {
 		unsigned char serial[255];
 		unsigned char tty_name[255];
@@ -79,9 +76,11 @@ static dev_info* dev_info_create(dev_info **head, dev_info **tail) {
 	memset(di, 0, sizeof(dev_info));
 
 	if(!(*tail)) {
+		// First; populate head
 		*head = di;
 		*tail = di;
 	} else {
+		// Not first; add to tail
 		(*tail)->next = di;
 		*tail = di;
 	}
@@ -119,6 +118,7 @@ static int dev_match(const dev_info *list_head, const dev_info *dev) {
 static int list_usb_devices_iter(libusb_device **devs, dev_info **out_list_head) {
 	int i=0;
 	int r;
+	int usb_nr = 0;
 	libusb_device *dev;
 	dev_info *tail=NULL, *curr;
 
@@ -140,6 +140,7 @@ static int list_usb_devices_iter(libusb_device **devs, dev_info **out_list_head)
 
 		curr->idVendor = desc.idVendor;
 		curr->idProduct = desc.idProduct;
+		curr->usbNr = ++usb_nr;
 
 		r = libusb_get_string_descriptor_ascii(dev_handle, desc.iManufacturer, curr->manufacturer, sizeof(curr->manufacturer));
 		if(r < 0) {
@@ -220,7 +221,11 @@ static int list_tty_devices(dev_info **out_list_head) {
 	return i;
 }
 
-static char *gather_ttys(dev_info *baseline, dev_info *updated, int cnt_baseline, int cnt_updated) {
+
+// For each TTY in updated, but not in baseline, add tty_name to
+// a comma separated string which is returned
+static char *create_ttys_string(dev_info *baseline, dev_info *updated,
+								int cnt_baseline, int cnt_updated) {
 	int sz = (cnt_baseline > cnt_updated ? cnt_baseline : cnt_updated) * 255;
 	int of=0;
 	const dev_info *curr = updated;
@@ -229,7 +234,9 @@ static char *gather_ttys(dev_info *baseline, dev_info *updated, int cnt_baseline
 
 	while(curr) {
 		if(!dev_match(baseline, curr)){
-			of+= snprintf(result+of, sz-of-1, "%s%s", (of > 0 ? ", ":""), curr->tty_name);
+			of+= snprintf(result+of, sz-of-1,
+						  "%s%s", (of > 0 ? ", ":""),
+						  curr->tty_name);
 		}
 
 		curr = curr->next;
@@ -239,20 +246,21 @@ static char *gather_ttys(dev_info *baseline, dev_info *updated, int cnt_baseline
 }
 
 
-
 static void describe_usb_device(const dev_info *dev, const char *ttys_found) {
 	int vid = dev->idVendor, pid = dev->idProduct;
 
 	log("> Vendor ID    : 0x%04x               Product ID   : 0x%04x", vid, pid);
 	log("  Manufacturer : %-20s Description  : %-30s", dev->manufacturer, dev->description);
-	log("  Serial       : %-20s Bus: %d, Addr: %d\n", dev->serial, dev->busNo, dev->devAddr);
+	log("  Serial       : %-20s Bus: %d, Addr: %d, US"
+	"B nr: %d\n",
+		dev->serial, dev->busNo, dev->devAddr, dev->usbNr);
 
 	// Compare vid/pid with known device list
 	if(vid == 0x0403 &&
 			(pid == 0x6001 || pid == 0x6010 || pid == 0x6011 ||
 			 pid == 0x6014 || pid == 0x6015)) {
 		char addr[255];
-		snprintf(addr, sizeof(addr), "ftd:s:0x%04x:0x%04x:%s", vid, pid, dev->serial);
+		snprintf(addr, sizeof(addr), "ftdi:s:0x%04x:0x%04x:%s", vid, pid, dev->serial);
 		log("This device is identified as a generic FTDI adapter. To address it, use the following adressing:\n");
 		log("  %s\n", addr);
 
@@ -269,20 +277,37 @@ static void describe_usb_device(const dev_info *dev, const char *ttys_found) {
 		}
 		log("have to check the documentation on how to target your particular device type.");
 		log("For any serial type device, you should be able to use the above addressing.");
+		log("For example, if it is DS2480B-compatible, you may put the following in your owfs.conf:\n");
+		log("  device = %s\n", addr);
 
-	}else if(vid == DS2490_USB_VENDOR && pid == DS2490_USB_PRODUCT) {
+		log("Or, if running from command line:\n");
+		log("  --device %s", addr);
+
+	}else if(vid == 0x04FA && pid == 0x2490) {
 		log("This device is identified as a DS2490 / DS9490 USB adapter.\n");
 
-		// XXX: This is pretty undeterministic between reboots etc...
-		log("You may put the following in your owfs.conf:\n");
+		log("You may put either of the following in your owfs.conf:\n");
 		log("  usb = %d:%d\n", dev->busNo, dev->devAddr);
+		log("  usb = %d\n", dev->usbNr);
 
 		log("Or, if running from command line:\n");
 		log("  --usb %d:%d", dev->busNo, dev->devAddr);
-	}else if(vid == 0x067B && pid == 0x2303) {
-		log("This device is identified as a generic Prolific USB adapter.\n"
+		log("  --usb %d\n", dev->usbNr);
+
+		log("Please be aware that these adressing schemes are non-stable, and numbers may\n"
+			"change between reboots or reconnects. Please read owserver manual page for more info.");
+	}else if((vid == 0x067B && pid == 0x2303) || (vid == 0x0B6A && pid == 0x5A03)) {
+		// DS2480b-emulating devices
+		if(vid == 0x067B && pid == 0x2303) {
+			log("This device is identified as a generic Prolific USB adapter.\n"
 				"It MAY be a DS9481 adapter. If it is, you need to use the DS2480B device, \n"
 				"and point it to the appropriate %s device.\n", TTY_EXAMPLE);
+		}else if(vid == 0x0B6A && pid == 0x5A03){
+			log("This device is identified as a DS18E17 / DS9481P-300 USB adapter.");
+			log("To use this, you need to use the DS2480B device, and point it to\n"
+						"the appropriate %s device\n", ACM_EXAMPLE);
+		}
+
 		if(ttys_found) {
 			log("The following devices where found: %s", ttys_found);
 		}
@@ -293,19 +318,8 @@ static void describe_usb_device(const dev_info *dev, const char *ttys_found) {
 		log("Or, if running from command line:\n");
 		log("  --device %s", TTY_EXAMPLE);
 
-	}else if(vid == 0x0B6A && pid == 0x5A03) {
-		log("This device is identified as a DS18E17 / DS9481P-300 USB adapter.");
-		log("To use this, you need to use the DS2480B device, and point it to\n"
-				"the appropriate %s device\n", ACM_EXAMPLE);
-		if(ttys_found) {
-			log("The following devices where found: %s", ttys_found);
-		}
-
-		log("You may put the following in your owfs.conf:\n");
-		log("  device = %s\n", ACM_EXAMPLE);
-
-		log("Or, if running from command line:\n");
-		log("  --device %s", ACM_EXAMPLE);
+		log("Please be aware that either of these addressing are non-stable, and numbers may\n"
+			"thus change between reboots or reconnects. Please read owserver manual page for more info.");
 	}else{
 		log("This device is not a known compatible device.");
 	}
@@ -400,7 +414,7 @@ int main(int argc, char *argv[])
 		}
 
 		// Find any new in tty_updated
-		tty_result = gather_ttys(tty_baseline, tty_updated, cnt_tty_baseline, cnt_tty_updated);
+		tty_result = create_ttys_string(tty_baseline, tty_updated, cnt_tty_baseline, cnt_tty_updated);
 	}
 
 	if(interactive && cnt_usb_baseline == cnt_usb_updated) {
