@@ -14,28 +14,37 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <dirent.h>
+#include <sys/errno.h>
 
 #include "config.h"
 #include "owfs_config.h"
+#include "../../../owlib/src/include/libusb.h"
 
 #define error_return(code, msg, args...) do { \
 	fprintf(stderr, msg"\n", ##args); \
 	return (code);\
 }while(0)
 
+#define libusb_error_return(code, usb_ret, msg, args...) do { \
+	fprintf(stderr, msg": %s\n", ##args, libusb_strerror(usb_ret)); \
+	return (code);\
+}while(0)
 
 #define log(msg, args...) fprintf(stdout, msg"\n", ##args)
 
-#if OW_USB
+#if 1 || OW_USB
 
 #define DS2490_USB_VENDOR  0x04FA
 #define DS2490_USB_PRODUCT 0x2490
 
-#ifdef __FreeBSD__
-#define TTY_EXAMPLE "/dev/cuaUX"
-#define ACM_EXAMPLE "/dev/cuaX"
+#if defined(__FreeBSD__)
+#define TTY_EXAMPLE "/dev/cuaUx"
+#define ACM_EXAMPLE "/dev/cuaUx" // TODO: Verify
+#elif defined(__APPLE__)
+#define TTY_EXAMPLE "/dev/cu.xxx"
+#define ACM_EXAMPLE "/dev/cu.xxx"
 #else
-// Linux
 #define TTY_EXAMPLE "/dev/ttyUSBx"
 #define ACM_EXAMPLE "/dev/ttyACMx"
 #endif
@@ -43,16 +52,44 @@
 
 #include <libusb.h>
 
-// Struct which we gather and store device info into
+
+// Struct which we gather and store device info into.
+// This can house either USB or TTY names. It's not very memory efficient but
+// in our very specific case we don't care.
 typedef struct dev_info_s {
+
 	int idVendor, idProduct;
 	int devAddr, busNo;
-	unsigned char manufacturer[255], description[255], serial[255];
+	unsigned char manufacturer[255], description[255];
+
+	union {
+		unsigned char serial[255];
+		unsigned char tty_name[255];
+	};
 
 	struct dev_info_s *next;
 } dev_info;
 
-static void free_dev_info(dev_info ** head) {
+static dev_info* dev_info_create(dev_info **head, dev_info **tail) {
+	dev_info *di;
+	// Create new result node
+	if(!(di = malloc(sizeof(dev_info))))
+		error_return(NULL, "malloc() failed");
+
+	memset(di, 0, sizeof(dev_info));
+
+	if(!(*tail)) {
+		*head = di;
+		*tail = di;
+	} else {
+		(*tail)->next = di;
+		*tail = di;
+	}
+
+	return di;
+}
+
+static void dev_info_free_all(dev_info **head) {
 	dev_info *next = *head;
 	while(next) {
 		dev_info *curr = next;
@@ -63,9 +100,11 @@ static void free_dev_info(dev_info ** head) {
 	*head = NULL;
 }
 
-static int dev_found(const dev_info *list_head, const dev_info *dev) {
+// Check if two device nodes are describing the same device
+static int dev_match(const dev_info *list_head, const dev_info *dev) {
 	const dev_info *curr = list_head;
 	while(curr) {
+		// For tty devices, idVendor & idProduct are 0. serial is also union with tty_name
 		if(curr->idVendor == dev->idVendor &&
 			curr->idProduct == dev->idProduct && 
 			!strcmp((const char*)curr->serial, (const char*)dev->serial)) {
@@ -77,8 +116,9 @@ static int dev_found(const dev_info *list_head, const dev_info *dev) {
 	return 0;
 }
 
-static int list_devices_iter(libusb_device **devs, dev_info **out_list_head) {
+static int list_usb_devices_iter(libusb_device **devs, dev_info **out_list_head) {
 	int i=0;
+	int r;
 	libusb_device *dev;
 	dev_info *tail=NULL, *curr;
 
@@ -95,34 +135,25 @@ static int list_devices_iter(libusb_device **devs, dev_info **out_list_head) {
 			error_return(-1, "libusb_open() failed");
 
 		// Create new result node
-		if(!(curr = malloc(sizeof(dev_info))))
-			error_return(-1, "malloc() failed");
+		if(!(curr = dev_info_create(out_list_head, &tail)))
+			return -1;
 
-		memset(curr, 0, sizeof(dev_info));
 		curr->idVendor = desc.idVendor;
 		curr->idProduct = desc.idProduct;
 
-		if(!tail) {
-			*out_list_head = curr;
-			tail = curr;
-		} else {
-			tail->next = curr;
-			tail = curr;
+		r = libusb_get_string_descriptor_ascii(dev_handle, desc.iManufacturer, curr->manufacturer, sizeof(curr->manufacturer));
+		if(r < 0) {
+			snprintf((char*)curr->manufacturer, sizeof(curr->manufacturer), "(failed to read: %s)", libusb_strerror(r));
 		}
 
-		if(libusb_get_string_descriptor_ascii(dev_handle, desc.iManufacturer, curr->manufacturer, sizeof(curr->manufacturer)) < 0) {
-			libusb_close(dev_handle);
-			error_return(-1, "libusb_get_string_descriptor_ascii() for iManufacturer failed");
+		r = libusb_get_string_descriptor_ascii(dev_handle, desc.iProduct, curr->description, sizeof(curr->description));
+		if(r < 0) {
+			snprintf((char*)curr->description, sizeof(curr->description), "(failed to read: %s)", libusb_strerror(r));
 		}
 
-		if(libusb_get_string_descriptor_ascii(dev_handle, desc.iProduct, curr->description, sizeof(curr->description)) < 0) {
-			libusb_close(dev_handle);
-			error_return(-1, "libusb_get_string_descriptor_ascii() for iProduct failed");
-		}
-
-		if(libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, curr->serial, sizeof(curr->serial)) < 0) {
-			libusb_close(dev_handle);
-			error_return(-1, "libusb_get_string_descriptor_ascii() for iSerial failed");
+		r = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, curr->serial, sizeof(curr->serial));
+		if(r < 0) {
+			snprintf((char*)curr->serial, sizeof(curr->serial), "(failed to read: %s)", libusb_strerror(r));
 		}
 
 		curr->devAddr = libusb_get_device_address(dev);
@@ -134,7 +165,7 @@ static int list_devices_iter(libusb_device **devs, dev_info **out_list_head) {
 	return i;
 }
 
-static int list_devices(dev_info **out_list_head) {
+static int list_usb_devices(dev_info **out_list_head) {
 	int r;
 	libusb_device **devs;
 	libusb_context *usb_ctx = NULL;
@@ -142,23 +173,74 @@ static int list_devices(dev_info **out_list_head) {
 	if(r != 0)
 		error_return(1, "libusb_init() failed: %d", r);
 
-	log("Scanning USB devices...");
+	log(" Scanning USB devices...");
 	r = libusb_get_device_list(usb_ctx, &devs);
 	if(r < 0) {
 		libusb_exit(usb_ctx);
 		error_return(-1, "libusb_get_device_list() failed: %d", r);
 	}
 
-	log("Found %d devices", r);
+	log(" Found %d devices", r);
 
-	r = list_devices_iter(devs, out_list_head);
+	r = list_usb_devices_iter(devs, out_list_head);
 
 	libusb_free_device_list(devs, 1);
 	libusb_exit(usb_ctx);
 	return r;
 }
 
-static void describe_device(const dev_info *dev) {
+/* Iterate all files in /dev/ and match OS-specific TTY names. */
+static int list_tty_devices(dev_info **out_list_head) {
+	DIR* d;
+	struct dirent* e;
+	int i=0;
+	dev_info *tail=NULL, *curr;
+
+	if(!(d = opendir("/dev")))
+		error_return(-1, "opendir(/dev) failed: %d", errno);
+
+	while((e = readdir(d)) != NULL) {
+#if defined(__FreeBSD__)
+		if(!strncmp(e->d_name, "cua", 3))
+#elif defined(__APPLE__)
+        if(!strncmp(e->d_name, "cu.", 3))
+#else
+		if(!strncmp(e->d_name, "ttyUSB", 6) || strncmp(e->d_name, "ttyACM", 6))
+#endif
+		{
+			if(!(curr = dev_info_create(out_list_head, &tail)))
+				return -1;
+
+			snprintf((char*)curr->tty_name, sizeof(curr->tty_name), "/dev/%s", e->d_name);
+		}
+	}
+
+	closedir(d);
+
+	return i;
+}
+
+static char *gather_ttys(dev_info *baseline, dev_info *updated, int cnt_baseline, int cnt_updated) {
+	int sz = (cnt_baseline > cnt_updated ? cnt_baseline : cnt_updated) * 255;
+	int of=0;
+	const dev_info *curr = updated;
+	char *result = malloc(sz);
+	memset(result, 0, sz);
+
+	while(curr) {
+		if(!dev_match(baseline, curr)){
+			of+= snprintf(result+of, sz-of-1, "%s%s", (of > 0 ? ", ":""), curr->tty_name);
+		}
+
+		curr = curr->next;
+	}
+
+	return result;
+}
+
+
+
+static void describe_usb_device(const dev_info *dev, const char *ttys_found) {
 	int vid = dev->idVendor, pid = dev->idProduct;
 
 	log("> Vendor ID    : 0x%04x               Product ID   : 0x%04x", vid, pid);
@@ -201,6 +283,9 @@ static void describe_device(const dev_info *dev) {
 		log("This device is identified as a generic Prolific USB adapter.\n"
 				"It MAY be a DS9481 adapter. If it is, you need to use the DS2480B device, \n"
 				"and point it to the appropriate %s device.\n", TTY_EXAMPLE);
+		if(ttys_found) {
+			log("The following devices where found: %s", ttys_found);
+		}
 
 		log("You may put the following in your owfs.conf:\n");
 		log("  device = %s\n", TTY_EXAMPLE);
@@ -212,6 +297,9 @@ static void describe_device(const dev_info *dev) {
 		log("This device is identified as a DS18E17 / DS9481P-300 USB adapter.");
 		log("To use this, you need to use the DS2480B device, and point it to\n"
 				"the appropriate %s device\n", ACM_EXAMPLE);
+		if(ttys_found) {
+			log("The following devices where found: %s", ttys_found);
+		}
 
 		log("You may put the following in your owfs.conf:\n");
 		log("  device = %s\n", ACM_EXAMPLE);
@@ -232,12 +320,24 @@ static int usage(char *progname) {
 	return 1;
 }
 
+#define DEV_INFO_CLEANUP() do {\
+		dev_info_free_all(&usb_baseline);\
+		dev_info_free_all(&usb_updated);\
+		dev_info_free_all(&tty_baseline);\
+		dev_info_free_all(&tty_updated);\
+		if(tty_result){ free(tty_result); tty_result = NULL;} \
+	}while(0)
+
 int main(int argc, char *argv[])
 {
-	int cnt_baseline = 0, cnt_updated = 0;
+	int cnt_usb_baseline = 0, cnt_usb_updated = 0;
+	int cnt_tty_baseline = 0, cnt_tty_updated = 0;
 	int i;
 	int interactive = 1;
-	dev_info *baseline = NULL, *updated = NULL;
+	char *tty_result = NULL;
+
+	dev_info *usb_baseline = NULL, *usb_updated = NULL;
+	dev_info *tty_baseline = NULL, *tty_updated = NULL;
 
 	if(argc > 2) {
 		usage(argv[0]);
@@ -262,8 +362,13 @@ int main(int argc, char *argv[])
 
 		getc(stdin);
 
-		if((cnt_baseline = list_devices(&baseline)) < 0) {
-			free_dev_info(&baseline);
+		if((cnt_usb_baseline = list_usb_devices(&usb_baseline)) < 0) {
+			DEV_INFO_CLEANUP();
+			return 1;
+		}
+
+		if((cnt_tty_baseline = list_tty_devices(&tty_baseline)) < 0) {
+			DEV_INFO_CLEANUP();
 			return 1;
 		}
 
@@ -275,13 +380,12 @@ int main(int argc, char *argv[])
 	}
 
 	for(i=0; i < 5; i++){
-		if((cnt_updated = list_devices(&updated)) < 0) {
-			free_dev_info(&baseline);
-			free_dev_info(&updated);
+		if((cnt_usb_updated = list_usb_devices(&usb_updated)) < 0) {
+			DEV_INFO_CLEANUP();
 			return 1;
 		}
 
-		if(interactive && cnt_updated <= cnt_baseline) {
+		if(interactive && cnt_usb_updated <= cnt_usb_baseline) {
 			// No change; sleep a bit and try agian
 			log("No new devices detect.. Re-scanning in 2s...");
 			sleep(2);
@@ -289,27 +393,34 @@ int main(int argc, char *argv[])
 			break;
 	}
 
-	if(interactive && cnt_baseline == cnt_updated) {
+	if(interactive) {
+		if((cnt_tty_updated = list_tty_devices(&tty_updated)) < 0) {
+			DEV_INFO_CLEANUP();
+			return 1;
+		}
+
+		// Find any new in tty_updated
+		tty_result = gather_ttys(tty_baseline, tty_updated, cnt_tty_baseline, cnt_tty_updated);
+	}
+
+	if(interactive && cnt_usb_baseline == cnt_usb_updated) {
 		log("Sorry, no new USB devices was found.");
 		if(geteuid() != 0)
 			log("This is likely due to running as non-root. ");
 
-		free_dev_info(&baseline);
-		free_dev_info(&updated);
+		DEV_INFO_CLEANUP();
 		return 0;
 	}
 
-	if(updated) {
-		const dev_info *curr = updated;
+	if(usb_updated) {
+		const dev_info *curr = usb_updated;
 		// Iterate all newly found and compare with baseline
 		while(curr) {
-			if(!interactive || !dev_found(baseline, curr))
-				describe_device(curr);
+			if(!interactive || !dev_match(usb_baseline, curr))
+				describe_usb_device(curr, tty_result);
 
 			curr = curr->next;
 		}
-
-		free_dev_info(&updated);
 
 		if(geteuid() == 0) {
 			log("\nNOTE: You are running as root. You may have to configure your OS to allow\n"
@@ -317,6 +428,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	DEV_INFO_CLEANUP();
 	return 0;
 }
 
