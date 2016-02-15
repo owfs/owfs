@@ -26,7 +26,7 @@
 	return (code);\
 }while(0)
 
-#define libusb_error_return(code, usb_ret, msg, args...) do { \
+#define error_return_libusb(code, usb_ret, msg, args...) do { \
 	fprintf(stderr, msg": %s\n", ##args, libusb_strerror(usb_ret)); \
 	return (code);\
 }while(0)
@@ -127,16 +127,18 @@ static int list_usb_devices_iter(libusb_device **devs, dev_info **out_list_head)
 	while((dev = devs[i++]) != NULL) {
 		libusb_device_handle *dev_handle;
 		struct libusb_device_descriptor desc;
-		
-		if (libusb_get_device_descriptor(dev, &desc) < 0)
-			error_return(-1, "libusb_get_device_descriptor() failed");
 
-		if(libusb_open(dev, &dev_handle) < 0)
-			error_return(-1, "libusb_open() failed");
+		if ((r = libusb_get_device_descriptor(dev, &desc)) < 0)
+			error_return_libusb(-1, r, "libusb_get_device_descriptor() failed");
+
+		if((r = libusb_open(dev, &dev_handle)) < 0)
+			error_return_libusb(-1, r, "libusb_open() failed");
 
 		// Create new result node
-		if(!(curr = dev_info_create(out_list_head, &tail)))
+		if(!(curr = dev_info_create(out_list_head, &tail))) {
+			libusb_close(dev_handle);
 			return -1;
+		}
 
 		curr->idVendor = desc.idVendor;
 		curr->idProduct = desc.idProduct;
@@ -175,10 +177,9 @@ static int list_usb_devices(dev_info **out_list_head) {
 		error_return(1, "libusb_init() failed: %d", r);
 
 	log(" Scanning USB devices...");
-	r = libusb_get_device_list(usb_ctx, &devs);
-	if(r < 0) {
+	if((r = libusb_get_device_list(usb_ctx, &devs)) < 0) {
 		libusb_exit(usb_ctx);
-		error_return(-1, "libusb_get_device_list() failed: %d", r);
+		error_return_libusb(-1, r, "libusb_get_device_list() failed: %d", r);
 	}
 
 	log(" Found %d devices", r);
@@ -303,7 +304,7 @@ static void describe_usb_device(const dev_info *dev, const char *ttys_found) {
 				"It MAY be a DS9481 adapter. If it is, you need to use the DS2480B device, \n"
 				"and point it to the appropriate %s device.\n", TTY_EXAMPLE);
 		}else if(vid == 0x0B6A && pid == 0x5A03){
-			log("This device is identified as a DS18E17 / DS9481P-300 USB adapter.");
+			log("This device is identified as a DS9481P-300 USB adapter.");
 			log("To use this, you need to use the DS2480B device, and point it to\n"
 						"the appropriate %s device\n", ACM_EXAMPLE);
 		}
@@ -318,7 +319,7 @@ static void describe_usb_device(const dev_info *dev, const char *ttys_found) {
 		log("Or, if running from command line:\n");
 		log("  --device %s", TTY_EXAMPLE);
 
-		log("Please be aware that either of these addressing are non-stable, and numbers may\n"
+		log("Please be aware that /dev device names may be non-stable, and may\n"
 			"thus change between reboots or reconnects. Please read owserver manual page for more info.");
 	}else{
 		log("This device is not a known compatible device.");
