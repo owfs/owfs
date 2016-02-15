@@ -203,7 +203,8 @@ static int list_tty_devices(dev_info **out_list_head) {
 
 	while((e = readdir(d)) != NULL) {
 #if defined(__FreeBSD__)
-		if(!strncmp(e->d_name, "cua", 3))
+		if(!strncmp(e->d_name, "cua", 3) &&
+				!strstr(e->d_name, ".init") && !strstr(e->d_name, ".lock"))
 #elif defined(__APPLE__)
         if(!strncmp(e->d_name, "cu.", 3))
 #else
@@ -214,6 +215,7 @@ static int list_tty_devices(dev_info **out_list_head) {
 				return -1;
 
 			snprintf((char*)curr->tty_name, sizeof(curr->tty_name), "/dev/%s", e->d_name);
+			i++;
 		}
 	}
 
