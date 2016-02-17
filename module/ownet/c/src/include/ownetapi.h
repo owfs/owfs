@@ -21,6 +21,10 @@ $Id$
 #ifndef OWNETAPI_H
 #define OWNETAPI_H
 
+#ifdef __CYGWIN__
+#define __BSD_VISIBLE 1 /* for u_int */
+#endif /* __CYGWIN__ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif

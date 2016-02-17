@@ -86,6 +86,11 @@
 #define __BSD_VISIBLE 1 
 #endif /* __FreeBSD__ */
 
+#ifdef __CYGWIN__
+#define __BSD_VISIBLE 1 /* for strep and u_int */
+#include <sys/select.h> /* for anything select on newer cygwin */
+#endif /* __CYGWIN__ */
+
 #ifdef HAVE_FEATURES_H
 #include <features.h>
 #endif							/* HAVE_FEATURES_H */
@@ -100,10 +105,6 @@
 #endif /* __FreeBSD__ */
 #include <sys/types.h>			/* for stat */
 #endif							/* HAVE_SYS_TYPES_H */
-
-#ifdef __CYGWIN__
-#define __BSD_VISIBLE  1 /* for strep */
-#endif
 
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>			/* for times */

@@ -17,6 +17,11 @@ $Id$
 // will wait for a thread to complete before executing a new one.
 //#define VALGRIND 1
 
+#ifdef __CYGWIN__
+#define __BSD_VISIBLE 1 /* for strep and u_int */
+#include <sys/select.h> /* for anything select on newer cygwin */
+#endif /* __CYGWIN__ */
+
 #define _FILE_OFFSET_BITS   64
 #ifdef HAVE_FEATURES_H
 #include <features.h>

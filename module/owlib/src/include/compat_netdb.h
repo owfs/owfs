@@ -124,7 +124,7 @@ int inet_pton(int af, const char *src, void *dst);
 #endif
 
 /* Extension from POSIX.1g.  */
-#ifdef	__USE_POSIX
+#if defined(__USE_POSIX) && !defined(__CYGWIN__)
 /* Structure to contain information about address of a service provider.  */
 struct addrinfo {
 	int ai_flags;				/* Input flags.  */

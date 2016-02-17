@@ -47,6 +47,11 @@
 
 #define _FILE_OFFSET_BITS   64
 
+#ifdef __CYGWIN__
+#define __BSD_VISIBLE 1 /* for strep and u_int */
+#include <sys/select.h> /* for anything select on newer cygwin */
+#endif /* __CYGWIN__ */
+
 #ifdef HAVE_FEATURES_H
 #include <features.h>
 #endif							/* HAVE_FEATURES_H */
@@ -67,9 +72,6 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
-#ifdef __CYGWIN__
-#define __BSD_VISIBLE  1 /* for strep */
-#endif
 #include <string.h>
 #ifdef __APPLE__
 #include <strings.h> /* for strcasecmp */
