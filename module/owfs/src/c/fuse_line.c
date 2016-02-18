@@ -97,7 +97,7 @@ char *Fuse_arg(char *opt_arg, char *entryname)
 	
 	orm.number = 1 ;
 	
-	ow_regcomp( &rx_farg, "^\".+\"$", 0 ) ;
+	ow_regcomp( &rx_farg, "^\"(.+)\"$", 0 ) ;
 	
 	if ( ow_regexec( &rx_farg, opt_arg, &orm ) != 0 ) {
 		fprintf(stderr, "Put the %s value in quotes. \"%s\"", entryname, opt_arg);
