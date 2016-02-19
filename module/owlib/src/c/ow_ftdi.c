@@ -86,7 +86,7 @@ static GOOD_OR_BAD owftdi_configure_bits(struct connection_in *in, enum ftdi_bre
 static GOOD_OR_BAD owftdi_configure_dtrrts(struct connection_in *in, int value) ;
 
 GOOD_OR_BAD owftdi_open( struct connection_in * in ) {
-	GOOD_OR_BAD gbResult = gbBAD;
+	GOOD_OR_BAD gbResult;
 	const char* arg = in->pown->init_data;
 	const char* target = arg+5;
 	assert(arg);
@@ -208,7 +208,7 @@ static GOOD_OR_BAD owftdi_open_device(struct connection_in *in, const char *desc
 	if(ret != 0) {
 		ERROR_CONNECT("Failed to open FTDI device with description '%s': %d = %s",
 				description, ret, ftdi_get_error_string(FTDIC(in)));
-		return ret;
+		return gbBAD;
 	}
 
 	return owftdi_opened(in);
@@ -219,7 +219,7 @@ static GOOD_OR_BAD owftdi_open_device_specific(struct connection_in *in, int vid
 	if(ret != 0) {
 		ERROR_CONNECT("Failed to open FTDI device with vid/pid 0x%x/0%x and serial '%s': %d = %s",
 				vid, pid, serial, ret, ftdi_get_error_string(FTDIC(in)));
-		return ret;
+		return gbBAD;
 	}
 
 	return owftdi_opened(in);
@@ -335,7 +335,7 @@ static GOOD_OR_BAD owftdi_configure_flow(struct connection_in *in) {
 		case flow_soft:
 		default:
 			LEVEL_DEBUG("Unsupported COM port flow control");
-			return -ENOTSUP ;
+			return gbBAD ;
 	}
 
 	if((ret = ftdi_setflowctrl(FTDIC(in), flow)) != 0) {
@@ -369,7 +369,7 @@ GOOD_OR_BAD owftdi_change(struct connection_in *in) {
 SIZE_OR_ERROR owftdi_read(BYTE * data, size_t requested_size, struct connection_in *in) {
 	struct port_in * pin = in->pown ;
 	struct timeval tv_start;
-	size_t chars_read =0,
+	size_t chars_read = 0,
 			 to_be_read = requested_size;
 	int retries = 0;
 	time_t timeout;
@@ -527,7 +527,7 @@ void owftdi_slurp(struct connection_in *in, uint64_t usec) {
 #if 0
 				LEVEL_DEBUG("ftdi_slurp timeout, timeleft=%d ", timeleft);
 #endif
-				return;
+				break;
 			}
 
 			usleep(min(timeleft, 200));
