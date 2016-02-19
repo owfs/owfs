@@ -20,7 +20,7 @@ void owftdi_flush( const struct connection_in *in ) ;
 void owftdi_break( struct connection_in *in ) ;
 void owftdi_slurp(struct connection_in *in, uint64_t usec) ;
 SIZE_OR_ERROR owftdi_read(BYTE * data, size_t length, struct connection_in *in) ;
-GOOD_OR_BAD owftdi_write( const BYTE * data, size_t length, struct connection_in *connection) ;
+GOOD_OR_BAD owftdi_write_once( const BYTE * data, size_t length, struct connection_in *in) ;
 
 #endif 	/* OW_FTDI_H */
 

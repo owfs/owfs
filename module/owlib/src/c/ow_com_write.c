@@ -13,6 +13,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
+#include "ow_ftdi.h"
 
 #ifdef HAVE_LINUX_LIMITS_H
 #include <linux/limits.h>
