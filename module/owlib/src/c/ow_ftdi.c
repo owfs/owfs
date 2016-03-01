@@ -397,7 +397,7 @@ SIZE_OR_ERROR owftdi_read(BYTE * data, size_t requested_size, struct connection_
 	 * With our latency timer of 1ms, we will have a empty read after 1ms. However, in most
 	 * cases we actuall DO get data in time!
 	 */
-	LEVEL_DEBUG("attempt %"PRIu64" bytes Time: "TVformat, requested_size, TVvar(&(pin->timeout)));
+	LEVEL_DEBUG("attempt %zu bytes Time: "TVformat, requested_size, TVvar(&(pin->timeout)));
 	gettimeofday(&tv_start, NULL);
 	while(to_be_read> 0) {
 		int ret = ftdi_read_data(FTDIC(in), &data[chars_read], to_be_read);
@@ -480,7 +480,7 @@ GOOD_OR_BAD owftdi_write_once( const BYTE * data, size_t length, struct connecti
 		return gbBAD;
 	}
 
-	LEVEL_DEBUG("ftdi_write: %"PRIu64" = actual %d", length, ret) ;
+	LEVEL_DEBUG("ftdi_write: %zu = actual %d", length, ret) ;
 
 	return gbGOOD;
 }
