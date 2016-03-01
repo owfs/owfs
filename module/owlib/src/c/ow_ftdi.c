@@ -190,6 +190,9 @@ void owftdi_flush( const struct connection_in *in ) {
 void owftdi_break ( struct connection_in *in ) {
 	assert (FTDIC(in));
 
+	// Wait a bit, ensuring any pending writes get through.
+	usleep(100000);
+
 	/* tcsendbreak manpage:
 	 * 	linux: 0.25-0.5s
 	 * 	freebsd: "four tenths of a second"
