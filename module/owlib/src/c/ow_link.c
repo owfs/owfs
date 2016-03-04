@@ -269,18 +269,20 @@ GOOD_OR_BAD LINK_detect(struct port_in *pin)
 			 * The Link DOES support higher baud rates (38400, 56700), BUT then we have
 			 * to enforce output throttling in order to not overflow the 1-Wire bus...
 			 * So, keep it at 19200.
-			 *
-			 * To avoid trouble, let the older serial devices use 9600 for now...
 			 */
 			RETURN_BAD_IF_BAD(LINK_detect_serial(in));
 
-			LEVEL_DEBUG("Reconfiguring found LinkUSB to 19200bps");
-			pin->baud = B19200;
-			LINK_set_baud(in);
+			if(pin->type == ct_ftdi) {
+				// ct_serial handling of BREAK, which is required to re-set to 9600bps, is not
+				// reliable. Only enable for ftdi devices with proper BREAK support.
+				LEVEL_DEBUG("Reconfiguring found LinkUSB to 19200bps");
+				pin->baud = B19200;
+				LINK_set_baud(in);
 
-			// ensure still found
-			RETURN_GOOD_IF_GOOD( LINK_version(in) ) ;
-			ERROR_CONNECT("LINK baud reconfigure failed, cannot find it after 19200 change.");
+				// ensure still found
+				RETURN_GOOD_IF_GOOD( LINK_version(in) ) ;
+				ERROR_CONNECT("LINK baud reconfigure failed, cannot find it after 19200 change.");
+			}
 			break;
 		}
 
