@@ -57,7 +57,9 @@
 #include <features.h>
 #endif
 
+#ifndef HAVE_GETADDRINFO
 #include "compat_netdb.h"
+#endif
 #include "compat_getopt.h"
 
 #ifndef HAVE_STRSEP
