@@ -61,6 +61,7 @@
 #define OW_USB          @OW_USB@
 #define OW_AVAHI        @OW_AVAHI@
 #define OW_PARPORT      @OW_PARPORT@
+#define OW_FTDI         @OW_FTDI@
 #define OW_DEBUG        @OW_DEBUG@
 #define OW_MUTEX_DEBUG  @OW_MUTEX_DEBUG@
 #define OW_W1           @OW_W1@

@@ -73,6 +73,7 @@ enum com_type {
 	ct_i2c,
 	ct_usb,
 	ct_netlink,
+	ct_ftdi,
 	ct_none,
 } ;
 

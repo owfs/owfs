@@ -13,6 +13,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
+#include "ow_ftdi.h"
 
 #ifdef HAVE_LINUX_LIMITS_H
 #include <linux/limits.h>
@@ -43,6 +44,11 @@ void COM_close(struct connection_in *connection)
 			return ;
 		case ct_serial:
 			break ;
+		case ct_ftdi:
+#if OW_FTDI
+			return owftdi_close(connection);
+#endif
+			break;
 	}
 
 	switch ( pin->state ) {

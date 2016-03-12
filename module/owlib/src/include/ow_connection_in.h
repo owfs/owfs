@@ -52,6 +52,7 @@ enum adapter_type {
 	adapter_LINK_12,
 	adapter_LINK_13,
 	adapter_LINK_14,
+	adapter_LINK_15,
 	adapter_LINK_other,
 	adapter_LINK_E,
 	adapter_masterhub,

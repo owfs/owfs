@@ -179,7 +179,7 @@ m4_include([src/scripts/m4/acx_pthread.m4])
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([asm/types.h arpa/inet.h sys/ioctl.h sys/mkdev.h sys/socket.h sys/time.h sys/times.h sys/types.h sys/uio.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h strings.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h resolv.h semaphore.h])
+AC_CHECK_HEADERS([asm/types.h arpa/inet.h sys/ioctl.h sys/mkdev.h sys/socket.h sys/time.h sys/times.h sys/types.h sys/param.h sys/uio.h feature_tests.h fcntl.h netinet/in.h stdlib.h string.h strings.h sys/file.h syslog.h termios.h unistd.h limits.h stdint.h features.h getopt.h resolv.h semaphore.h])
 AC_CHECK_HEADERS([linux/limits.h linux/types.h netdb.h dlfcn.h])
 AC_CHECK_HEADERS(sys/event.h sys/inotify.h)
 
@@ -1279,6 +1279,103 @@ AC_SUBST(ENABLE_PARPORT)
 AM_CONDITIONAL(ENABLE_PARPORT, test "${ENABLE_PARPORT}" = "true")
 
 
+dnl We support both libftdi 1.x and libftdi 0.x
+if test "$cross_compiling" != yes; then
+AC_CHECK_PROGS(LIBFTDI_CONFIG, libftdi1-config libftdi-config)
+else
+LIBFTDI_CONFIG=""
+fi
+AC_SUBST(LIBFTDI_CONFIG)
+
+AC_ARG_WITH(libftdi-config,
+            [  --with-libftdi-config=PATH Specify full path to libftdi-config or libftdi1-config])
+dnl Check if user passed a specific libftdi-config program.
+if test "X$with_libftdi_config" != "X" ; then
+	LIBFTDI_CONFIG=$with_libftdi_config
+fi
+
+if test "$cross_compiling" != yes; then
+	if test "X$LIBFTDI_CONFIG" == "X" ; then
+		dirs="/usr/bin /usr/local/bin /opt/local/bin"
+		for i in $dirs; do
+			for prog in libftdi1-config libftdi-config; do
+				echo "Testing $i/$prog"
+				if test -x $i/$prog; then
+					AC_MSG_RESULT($i/$prog is found)
+					LIBFTDI_CONFIG="$i/$prog"
+					break 2;
+				fi
+			done
+		done
+	fi
+fi
+
+# Check if FTDI should be enabled
+ENABLE_FTDI=auto
+AC_MSG_CHECKING([if libftdi is available])
+
+AC_ARG_ENABLE(ftdi,
+[  --enable-ftdi          Enable LinkUSB support via libftdi (default auto)],
+[
+	AC_MSG_RESULT([$enableval])
+
+	if ! test "$enableval" = "yes" ; then
+		ENABLE_FTDI=false
+	fi
+],
+[
+	AC_MSG_RESULT([auto (default)])
+])
+
+# Include ftdi.h if enabled
+if test "${ENABLE_FTDI}" != "false" ; then
+
+	LIBFTDI_FOUND=false
+	if test "X${LIBFTDI_CONFIG}" != "X" ; then
+		LIBFTDI_CFLAGS=`$LIBFTDI_CONFIG --cflags`
+		LIBFTDI_LIBS=`$LIBFTDI_CONFIG --libs`
+
+		save_CPPFLAGS="$CPPFLAGS"
+		save_LDFLAGS="$LDFLAGS"
+		CPPFLAGS="$save_CPPFLAGS $LIBFTDI_CFLAGS"
+		LDFLAGS="$save_LDFLAGS $LIBFTDI_LIBS"
+
+		AC_MSG_CHECKING([if libftdi compiles with includes+lib ])
+		AC_COMPILE_IFELSE([
+		AC_LANG_PROGRAM([[#include <ftdi.h>]],
+		[[
+			struct ftdi_context ftdic;
+			ftdi_init(&ftdic);
+		]])],
+		[AC_MSG_RESULT([ok])
+		FTDI_FOUND=true
+		],
+		[AC_MSG_RESULT([compilation error])
+		LIBFTDI_CFLAGS=""
+		LIBFTDI_LDFLAGS=""
+		LIBFTDI_CONFIG=""
+		])
+
+		CPPFLAGS="$save_CPPFLAGS"
+		LDFLAGS="$save_LDFLAGS"
+	fi
+
+	if test "${FTDI_FOUND}" = "true"; then
+		ENABLE_FTDI=true
+	else
+		if test "${ENABLE_FTDI}" = "true" ; then
+			AC_MSG_ERROR([libftdi must be installed to use LinkUSB natively])
+		else
+			AC_MSG_WARN([libftdi not found, LinkUSB native will be disabled])
+			ENABLE_FTDI=false
+		fi
+	fi
+fi
+AC_SUBST(LIBFTDI_CFLAGS)
+AC_SUBST(LIBFTDI_LIBS)
+AC_SUBST(ENABLE_FTDI)
+AM_CONDITIONAL(ENABLE_FTDI, test "${ENABLE_FTDI}" = "true")
+
 if test "${HAVE_CYGWIN}" = "true" ; then
 	OW_CYGWIN=1
 else
@@ -1496,6 +1593,13 @@ else
 fi
 AC_SUBST(OW_PARPORT)
 
+if test "${ENABLE_FTDI}" = "true" ; then
+	OW_FTDI=1
+else
+	OW_FTDI=0
+fi
+AC_SUBST(OW_FTDI)
+
 if test "${ENABLE_DEBUG}" = "true" ; then
 	OW_DEBUG=1
 else
@@ -1536,7 +1640,7 @@ AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STRFTIME
 AC_FUNC_STRTOD
 AC_TYPE_SIGNAL
-AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo gethostbyname2_r gethostbyaddr_r gethostbyname_r getservbyname_r getopt getopt_long gettimeofday inet_ntop inet_pton memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul twalk tsearch tfind tdelete tdestroy vasprintf strsep vsprintf vsnprintf writev getline])
+AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo gethostbyname2_r gethostbyaddr_r gethostbyname_r getservbyname_r getopt getopt_long gmtime_r gettimeofday localtime_r inet_ntop inet_pton memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul twalk tsearch tfind tdelete tdestroy vasprintf strsep vsprintf vsnprintf writev getline])
 
 save_LIBS="$LIBS"
 DL_LIBS=""
@@ -1709,6 +1813,11 @@ if test "${ENABLE_PARPORT}" = "true"; then
 	AC_MSG_RESULT([    Parallel port DS1410E is enabled])
 else
 	AC_MSG_RESULT([    Parallel port DS1410E is DISABLED])
+fi
+if test "${ENABLE_FTDI}" = "true"; then
+	AC_MSG_RESULT([           FTDI (LinkUSB) is enabled])
+else
+	AC_MSG_RESULT([           FTDI (LinkUSB) is DISABLED])
 fi
 if test "${ENABLE_ZERO}" = "true"; then
 	AC_MSG_RESULT([         Zeroconf/Bonjour is enabled])

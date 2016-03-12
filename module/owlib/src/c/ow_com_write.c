@@ -13,6 +13,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
+#include "ow_ftdi.h"
 
 #ifdef HAVE_LINUX_LIMITS_H
 #include <linux/limits.h>
@@ -53,6 +54,7 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 		case ct_tcp:
 		case ct_serial:
 		case ct_netlink:
+		case ct_ftdi:
 			// These protocols need no special pre-processing
 			break ;
 	}
@@ -64,7 +66,15 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 	}
 
 	// try the write
-	RETURN_GOOD_IF_GOOD( COM_write_once( data, length, connection ) );
+	switch ( pin->type ) {
+		case ct_ftdi:
+#if OW_FTDI
+			RETURN_GOOD_IF_GOOD( owftdi_write_once( data, length, connection ) );
+			break;
+#endif
+		default:
+			RETURN_GOOD_IF_GOOD( COM_write_once( data, length, connection ) );
+	}
 	
 	LEVEL_DEBUG("Trouble writing to %s", SAFESTRING(DEVICENAME(connection)) ) ;
 
@@ -75,7 +85,14 @@ GOOD_OR_BAD COM_write( const BYTE * data, size_t length, struct connection_in *c
 		LEVEL_DEBUG("Reopened %s, now slurp", SAFESTRING(DEVICENAME(connection)) ) ;
 		COM_slurp(connection) ;
 		LEVEL_DEBUG("Write again to %s", SAFESTRING(DEVICENAME(connection)) ) ;
-		return COM_write_once( data, length, connection ) ;
+		switch ( pin->type ) {
+			case ct_ftdi:
+#if OW_FTDI
+				return owftdi_write_once( data, length, connection );
+#endif
+			default:
+				return COM_write_once( data, length, connection );
+		}
 	}
 
 	// Can't open or another type of error
@@ -111,6 +128,11 @@ GOOD_OR_BAD COM_write_simple( const BYTE * data, size_t length, struct connectio
 		case ct_serial:
 		case ct_netlink:
 			break ;
+		case ct_ftdi:
+#if OW_FTDI
+			return owftdi_write_once(data, length, connection);
+#endif
+			break;
 	}
 
 	if ( pin->file_descriptor == FILE_DESCRIPTOR_BAD ) {

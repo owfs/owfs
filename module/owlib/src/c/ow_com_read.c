@@ -12,6 +12,7 @@
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
+#include "ow_ftdi.h"
 
 #ifdef HAVE_LINUX_LIMITS_H
 #include <linux/limits.h>
@@ -70,6 +71,13 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 				return actual == (ssize_t) length ? gbGOOD : gbBAD ;
 			}
 			break ;
+		}
+		case ct_ftdi:
+		{
+#if OW_FTDI
+			SIZE_OR_ERROR actual = owftdi_read(data, length, connection);
+			return (actual == (size_t) length) ? gbGOOD : gbBAD ;
+#endif
 		}
 	}
 	return gbBAD ;

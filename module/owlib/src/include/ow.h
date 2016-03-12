@@ -99,10 +99,11 @@
 #include <feature_tests.h>
 #endif							/* HAVE_FEATURE_TESTS_H */
 
-#ifdef HAVE_SYS_TYPES_H
-#ifdef __FreeBSD__
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
-#endif /* __FreeBSD__ */
+#endif
+
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>			/* for stat */
 #endif							/* HAVE_SYS_TYPES_H */
 

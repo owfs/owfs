@@ -13,6 +13,7 @@ $Id$
 #include "owfs_config.h"
 #include "ow.h"
 #include "ow_connection.h"
+#include "ow_ftdi.h"
 
 #ifdef HAVE_LINUX_LIMITS_H
 #include <linux/limits.h>
@@ -43,6 +44,11 @@ void COM_free(struct connection_in *connection)
 			break ;
 		case ct_serial:
 			serial_free( connection ) ;
+			break ;
+		case ct_ftdi:
+#if OW_FTDI
+			owftdi_free( connection ) ;
+#endif
 			break ;
 	}
 

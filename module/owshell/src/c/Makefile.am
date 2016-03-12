@@ -10,7 +10,7 @@ COMMON_OWSHELL_SOURCE = ow_opt.c   \
                getopt.c     \
                globals.c
 
-bin_PROGRAMS = owget owdir owread owwrite owpresent owexist
+bin_PROGRAMS = owget owdir owread owwrite owpresent owexist owusbprobe
 owget_SOURCES = ${COMMON_OWSHELL_SOURCE} \
                owget.c
 
@@ -28,6 +28,10 @@ owpresent_SOURCES = ${COMMON_OWSHELL_SOURCE} \
 
 owexist_SOURCES = ${COMMON_OWSHELL_SOURCE} \
                owexist.c
+
+owusbprobe_SOURCES = ${COMMON_OWSHELL_SOURCE} \
+               owusbprobe.c
+owusbprobe_LDFLAGS = ${LIBUSB_LIBS}
 
 AM_CFLAGS = -I../include \
 	-I../../../owlib/src/include \

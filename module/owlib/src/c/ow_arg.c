@@ -18,25 +18,32 @@
 #include "ow_connection.h"
 #include "ow_usb_msg.h" // for DS9490_port_setup
 
-enum arg_address { arg_addr_device, arg_addr_null, arg_addr_ip, arg_addr_colon, arg_addr_number, arg_addr_other, arg_addr_error, } ;
+enum arg_address { arg_addr_device, arg_addr_null,
+	arg_addr_ip, arg_addr_colon,
+	arg_addr_number, arg_addr_ftdi,
+	arg_addr_other, arg_addr_error, } ;
 
 static enum arg_address ArgType( const char * arg )
 {
 	static regex_t rx_dev ;
 	static regex_t rx_num ;
 	static regex_t rx_ip ;
+	static regex_t rx_ftdi ;
 	static regex_t rx_col ;
 	
 	// compile regex expressions
 	ow_regcomp( &rx_dev, "/", REG_NOSUB ) ;
 	ow_regcomp( &rx_num, "^[:digit:]+$", REG_NOSUB ) ;
 	ow_regcomp( &rx_ip, "[:digit:]{1,3}\\.[:digit:]{1,3}\\.[:digit:]{1,3}\\.[:digit:]{1,3}", REG_NOSUB ) ;
+	ow_regcomp( &rx_ftdi, "^ftdi:", REG_NOSUB ) ;
 	ow_regcomp( &rx_col, ":", REG_NOSUB ) ;
 
 	if ( arg == NULL ) {
 		return arg_addr_null ;
 	} else if ( ow_regexec( &rx_ip, arg, NULL ) == 0 ) {
 		return arg_addr_ip ;
+	} else if ( ow_regexec( &rx_ftdi, arg, NULL ) == 0 ) {
+		return arg_addr_ftdi;
 	} else if ( ow_regexec( &rx_col, arg, NULL ) == 0 ) {
 		return arg_addr_colon ;
 	} else if ( ow_regexec( &rx_dev, arg, NULL ) == 0 ) {
@@ -70,6 +77,14 @@ static GOOD_OR_BAD Serial_or_telnet( const char * arg, struct connection_in * in
 		case arg_addr_device:
 			in->pown->type = ct_serial ; // serial port
 			break ;
+		case arg_addr_ftdi:
+#if OW_FTDI
+			in->pown->type = ct_ftdi;
+			break;
+#else
+			LEVEL_DEFAULT("FTDI support not included in compilation. Use generic serial device.");
+			return gbBAD;
+#endif
 		case arg_addr_number: // port
 		case arg_addr_colon:
 		case arg_addr_ip:
@@ -87,7 +102,8 @@ GOOD_OR_BAD ARG_Device(const char *arg)
 		switch( ArgType(arg) ) {
 			case arg_addr_number: // port
 			case arg_addr_colon:
-			case arg_addr_ip:			
+			case arg_addr_ip:
+			case arg_addr_ftdi:
 			case arg_addr_other:
 				return ARG_Serial(arg) ;
 			default:

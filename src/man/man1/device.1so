@@ -19,6 +19,12 @@ Linux and BSD enforce a security policy restricting access to hardware ports. Yo
 .I port 
 specifies a serial port, e.g. 
 .I /dev/ttyS0
+.P
+If OWFS was built with \fBlibftdi\fR support, you may be able to use the
+.I ftdi:
+prefix to address a FTDI-based USB device.
+.br
+For details, see the FTDI ADDRESSING section.
 .TP
 \fI-d port\fI \fR|\fR \fI--device=port\fI \fB(DS2480B)\fB
 DS2480B-based bus master (like the DS9097U or the LINK in emulation mode). If the adapter doesn't respond, a passive type (DS9907E or diode/resistor) circuit will be assumed.
@@ -54,6 +60,8 @@ Reverse polarity of the DS2480B output transistors? Not needed for the DS9097U, 
 .B iButtonLink
 .I LINK
 adapter (all versions) in non-emulation mode. Uses an ascii protocol over serial.
+.br
+This supports the simplified \fIftdi:\fB<serial>\fR addressing scheme.
 .TP
 \fI--ha7e=port\fI \fB(HA7E)\fB
 .B Embedded Data Systems
@@ -217,3 +225,35 @@ Use the linux kernel w1 virtual bus master.
 .I \-\-timeout_w1=10
 Timeout for w1 netlink communications. This has a 10 second default and can be changed dynamically under
 .I /settings/timeout/w1
+.SH "FTDI ADDRESSING"
+FTDI is a brand of USB-to-serial chips which are very common. If your serial device is connected via a USB serial dongle based on a FTDI chip, or if your 
+adapter uses a built-in FTDI USB chip (for example, the LinkUSB), you can use this FTDI addressing.
+.P
+The main benifit with this mode of access is that we can decrease the communication delay, yielding twice as fast 1-Wire communication in many cases.
+.P
+The following values for \fIport\fR can be used to identify a specific FTDI port. Note that this requires that OWFS is built with libftdi support.
+.TP
+\fIftdi:d:\fB<devicenode>\fB
+path of bus and device-node (e.g. "003/001") within usb device tree
+(usually at /proc/bus/usb/)
+.TP
+\fIftdi:i:\fI\fB<vendor>:<product>\fB
+first device with given vendor and product id, ids can be decimal, octal
+(preceded by "0") or hex (preceded by "0x")
+.TP
+\fIftdi:i:\fI\fB<vendor>:<product>:<index>\fB
+as above with index being the number of the device (starting with 0)
+if there are more than one
+.TP
+\fIftdi:s:\fI\fB<vendor>:<product>:<serial>\fB
+first device with given vendor id, product id and serial string
+.P
+The above formats are parsed fully by libftdi (minus the \fIftdi:\fR prefix).
+.SS Simplified device \fBserial-only\fB support
+An additional format is supported, for certain bus types. This only specifies the USB serial number.
+.TP
+\fIftdi:\fI\fB<serial>\fB
+Identifies a FTDI device by serial only.
+Currently, this is only valid for the VID/PID found on the LinkUSB (i.e. --link).
+Note that those VID/PID's are the default for any FT232R device, and in no way exclusive
+to LinkUSB.
