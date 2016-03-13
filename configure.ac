@@ -1643,20 +1643,22 @@ AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([accept daemon getaddrinfo freeaddrinfo gethostbyname2_r gethostbyaddr_r gethostbyname_r getservbyname_r getopt getopt_long gmtime_r gettimeofday localtime_r inet_ntop inet_pton memchr memset select socket strcasecmp strchr strdup strncasecmp strtol strtoul twalk tsearch tfind tdelete tdestroy vasprintf strsep vsprintf vsnprintf writev getline])
 
 save_LIBS="$LIBS"
+LIBS=""
 DL_LIBS=""
 if test "${ENABLE_ZERO}" = "true" ; then
 	AC_SEARCH_LIBS(dlopen, dl,
-		DL_LIBS="-ldl"
 		AC_DEFINE(HAVE_DLOPEN, 1, [Define if you have dlopen]))
+	DL_LIBS="$LIBS"
 fi
 AC_SUBST([DL_LIBS])
 LIBS="$save_LIBS"
 
 save_LIBS="$LIBS"
 M_LIBS=""
+LIBS=""
 AC_SEARCH_LIBS(lrint, m,
-       M_LIBS="-lm"
        AC_DEFINE(HAVE_LRINT, 1, [Define if you have lrint]))
+M_LIBS="$LIBS"
 AC_SUBST([M_LIBS])
 LIBS="$save_LIBS"
 
@@ -1681,8 +1683,9 @@ AS_IF([test "x$with_systemdsystemunitdir" != "xno"],
 AM_CONDITIONAL([HAVE_SYSTEMD], [test "x$with_systemdsystemunitdir" != "xno"])
 save_LIBS="$LIBS"
 MQ_LIBS=""
-AC_SEARCH_LIBS([mq_getattr], [rt],
-		[MQ_LIBS="-lrt"])
+LIBS=""
+AC_SEARCH_LIBS([mq_getattr], [rt])
+MQ_LIBS="$LIBS"
 AC_SUBST([MQ_LIBS])
 LIBS="$save_LIBS"
 
