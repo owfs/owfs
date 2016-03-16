@@ -33,7 +33,7 @@
 
 #define log(msg, args...) fprintf(stdout, msg"\n", ##args)
 
-#if 1 || OW_USB
+#if OW_USB
 
 #if defined(__FreeBSD__)
 #define TTY_EXAMPLE "/dev/cuaUx"
