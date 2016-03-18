@@ -367,8 +367,8 @@ sub _BonjourLookup($) {
 sub _ToServer ($$$$;$) {
 	my ($self, $msg_type, $size, $offset, $payload_data) = @_ ;
 	my $f = "N6" ;
-	my $payload_length = length($payload_data) + 1 ;
-	$f .= 'Z'.$payload_length ;
+	my $payload_length = length($payload_data);
+	$f .= 'A'.$payload_length ;
 	my $message = pack($f,$self->{VER},$payload_length,$msg_type,$self->{SG}|$self->{PERSIST},$size,$offset,$payload_data) ;
 
 	# try to send
