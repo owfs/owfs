@@ -605,7 +605,7 @@ static ZERO_OR_ERROR FS_write_in_parts( struct one_wire_query *owq_all )
 	// create a buffer for certain types
 	// point to 0th element's buffer first
 	buffer_pointer = OWQ_buffer(owq_all);
-	OWQ_size(owq_part) = FileLength(PN(owq_part));
+	size_t fileSize = FileLength(PN(owq_part));
 	OWQ_offset(owq_part) = 0;
 
 	// loop through all eloements
@@ -617,11 +617,12 @@ static ZERO_OR_ERROR FS_write_in_parts( struct one_wire_query *owq_all )
 		case ft_vascii:
 		case ft_alias:
 		case ft_binary:
-			OWQ_length(owq_part) = OWQ_array_length(owq_all,extension) ;
+			OWQ_length(owq_part) = OWQ_size(owq_part) = OWQ_array_length(owq_all,extension) ;
 			OWQ_buffer(owq_part) = buffer_pointer;
-			buffer_pointer += OWQ_length(owq_part);
+			buffer_pointer += OWQ_size(owq_part);
 			break;
 		default:
+			OWQ_size(owq_part) = fileSize;
 			memcpy(&OWQ_val(owq_part), &OWQ_array(owq_all)[extension], sizeof(union value_object));
 			break;
 		}
