@@ -459,7 +459,7 @@ static ZERO_OR_ERROR FS_input_ascii_array(struct one_wire_query *owq)
 		// move the rest of the buffer (after the comma) to the end of this entry
 		memmove(buffer_position + allowed_length, comma + 1, end - comma - 1);
 		// shorten the buffer length by the comma and discarded chars
-		end -= entry_length - allowed_length - 1 ;
+		end -= (entry_length - allowed_length) + 1 ;
 		// move the buffer start to the start of the next entry
 		buffer_position += allowed_length ;
 	}
