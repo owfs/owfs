@@ -467,9 +467,6 @@ static void change_dir(struct ftp_session_s *f, const char *new_dir)
 	if (cps.dir) {
 		owfree(cps.dir);
 	}
-	if (cps.rest) {
-		owfree(cps.dir);
-	}
 }
 
 static void do_quit(struct ftp_session_s *f, const struct ftp_command_s *cmd)
