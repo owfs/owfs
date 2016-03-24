@@ -1689,6 +1689,16 @@ MQ_LIBS="$LIBS"
 AC_SUBST([MQ_LIBS])
 LIBS="$save_LIBS"
 
+HAVE_CHECK="false"
+PKG_CHECK_MODULES([libcheck],[check >= 0.10.0],[HAVE_CHECK="true"],
+	AC_MSG_WARN(["Check unit testing framework not found. "]))
+AM_CONDITIONAL(HAVE_CHECK, test "${HAVE_CHECK}" = "true")
+CHECK_CFLAGS="$libcheck_CFLAGS"
+CHECK_LIBS="$libcheck_LIBS"
+AC_SUBST([CHECK_CFLAGS])
+AC_SUBST([CHECK_LIBS])
+
+
 AC_CONFIG_FILES([
 	Makefile
 	module/Makefile
@@ -1697,6 +1707,7 @@ AC_CONFIG_FILES([
 	module/owlib/src/Makefile
 	module/owlib/src/include/Makefile
 	module/owlib/src/c/Makefile
+	module/owlib/tests/Makefile
 
 	module/owfs/Makefile
 	module/owfs/src/Makefile
@@ -1935,5 +1946,12 @@ if test "${ENABLE_OWTCL}" = "true"; then
 	AC_MSG_RESULT([                    owtcl is enabled])
 else
 	AC_MSG_RESULT([                    owtcl is DISABLED])
+fi
+
+AC_MSG_RESULT()
+if test "${HAVE_CHECK}" = "true"; then
+	AC_MSG_RESULT([              unit tests are enabled (run with 'make check')])
+else
+	AC_MSG_RESULT([              unit tests are DISABLED])
 fi
 AC_MSG_RESULT()
