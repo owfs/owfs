@@ -320,20 +320,20 @@ void AddProperty( char * input_string, enum external_type et )
 			break ;
 		default:
 			LEVEL_DEFAULT("Unrecognized variable type <%s> for property <%s> family <%s>",s_dummy,s_property,s_family);
-			s_format = ft_unknown ;
-			return ;
+			goto cleanup;
 	}
 	if ( s_dummy[1] ) { 
 		int temp_length ;
 		temp_length = strtol( &s_dummy[1], NULL, 0 ) ;
 		if ( temp_length < 1 ) {
 			LEVEL_DEFAULT("Unrecognized variable length <%s> for property <%s> family <%s>",s_dummy,s_property,s_family);
-			return ;
+			goto cleanup;
 		}
 		s_length = temp_length ;
 	}
 
 	// array
+	owfree(s_dummy);
 	GetQuotedString( dummy ) ;
 	switch ( s_dummy[0] ) {
 		case '1':
@@ -381,10 +381,11 @@ void AddProperty( char * input_string, enum external_type et )
 	}
 	if ( s_array < 1 ) {
 		LEVEL_DEFAULT("Unrecognized array type <%s> for property <%s> family <%s>",s_dummy,s_property,s_family);
-		return ;
+		goto cleanup;
 	}
 
 	// persistance
+	owfree(s_dummy);
 	GetQuotedString( dummy ) ;
 	switch ( s_dummy[0] ) {
 		case 'f':
@@ -404,7 +405,7 @@ void AddProperty( char * input_string, enum external_type et )
 			break ;
 		default:
 			LEVEL_DEFAULT("Unrecognized persistance <%s> for property <%s> family <%s>",s_dummy,s_property,s_family);
-			return ;
+			goto cleanup;
 	}
 
 	// read
@@ -427,7 +428,9 @@ void AddProperty( char * input_string, enum external_type et )
 		create_subdirs( s_property, s_family ) ;
 	}
 
+cleanup:
 	// Clean up
+	owfree( s_dummy );
 	owfree( s_property ) ;
 	owfree( s_family ) ;
 	owfree( s_read ) ;
