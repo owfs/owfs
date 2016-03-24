@@ -25,6 +25,10 @@
 *.x86_64
 *.hex
 
+# Test results
+*.trs
+*.log
+
 /blib/
 /.build/
 _build/
@@ -63,6 +67,7 @@ autom4te.cache/
 module/owfs/src/c/owfs
 module/owftpd/src/c/owftpd
 module/owhttpd/src/c/owhttpd
+module/owlib/tests/owlib_test
 module/ownet/perl5/OWNet/blib/
 module/ownet/perl5/OWNet/pm_to_blib
 module/ownet/php/examples/ownet_example.php
@@ -107,3 +112,6 @@ config.guess
 config.sub
 install-sh
 *.m4
+
+# CLion config
+.idea
