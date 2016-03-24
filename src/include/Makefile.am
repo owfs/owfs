@@ -2,7 +2,7 @@ owfsincludedir = ${prefix}/include
 nodist_owfsinclude_HEADERS = owfs_config.h
 
 clean-generic:
-	@RM@ -f *.o *.tmp *.cpp *~ .*~ stamp-* lint_cmac.h lint_cppmac.h gcc-include-path.lnt size-options.lnt
+	@RM@ -f *.o *.tmp *.cpp .*~ stamp-* lint_cmac.h lint_cppmac.h gcc-include-path.lnt size-options.lnt
 
 COMMON_GCC_OPTS:= $(COMMON_FLAGS) $(CPPFLAGS) -Wno-long-long
 # We want to enable 'long long' for the purpose of extracting the value of
