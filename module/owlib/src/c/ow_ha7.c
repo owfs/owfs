@@ -331,7 +331,6 @@ static GOOD_OR_BAD HA7_toHA7( const struct toHA7 *ha7, struct connection_in *in)
 		strcat(full_command, first ? "?" : "&");
 		strcat(full_command, "LockID=");
 		strcat(full_command, ha7->lock);
-		first = 0;
 	}
 
 	strcat(full_command, " HTTP/1.0\n\n");

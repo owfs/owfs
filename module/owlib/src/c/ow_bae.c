@@ -929,7 +929,6 @@ static ZERO_OR_ERROR FS_w_sector_data(struct one_wire_query *owq)
 	rlen=0;
 	wlen=4;
 	RETURN_ERROR_IF_BAD(OW_wr_complete_transaction(wlen,_FC03_WR_BEGIN_SD_W, &rlen, wparam, rparam, timeout, pn));
-	wlen= _FC02_MAX_WRITE_GULP;
 	retry=0;
 	for(i=size;i;) {
 		if ( i > _FC02_MAX_WRITE_GULP) {

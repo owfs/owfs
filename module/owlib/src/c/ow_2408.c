@@ -843,8 +843,6 @@ static GOOD_OR_BAD OW_redefchar(ASCII * pattern, struct parsedname * pn)
 
 	RETURN_BAD_IF_BAD( OW_Hinit(pn) ) ;
 
-	i = j = 0;
-	
 	// Start with char num
 	data[j++] = (char_num & 0xF0);
 	data[j++] = (char_num << 4) & 0xF0;
