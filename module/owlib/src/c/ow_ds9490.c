@@ -1046,7 +1046,7 @@ static GOOD_OR_BAD DS9490_SetSpeed(const struct parsedname *pn)
 static GOOD_OR_BAD DS9490_overdrive(const struct parsedname *pn)
 {
 	BYTE sp = _1W_OVERDRIVE_SKIP_ROM;
-	BYTE resp;
+	BYTE resp = 0;
 	int i;
 
 	// we need to change speed to overdrive

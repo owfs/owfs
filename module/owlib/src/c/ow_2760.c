@@ -586,11 +586,13 @@ static ZERO_OR_ERROR FS_r_vis_avg(struct one_wire_query *owq)
 	case 0x32:					//DS2780
 	case 0x3D:					//DS2781
 		ret = OW_r_int(&I, _1W_DS2780_AVERAGE_CURRENT, pn);
-		OWQ_F(owq) = .0000015625 * I;
+		if(GOOD(ret))
+			OWQ_F(owq) = .0000015625 * I;
 		break;
 	case 0x35:					//DS2755
 		ret = OW_r_int(&I, _1W_DS2756_AVERAGE_CURRENT, pn);
-		OWQ_F(owq) = .000001953 * I;
+		if(GOOD(ret))
+			OWQ_F(owq) = .000001953 * I;
 		break;
 	}
 	return GB_to_Z_OR_E(ret);

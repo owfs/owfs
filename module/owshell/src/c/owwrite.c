@@ -111,6 +111,7 @@ static char * HexConvert( char * input_string, int *out_size  )
 		PRINT_ERROR("Out of memory.\n") ;
 		errno = ENOMEM ;
 		Exit(1) ;
+		return 0; // Silence static analyzer
 	}
 
 	memset( return_string, 0, length+1 ) ;
