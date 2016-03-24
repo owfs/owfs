@@ -16,6 +16,7 @@
 #endif
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
+#include <assert.h>
 
 /* _x_ must be a pointer to a sockaddr structure */
 
@@ -203,7 +204,10 @@ void daemon_assert_fail(const char *assertion, const char *file, int line, const
 
 #define daemon_assert(expr)                                                   \
            ((expr) ? 0 :                                                      \
-            (daemon_assert_fail(__STRING(expr), __FILE__, __LINE__, __func__)))
+            (daemon_assert_fail(__STRING(expr), __FILE__, __LINE__, __func__)));\
+			assert(expr)
+
+// last assert is to silence static analyzers
 
 #endif							/* NDEBUG */
 

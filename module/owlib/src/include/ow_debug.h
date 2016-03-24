@@ -55,11 +55,16 @@ void print_timestamp_(const char * file, int line, const char * func, const char
 
 extern int log_available;
 
+#ifndef __clang_analyzer__
 #define debug_crash() {													\
 		char *crash_ptr = NULL;											\
 		print_timestamp_(__FILE__,__LINE__,__func__,"debug_crash");     \
 		*crash_ptr = '\000';											\
 	} //lint -e413 Force Core-dump to allow debugging the core-file
+#else
+// clang outputs alot of uncesseray Null-pointer dereference warnings without this
+#define debug_crash()
+#endif
 
 #if OW_DEBUG
 #define LEVEL_DEFAULT(...)    if (Globals.error_level>=e_err_default) {\

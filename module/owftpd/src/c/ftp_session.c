@@ -150,7 +150,7 @@ int ftp_session_init(struct ftp_session_s *f,
 
 	f->telnet_session = t;
 	daemon_assert(strlen(dir) < sizeof(f->dir));
-	strcpy(f->dir, dir);
+	strncpy(f->dir, dir, sizeof(f->dir) - 1);
 
 	f->data_channel = DATA_PORT;
 	f->data_port = *client_addr;
@@ -889,7 +889,7 @@ static void get_absolute_fname(char *fname, size_t fname_len, const char *dir, c
 
 		/* construct a file name based on our current directory */
 		daemon_assert(strlen(dir) + 1 + strlen(file) < fname_len);
-		strcpy(fname, dir);
+		strncpy(fname, dir, fname_len - 1);
 
 		/* add a seperating '/' if we're not at the root */
 		if (fname[1] != '\0') {

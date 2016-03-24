@@ -310,6 +310,7 @@ static void ProcessListenSocket( struct connection_out * out )
 	}
 
 	RWLOCK_RUNLOCK( shutdown_mutex_rw ) ;
+	// asd does not leak; it is passed to ProcessAcceptSocket in another thread.
 }
 
 /* Setup Servers -- select on each port */
