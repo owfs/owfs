@@ -99,6 +99,8 @@ WRITE_FUNCTION(FS_redefchar_hex);
 
 static struct aggregate A2408 = { 8, ag_numbers, ag_aggregate, };
 static struct aggregate A2408c = { 8, ag_numbers, ag_separate, };
+// LCD_M is HD44780 in 8bit mode
+// LCD_H is HD44780 in 4bit mode
 static struct filetype DS2408[] = {
 	F_STANDARD,
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
@@ -151,6 +153,8 @@ Make_SlaveSpecificTag(INI, fc_stable);	// LCD screen initialized?
 * */
 #define LCD_DATA_FLAG       0x08
 #define LCD_BUTTON_MASK		0x07
+#define LCD_M_VERIFY_MASK	0xFF
+#define LCD_H_VERIFY_MASK	0xF8
 #define NIBBLE_ONE(x)       ( ((x)&0xF0) | LCD_BUTTON_MASK )
 #define NIBBLE_TWO(x)       ( (((x)<<4)&0xF0) | LCD_BUTTON_MASK )
 #define NIBBLE_CTRL( x )    NIBBLE_ONE(x)               , NIBBLE_TWO(x)
@@ -164,7 +168,7 @@ static GOOD_OR_BAD OW_c_latch(const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_pio(const BYTE data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_reg(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_s_alarm(const BYTE * data, const struct parsedname *pn);
-static GOOD_OR_BAD OW_w_pios(const BYTE * data, const size_t size, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_pios(const BYTE *data, const size_t size, const BYTE verify_mask, const struct parsedname *pn);
 static GOOD_OR_BAD OW_redefchar(ASCII * pattern, struct parsedname * pn);
 static GOOD_OR_BAD OW_out_of_test_mode( const struct parsedname * pn ) ;
 
@@ -252,7 +256,7 @@ static ZERO_OR_ERROR FS_Mscreen(struct one_wire_query *owq)
 		}
 		data[i] = OWQ_buffer(owq)[i] | 0x80;
 	}
-	return GB_to_Z_OR_E( OW_w_pios(data, size, pn) ) ;
+	return GB_to_Z_OR_E(OW_w_pios(data, size, LCD_M_VERIFY_MASK, pn)) ;
 }
 
 static ZERO_OR_ERROR FS_Mmessage(struct one_wire_query *owq)
@@ -406,7 +410,7 @@ static ZERO_OR_ERROR FS_Hclear(struct one_wire_query *owq)
 		LEVEL_DEBUG("Screen initialization error");	
 		return -EINVAL ;
 	}
-	return GB_to_Z_OR_E(OW_w_pios(clear, 6, pn)) ;
+	return GB_to_Z_OR_E(OW_w_pios(clear, 6, LCD_H_VERIFY_MASK, pn)) ;
 }
 
 static GOOD_OR_BAD OW_Hinit(struct parsedname * pn)
@@ -438,12 +442,12 @@ static GOOD_OR_BAD OW_Hinit(struct parsedname * pn)
 		LEVEL_DEBUG("Trouble clearing latches") ;
 		return gbBAD ;
 	}// clear PIOs
-	if ( BAD( OW_w_pios(start, 1, pn) ) ) {
+	if ( BAD(OW_w_pios(start, 1, LCD_H_VERIFY_MASK, pn)) ) {
 		LEVEL_DEBUG("Error sending initial attention");	
 		return gbBAD;
 	}
 	UT_delay(5);
-	if ( BAD( OW_w_pios(next, 5, pn) ) ) {
+	if ( BAD(OW_w_pios(next, 5, LCD_H_VERIFY_MASK, pn)) ) {
 		LEVEL_DEBUG("Error sending setup commands");	
 		return gbBAD;
 	}
@@ -592,7 +596,7 @@ static GOOD_OR_BAD OW_Hprintyx(struct yx * YX, struct parsedname * pn)
 		}
 	}
 	LEVEL_DEBUG("Print the message");
-	return OW_w_pios(translated_data, translate_index, pn) ;
+	return OW_w_pios(translated_data, translate_index, LCD_H_VERIFY_MASK, pn);
 }
 
 // 0x01 => blinking cursor on
@@ -605,7 +609,7 @@ static ZERO_OR_ERROR FS_Honoff(struct one_wire_query *owq)
 
 	RETURN_ERROR_IF_BAD( OW_Hinit(pn) ) ;
 	// onoff
-	if ( BAD( OW_w_pios(onoff, 2, pn) ) ) {
+	if ( BAD(OW_w_pios(onoff, 2, LCD_H_VERIFY_MASK, pn)) ) {
 		LEVEL_DEBUG("Error setting LCD state");	
 		return -EINVAL;
 	}
@@ -638,7 +642,7 @@ static ZERO_OR_ERROR FS_redefchar_hex(struct one_wire_query *owq)
 		return -ERANGE ;
 	}
 	string2bytes( OWQ_buffer(owq), data, LCD_REDEFCHAR_LENGTH ) ;
-		
+
 	return GB_to_Z_OR_E( OW_redefchar( (ASCII *) data, pn ) ) ;
 }
 
@@ -694,8 +698,11 @@ static GOOD_OR_BAD OW_w_pio(const BYTE data, const struct parsedname *pn)
 	return gbGOOD;
 }
 
-/* Send several bytes to the channel */
-static GOOD_OR_BAD OW_w_pios(const BYTE * data, const size_t size, const struct parsedname *pn)
+/* Send several bytes to the channel, and verify that they where sent properly
+ * verify_mask can be used if we do not have explicit control over all PIOs, i.e. if we don't know if they
+ * are pulled up or not (device with buttons on lower 3 bits, may not be pulled up if no buttons are included)
+ */
+static GOOD_OR_BAD OW_w_pios(const BYTE *data, const size_t size, const BYTE verify_mask, const struct parsedname *pn)
 {
 	BYTE cmd[] = { _1W_CHANNEL_ACCESS_WRITE, };
 	size_t formatted_size = 4 * size;
@@ -737,7 +744,7 @@ static GOOD_OR_BAD OW_w_pios(const BYTE * data, const size_t size, const struct 
 		if (formatted_data[formatted_data_index + 2] != 0xAA) {
 			return gbBAD;
 		}
-		if (formatted_data[formatted_data_index + 3] != data[i]) {
+		if ((formatted_data[formatted_data_index + 3] & verify_mask) != (data[i] & verify_mask)) {
 			return gbBAD;
 		}
 	}
@@ -853,5 +860,5 @@ static GOOD_OR_BAD OW_redefchar(ASCII * pattern, struct parsedname * pn)
 		data[j++] = NIBBLE_TWO(pattern[i]) | LCD_DATA_FLAG;
 	}
 
-	return OW_w_pios(data, datalength, pn) ;
+	return OW_w_pios(data, datalength, LCD_H_VERIFY_MASK, pn);
 }
