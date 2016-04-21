@@ -42,7 +42,5 @@ void Setup_Systemd( void )
 // Announce systemd is ready
 void Announce_Systemd( void )
 {
-	if ( Globals.daemon_status == e_daemon_sd ) {
-		sd_notify( 0,"READY=1" ) ;
-	}
+	sd_notify( 0,"READY=1" ) ;
 }
