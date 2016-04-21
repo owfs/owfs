@@ -251,6 +251,7 @@ static void *FS_init(void)
 {
 #endif							/* FUSE_VERSION > 25 */
 	PIDstart();
+	Announce_Systemd();
 	return VOID_RETURN;
 }
 #endif							/* FUSE_VERSION > 22 */

@@ -3,7 +3,8 @@ Description=1-wire filesystem FUSE mount
 Documentation=man:owfs(1)
 
 [Service]
-Type=forking
+Type=notify
+NotifyAccess=all
 ExecStart=@bindir@/owfs --server=127.0.0.1 --allow_other %t/owfs
 ExecStop=/usr/bin/umount %t/owfs
 RuntimeDirectory=owfs

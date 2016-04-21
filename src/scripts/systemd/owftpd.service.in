@@ -3,6 +3,8 @@ Description=Anonymous FTP server for 1-wire access
 Documentation=man:owftpd(1)
 
 [Service]
+Type=notify
+NotifyAccess=all
 ExecStart=@bindir@/owftpd --foreground --server=127.0.0.1
 User=ow
 Group=ow
