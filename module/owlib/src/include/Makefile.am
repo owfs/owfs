@@ -5,7 +5,9 @@ noinst_HEADERS =           \
         compat_netdb.h     \
         connector.h        \
         jsmn.h             \
+        libusb.h           \
         ow.h               \
+        ownet.h            \
         ow_1820.h          \
         ow_1821.h          \
         ow_1921.h          \
@@ -33,6 +35,7 @@ noinst_HEADERS =           \
         ow_2505.h          \
         ow_2760.h          \
         ow_2804.h          \
+        ow_2810.h          \
         ow_2890.h          \
         ow_alloc.h         \
         ow_arg.h           \
@@ -66,6 +69,7 @@ noinst_HEADERS =           \
         ow_external.h      \
         ow_fd.h            \
         ow_filetype.h      \
+        ow_ftdi.h          \
         ow_functions.h     \
         ow_generic_read.h  \
         ow_generic_write.h \
@@ -95,7 +99,6 @@ noinst_HEADERS =           \
         ow_programs.h      \
         ow_regex.h         \
         ow_reset.h         \
-        ow_regex.h         \
         ow_return_code.h   \
         ow_settings.h      \
         ow_search.h        \
