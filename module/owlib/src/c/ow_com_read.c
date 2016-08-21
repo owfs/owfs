@@ -26,11 +26,11 @@ static SIZE_OR_ERROR COM_read_get_size( BYTE * data, size_t length, struct conne
 GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connection)
 {
 	struct port_in * pin ;
-	
+
 	if ( length == 0 ) {
 		return gbGOOD ;
 	}
-	
+
 	if ( connection == NO_CONNECTION || data == NULL ) {
 		// bad parameters
 		return gbBAD ;
@@ -59,7 +59,7 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 		case ct_netlink:
 		case ct_usb:
 			LEVEL_DEBUG("Unimplemented");
-			break ; 
+			break ;
 		case ct_serial:
 		// serial is ok
 		// printf("Serial read fd=%d length=%d\n",pin->file_descriptor, (int) length);
@@ -76,7 +76,10 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 		{
 #if OW_FTDI
 			SIZE_OR_ERROR actual = owftdi_read(data, length, connection);
-			return (actual == (size_t) length) ? gbGOOD : gbBAD ;
+			return (actual == (SIZE_OR_ERROR) length) ? gbGOOD : gbBAD ;
+#else
+			LEVEL_DEBUG("Unimplemented");
+			break;
 #endif
 		}
 	}
@@ -89,11 +92,11 @@ GOOD_OR_BAD COM_read( BYTE * data, size_t length, struct connection_in *connecti
 SIZE_OR_ERROR COM_read_with_timeout( BYTE * data, size_t length, struct connection_in *connection)
 {
 	struct port_in * pin ;
-	
+
 	if ( length == 0 ) {
 		return 0 ;
 	}
-	
+
 	if ( connection == NO_CONNECTION || data == NULL ) {
 		// bad parameters
 		return -EIO ;
@@ -135,6 +138,3 @@ static SIZE_OR_ERROR COM_read_get_size( BYTE * data, size_t length, struct conne
 		return actual_size ;
 	}
 }
-
-		
-	
