@@ -1485,10 +1485,12 @@ AC_COMPILE_IFELSE(
 [
 	if test "${HAVE_CYGWIN}" = "true" ; then
 		AC_MSG_RESULT([no, Cygwins ipv6 is incomplete])
+		AC_DEFINE(__HAS_IPV6__, 0, [No ipv6 support available.])
 		have_v6=no
 	else
 		have_v6=yes
 		AC_DEFINE(IPV6, 1, [Define if ipv6 support is present and available.])
+		AC_DEFINE(__HAS_IPV6__, 1, [Define if ipv6 support is present and available.])
 		AC_MSG_RESULT(yes)
 		AC_MSG_CHECKING([for struct in6addr_any])
 		AC_COMPILE_IFELSE(
@@ -1506,8 +1508,11 @@ AC_COMPILE_IFELSE(
 		)
 	fi
 ],
-[AC_MSG_RESULT(no)
-have_v6="no"])
+[
+	AC_MSG_RESULT(no)
+	have_v6=no
+	AC_DEFINE(__HAS_IPV6__, 0, [No ipv6 support available.])
+])
 
 
 AC_CACHE_CHECK(if sem_timedwait exists,ac_cv_sem_timedwait, [
