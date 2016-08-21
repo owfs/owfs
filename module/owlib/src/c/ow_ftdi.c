@@ -287,6 +287,7 @@ static GOOD_OR_BAD owftdi_configure_bits(struct connection_in *in, enum ftdi_bre
 
 	switch (pin->parity) {
 		case parity_none:
+		default:
 			parity = NONE;
 			break ;
 		case parity_even:
@@ -303,6 +304,7 @@ static GOOD_OR_BAD owftdi_configure_bits(struct connection_in *in, enum ftdi_bre
 	// stop bits
 	switch (pin->stop) {
 		case stop_1:
+		default:
 			stop = STOP_BIT_1;
 			break ;
 		case stop_15:
@@ -464,7 +466,6 @@ SIZE_OR_ERROR owftdi_read(BYTE * data, size_t requested_size, struct connection_
 
 GOOD_OR_BAD owftdi_write_once( const BYTE * data, size_t length, struct connection_in *in) {
 	// Mimics COM_write_once
-
 	FTDIC(in)->usb_write_timeout = Globals.timeout_serial * 1000; // XXX why not pin->timeout?
 
 	TrafficOut("write", data, length, in);

@@ -909,6 +909,7 @@ static GOOD_OR_BAD OW_22latesttemp(_FLOAT * temp, enum temperature_problem_flag 
 			Resolution = &Resolution11 ;
 			break ;
 		case 0x60:
+		default:
 			Resolution = &Resolution12 ;
 			break ;
 	}
