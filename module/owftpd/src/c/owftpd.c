@@ -14,11 +14,11 @@ int main(int argc, char *argv[])
 	int err, signo;
 	struct ftp_listener_s ftp_listener;
 	sigset_t myset;
-	
+
 	struct re_exec sre =
 	{
-		& ftp_listener, 
-		ftp_listener_stop, 
+		& ftp_listener,
+		(void (*)(void *)) ftp_listener_stop,
 	};
 
 	/* Set up owlib */
