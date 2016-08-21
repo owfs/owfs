@@ -93,7 +93,7 @@ static void ShowReadWrite(struct OutputControl * oc, struct one_wire_query *owq)
 		fprintf(out, "Error: %s", strerror(-read_return));
 		return;
 	}
-		
+
 	switch (pn->selected_filetype->format) {
 		case ft_binary:
 			{
@@ -113,14 +113,14 @@ static void ShowReadWrite(struct OutputControl * oc, struct one_wire_query *owq)
 		case ft_bitfield:
 			if (pn->extension >= 0) {
 				fprintf(out,
-						"<FORM METHOD='GET' ACTION='http://%s%s'><INPUT TYPE='CHECKBOX' NAME='%s' %s><INPUT TYPE='SUBMIT' VALUE='CHANGE' NAME='%s'></FORM>",oc->host, oc->base_url, 
+						"<FORM METHOD='GET' ACTION='http://%s%s'><INPUT TYPE='CHECKBOX' NAME='%s' %s><INPUT TYPE='SUBMIT' VALUE='CHANGE' NAME='%s'></FORM>",oc->host, oc->base_url,
 						file, (OWQ_buffer(owq)[0] == '0') ? "" : "CHECKED", file);
 				break;
 			}
 			// fall through
 		default:
 			fprintf(out,
-					"<FORM METHOD='GET' ACTION='http://%s%s'><INPUT TYPE='TEXT' NAME='%s' VALUE='%.*s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",oc->host, oc->base_url, 
+					"<FORM METHOD='GET' ACTION='http://%s%s'><INPUT TYPE='TEXT' NAME='%s' VALUE='%.*s'><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM>",oc->host, oc->base_url,
 					file, read_return, OWQ_buffer(owq));
 			break;
 	}
@@ -139,8 +139,8 @@ static void Extension( struct OutputControl * oc, const struct parsedname * pn )
 	const char * file = FS_DirName(pn);
 	struct ow_regmatch orm ;
 	orm.number = 0 ;
-	
-	ow_regcomp( &rx_extension, "\.", 0 ) ;
+
+	ow_regcomp( &rx_extension, "\\.", 0 ) ;
 	if ( ow_regexec( &rx_extension, file, &orm ) == 0 ) {
 		fprintf(out, "<CODE><FORM METHOD='GET' ACTION='http://%s%s'><INPUT NAME='EXTENSION' TYPE='TEXT' SIZE='30' VALUE='%s.' ID='EXTENSION'><INPUT TYPE='SUBMIT' VALUE='EXTENSION'></FORM>", oc->host, oc->base_url, orm.pre[0] );
 		ow_regexec_free( &orm ) ;
@@ -203,7 +203,7 @@ static void ShowStructure(struct OutputControl * oc, struct one_wire_query *owq)
 	}
 
 	fprintf(out, "%.*s", read_return, OWQ_buffer(owq));
-	
+
 	// Optional structure details
 	StructureDetail(oc,OWQ_buffer(owq)) ;
 }
@@ -303,11 +303,11 @@ static void ShowWriteonly(struct OutputControl * oc, struct one_wire_query *owq)
 	FILE * out = oc->out ;
 	struct parsedname * pn = PN(owq) ;
 	const char *file = FS_DirName(pn);
-	
+
 	switch (pn->selected_filetype->format) {
 		case ft_binary:
 			fprintf(out,
-					"<CODE><FORM METHOD='GET' ACTION='http://%s%s'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",oc->host, oc->base_url, 
+					"<CODE><FORM METHOD='GET' ACTION='http://%s%s'><TEXTAREA NAME='%s' COLS='64' ROWS='%-d'></TEXTAREA><INPUT TYPE='SUBMIT' VALUE='CHANGE'></FORM></CODE>",oc->host, oc->base_url,
 					file, (int) (OWQ_size(owq) >> 5));
 			Upload(oc,pn) ;
 			break;
@@ -659,7 +659,7 @@ static void ShowDeviceJsonCallback(void *v, const struct parsedname * pn_entry)
 static void ShowDeviceJson(struct OutputControl * oc, struct parsedname *pn)
 {
 	FILE * out = oc->out ;
-	
+
 	HTTPstart(oc, "200 OK", ct_json);
 
 	if (pn->selected_filetype == NO_DEVICE) {	/* whole device */
@@ -670,9 +670,9 @@ static void ShowDeviceJson(struct OutputControl * oc, struct parsedname *pn)
 		fprintf(out, "}" );
 	} else {					/* Single item */
 		//printf("single item path=%s\n", pn->path);
-		fprintf(out, "[ " ) ;		
+		fprintf(out, "[ " ) ;
 		ShowJson(oc, pn);
-		fprintf(out, " ]" ) ;		
+		fprintf(out, " ]" ) ;
 	}
 }
 
