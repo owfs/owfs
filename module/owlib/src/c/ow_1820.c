@@ -896,9 +896,22 @@ static GOOD_OR_BAD OW_22latesttemp(_FLOAT * temp, enum temperature_problem_flag 
 	BYTE data[SCRATCHPAD_LENGTH];
 	struct tempresolution *Resolution ;
 
-	RETURN_BAD_IF_BAD( OW_set_resolution( &Resolution, pn ) ) ;
-
 	RETURN_BAD_IF_BAD( OW_r_scratchpad(data, pn) ) ;
+
+	switch (data[4] & 0x60) {
+		case 0x00:
+			Resolution = &Resolution9 ;
+			break ;
+		case 0x20:
+			Resolution = &Resolution10 ;
+			break ;
+		case 0x40:
+			Resolution = &Resolution11 ;
+			break ;
+		case 0x60:
+			Resolution = &Resolution12 ;
+			break ;
+	}
 
 	temp[0] = OW_masked_temperature( data, Resolution ) ;
 
