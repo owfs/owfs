@@ -12,7 +12,7 @@ MANFILES = \
 ## .so includes
 SOFILES = \
     addressing.3so description.3so seealso.3so standard.3so standard_mini.3so \
-    temperature_errata.3so temperature_threshold.3so temperatures_mini.3so
+    temperature_errata.3so temperature_threshold.3so temperature_resolution.3so temperatures_mini.3so
 ## man files that need no preprocessing
 dist_man3_MANS = \
     DS1427.3 DS1904.3 DS1920.3 DS1971.3 DS1982.3 DS1982U.3 DS1985.3 DS1985U.3 \

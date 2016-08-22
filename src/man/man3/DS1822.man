@@ -29,6 +29,8 @@ Thermometer.
 |
 .B templow
 |
+.B tempres
+|
 .B trim
 |
 .B trimblanket
@@ -48,7 +50,7 @@ Is the chip powered externally (=1) or from the parasitically from the data bus 
 .SS temperature
 .I read-only, floating point
 .br
-Measured temperature with 12 bit resolution. 
+Measured temperature with 12 bit resolution.
 .SS temperature9 temperature10 temperature11 temperature12
 .I read-only, floating point
 .br
@@ -64,6 +66,7 @@ Measured temperature at 9 to 12 bit resolution, depending on the resolution of t
 Equivalent to
 .I temperature9
 .so man3/temperature_threshold.3so
+.so man3/temperature_resolution.3so
 .so man3/temperature_errata.3so
 .SH STANDARD PROPERTIES
 .so man3/standard.3so

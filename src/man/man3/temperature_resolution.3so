@@ -1,0 +1,17 @@
+.SH TEMPERATURE RESOLUTION DEFAULT VALUE
+.SS tempres
+.I read-write, integer
+.br
+The device employs a non-volatile memory to store the default temperature resolution (9, 10, 11 or 12 bits) to be applied after power-up. This is useful if you use
+.I simultaneous
+temperature conversions. Reading this node gives you the value stored in the non-volatile memory. Writing sets a new power-on resolution value.
+.PP
+As a side effect, reading this node resets the temperature resolution used by
+.I simultaneous
+temperature conversions to its power-on value. It also affects the resolution value used by
+.B latesttemp,
+to scale the latest conversion value, so make sure to re-sample the temperature before accessing
+.B latesttemp
+after writing or reading the
+.B tempres
+value.

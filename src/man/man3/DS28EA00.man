@@ -29,6 +29,8 @@ Thermometer, PIO and Chain.
 |
 .B templow
 |
+.B tempres
+|
 .B PIO.A|B|ALL.BYTE
 |
 .B latch.A|B|ALL.BYTE
@@ -102,6 +104,7 @@ pins.
 .br
 Is the chip powered externally (=1) or from the parasitically from the data bus (=0)?
 .so man3/temperature_threshold.3so
+.so man3/temperature_resolution.3so
 .SH STANDARD PROPERTIES
 .so man3/standard.3so
 .SH DESCRIPTION

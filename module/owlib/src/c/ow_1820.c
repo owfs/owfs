@@ -56,6 +56,8 @@ READ_FUNCTION(FS_slowtemp);
 READ_FUNCTION(FS_power);
 READ_FUNCTION(FS_r_templimit);
 WRITE_FUNCTION(FS_w_templimit);
+READ_FUNCTION(FS_r_tempres);
+WRITE_FUNCTION(FS_w_tempres);
 READ_FUNCTION(FS_r_die);
 READ_FUNCTION(FS_r_trim);
 WRITE_FUNCTION(FS_w_trim);
@@ -130,6 +132,7 @@ static struct filetype DS18B20[] = {
 	{"latesttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_22latesttemp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {.i=1}, },
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {.i=0}, },
+	{"tempres", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_tempres, FS_w_tempres, VISIBLE, NO_FILETYPE_DATA, },
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"scratchpad", SCRATCHPAD_LENGTH, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_scratchpad, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 
@@ -153,6 +156,7 @@ static struct filetype DS1822[] = {
 	{"latesttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_22latesttemp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {.i=1}, },
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE, {.i=0}, },
+	{"tempres", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_tempres, FS_w_tempres, VISIBLE, NO_FILETYPE_DATA, },
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"scratchpad", SCRATCHPAD_LENGTH, NON_AGGREGATE, ft_binary, fc_volatile, FS_r_scratchpad, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 
@@ -178,6 +182,7 @@ static struct filetype DS1825[] = {
 	{"latesttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_22latesttemp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE_DS1825, {.i=1}, },
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE_DS1825, {.i=0}, },
+	{"tempres", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_tempres, FS_w_tempres, VISIBLE, NO_FILETYPE_DATA, },
 	{"thermocouple", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_link, FS_thermocouple, NO_WRITE_FUNCTION, VISIBLE_MAX31850, {.i=12}, },
 	{"flagfield", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_link, FS_r_flagfield, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 	{"fault" , PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_bitfield, NO_WRITE_FUNCTION, VISIBLE_MAX31850, {.v= &max31850_fault,}, },
@@ -206,6 +211,7 @@ static struct filetype DS28EA00[] = {
 	{"latesttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_22latesttemp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"templow", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE_DS1825, {.i=1}, },
 	{"temphigh", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_templimit, FS_w_templimit, VISIBLE_DS1825, {.i=0}, },
+	{"tempres", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_unsigned, fc_stable, FS_r_tempres, FS_w_tempres, VISIBLE, NO_FILETYPE_DATA, },
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_power, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"piostate", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, FS_r_piostate, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 	{"PIO", PROPERTY_LENGTH_BITFIELD, &A28EA00, ft_bitfield, fc_link, FS_r_pio, FS_w_pio, VISIBLE, NO_FILETYPE_DATA, },
@@ -304,6 +310,8 @@ static GOOD_OR_BAD OW_22temp(_FLOAT * temp, enum temperature_problem_flag accept
 static GOOD_OR_BAD OW_power(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_templimit(_FLOAT * T, const int Tindex, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_templimit(const _FLOAT T, const int Tindex, const struct parsedname *pn);
+static GOOD_OR_BAD OW_r_tempres(UINT * resolution, const struct parsedname *pn);
+static GOOD_OR_BAD OW_w_tempres(UINT resolution, const struct parsedname *pn);
 static GOOD_OR_BAD OW_r_scratchpad(BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_scratchpad(const BYTE * data, const struct parsedname *pn);
 static GOOD_OR_BAD OW_w_store_scratchpad(const BYTE * data, const struct parsedname *pn);
@@ -485,6 +493,12 @@ static ZERO_OR_ERROR FS_r_templimit(struct one_wire_query *owq)
 	return GB_to_Z_OR_E( OW_r_templimit(&OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq)) );
 }
 
+static ZERO_OR_ERROR FS_r_tempres(struct one_wire_query *owq)
+{
+	return GB_to_Z_OR_E( OW_r_tempres(&OWQ_U(owq), PN(owq)) );
+}
+
+
 /* DS1825 hardware programmable address */
 static ZERO_OR_ERROR FS_r_ad(struct one_wire_query *owq)
 {
@@ -527,6 +541,11 @@ static ZERO_OR_ERROR FS_thermocouple(struct one_wire_query * owq )
 static ZERO_OR_ERROR FS_w_templimit(struct one_wire_query *owq)
 {
 	return GB_to_Z_OR_E(OW_w_templimit(OWQ_F(owq), PN(owq)->selected_filetype->data.i, PN(owq)));
+}
+
+static ZERO_OR_ERROR FS_w_tempres(struct one_wire_query *owq)
+{
+	return GB_to_Z_OR_E(OW_w_tempres(OWQ_U(owq), PN(owq)));
 }
 
 static ZERO_OR_ERROR FS_r_die(struct one_wire_query *owq)
@@ -986,6 +1005,70 @@ static GOOD_OR_BAD OW_w_templimit(const _FLOAT T, const int Tindex, const struct
 	data[2 + Tindex] = (int8_t) T;
 	return OW_w_store_scratchpad(&data[2], pn);
 }
+
+/* Get default resolution */
+static GOOD_OR_BAD OW_r_tempres(UINT * resolution, const struct parsedname *pn)
+{
+	BYTE data[SCRATCHPAD_LENGTH];
+	BYTE recall[] = { _1W_RECALL_EEPROM, };
+	struct transaction_log trecall[] = {
+		TRXN_START,
+		TRXN_WRITE1(recall),
+		TRXN_DELAY(10),
+		TRXN_END,
+	};
+
+	RETURN_BAD_IF_BAD(BUS_transaction(trecall, pn)) ;
+
+	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
+
+	switch (data[4] & 0x60) {
+		case 0x00:
+			resolution[0] = 9;
+			break ;
+		case 0x20:
+			resolution[0] = 10;
+			break ;
+		case 0x40:
+			resolution[0] = 11;
+			break ;
+		case 0x60:
+			resolution[0] = 12;
+			break ;
+	}
+
+	return gbGOOD;
+}
+
+/* Set default resolution */
+static GOOD_OR_BAD OW_w_tempres(UINT resolution, const struct parsedname *pn)
+{
+	BYTE data[SCRATCHPAD_LENGTH];
+
+	if (OW_r_scratchpad(data, pn)) {
+		return gbBAD;
+	}
+
+	data[4] &= 0x9f;
+	switch (resolution) {
+		case 9:
+			break;
+		case 10:
+			data[4] |= 0x20;
+			break;
+		case 11:
+			data[4] |= 0x40;
+			break;
+		case 12:
+			data[4] |= 0x60;
+			break;
+		default:
+			return gbBAD;
+	}
+
+	return OW_w_store_scratchpad(&data[2], pn);
+}
+
 
 /* read 9 bytes, includes CRC8 which is checked */
 static GOOD_OR_BAD OW_r_scratchpad(BYTE * data, const struct parsedname *pn)
