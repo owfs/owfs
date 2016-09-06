@@ -932,9 +932,12 @@ static GOOD_OR_BAD OW_22latesttemp(_FLOAT * temp, enum temperature_problem_flag 
 			Resolution = &Resolution12 ;
 			break ;
 	}
-
-	temp[0] = OW_masked_temperature( data, Resolution ) ;
-
+        if ((pn->sn[0] == 0x3B) && (data[4] & 0x80)) {
+            /* MAX31850 shows internal temperature at data[2] as "temperatureXXX"! */
+            temp[0] = ((_FLOAT) ((int16_t) ((data[3] << 8) | (data[2] & 0xf0)))) / 256.0;
+        } else {
+            temp[0] = OW_masked_temperature( data, Resolution ) ;
+        }
 	if ( accept_85C==allow_85C || data[0] != 0x50 || data[1] != 0x05 ) {
 		return gbGOOD;
 	}
@@ -964,13 +967,12 @@ static GOOD_OR_BAD OW_thermocouple(_FLOAT * temp, enum temperature_problem_flag 
 
 	RETURN_BAD_IF_BAD(OW_r_scratchpad(data, pn)) ;
 
-	temp[0] = OW_masked_temperature( &data[2], Resolution ) ;
-
 	if ( (data[0] & 0x01)  || (data[2] & 0x07)) {
 		// Fault flag
 		LEVEL_DEBUG("Error flag on thermocouple read of %s",pn->path) ;
 		return gbBAD ;
 	}
+	temp[0] = OW_masked_temperature( &data[0], Resolution ) ;
 
 	return gbGOOD ;
 }
