@@ -1,0 +1,7 @@
+#!/bin/sh
+OWFS_BASE=$(pwd)
+cd src/man
+find -name '*.man' | while read
+do
+	soelim -r $REPLY | $OWFS_BASE/man2md >$OWFS_BASE/../owfs-doc.wiki/$(basename $REPLY .man).md
+done
