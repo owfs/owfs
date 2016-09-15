@@ -7,7 +7,7 @@
 .SS Language bindings
 .B owtcl (3) owperl (3) owcapi (3)
 .SS Clocks
-.B DS1427 (3) DS1904(3) DS1994 (3) DS2404 (3) DS2404S (3) DS2415 (3) DS2417 (3)
+.B DS1427 (3) DS1904 (3) DS1994 (3) DS2404 (3) DS2404S (3) DS2415 (3) DS2417 (3)
 .SS ID
 .B DS2401 (3) DS2411 (3) DS1990A (3)
 .SS Memory
@@ -31,6 +31,6 @@
 .SS Crypto
 .B DS1977 (3)
 .SS Pressure
-.B DS2406 (3) TAI8570 EDS0066 (3) EDS0068 (3)
+.B DS2406 (3) TAI8570 (3) EDS0066 (3) EDS0068 (3)
 .SS Moisture
 .B EEEF (3) DS2438 (3)
