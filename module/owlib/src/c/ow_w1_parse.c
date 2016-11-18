@@ -232,7 +232,7 @@ enum Netlink_Read_Status W1_Process_Response( void (* nrs_callback)( struct netl
 			// Don't need to free since nlm not set if BAD
 			return nrs_error ;
 		}
-		if ( NL_SEQ(nlp.nlm->nlmsg_seq) != (unsigned int) seq ) {
+		if ( NL_SEQ(nlp.nlm->nlmsg_seq) != NL_SEQ(seq) ) {
 			LEVEL_DEBUG("Netlink sequence number out of order");
 			owfree(nlp.nlm) ;
 			continue ;
