@@ -384,7 +384,7 @@ static ZERO_OR_ERROR FS_10temp(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_10latesttemp(struct one_wire_query *owq)
 {
-	return GB_to_Z_OR_E(OW_10latesttemp(&OWQ_F(owq), 1, PN(owq)));
+	return GB_to_Z_OR_E(OW_10latesttemp(&OWQ_F(owq), allow_85C, PN(owq)));
 }
 
 static ZERO_OR_ERROR FS_10temp_link(struct one_wire_query *owq)
@@ -412,7 +412,7 @@ static ZERO_OR_ERROR FS_22temp(struct one_wire_query *owq)
 
 static ZERO_OR_ERROR FS_22latesttemp(struct one_wire_query *owq)
 {
-	return GB_to_Z_OR_E(OW_22latesttemp(&OWQ_F(owq), 1, PN(owq)));
+	return GB_to_Z_OR_E(OW_22latesttemp(&OWQ_F(owq), allow_85C, PN(owq)));
 }
 
 // use sibling function for fasttemp to keep cache value consistent
