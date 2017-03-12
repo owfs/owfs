@@ -171,6 +171,7 @@ static struct filetype DS2438[] = {
 };
 
 DeviceEntryExtended(26, DS2438, DEV_temp | DEV_volt, NO_GENERIC_READ, NO_GENERIC_WRITE);
+DeviceEntryExtendedSecondary(A6, DS2438, DEV_temp | DEV_volt, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_WRITE_SCRATCHPAD 0x4E
 #define _1W_READ_SCRATCHPAD 0xBE
