@@ -59,7 +59,7 @@ B. Header
 C. Makefile and include
   1. Add this file to Makefile.am
   2. Add the header to ../include/Makefile.am
-  3. Add the header file to ../include/devices.h
+  3. Add the header file to ../include/ow_devices.h
 
 D. Device tree
   1. Add the appropriate entry to the device tree in
