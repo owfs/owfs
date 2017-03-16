@@ -261,7 +261,7 @@ static ZERO_OR_ERROR FS_write_real(int depth, struct one_wire_query *owq)
 		// third try
 		STAT_ADD1(write_tries[2]);
 		return FS_w_given_bus(owq);
-	}		
+	}
 
 	// Changed location retry everything
 	LEVEL_DEBUG("Bus location changed from %d to %d\n",initial_bus,rechecked_bus);
@@ -280,11 +280,11 @@ static void * Simultaneous_write_callback_conn(void * v)
 	struct simultaneous_struct ss_next ;
 	pthread_t thread;
 	int threadbad = 0;
-	
+
 	if ( ss->cin == NULL ) {
 		return VOID_RETURN;
 	}
-	
+
 	ss_next.cin = ss->cin->next ;
 	if ( ss_next.cin == NO_CONNECTION ) {
 		threadbad = 1 ;
@@ -293,9 +293,9 @@ static void * Simultaneous_write_callback_conn(void * v)
 		memcpy( &(ss_next.owq), &(ss->owq), sizeof(struct one_wire_query));	// shallow copy
 		threadbad = pthread_create(&thread, DEFAULT_THREAD_ATTR, Simultaneous_write_callback_conn, (void *) (&ss_next)) ;
 	}
-	
+
 	SetKnownBus(ss->cin->index, PN( &(ss->owq)) );
-	
+
 	FS_w_given_bus( &(ss->owq) );
 
 	if (threadbad == 0) {		/* was a thread created? */
@@ -314,7 +314,7 @@ static void * Simultaneous_write_callback_port(void * v)
 	if ( ss->pin == NULL ) {
 		return VOID_RETURN;
 	}
-	
+
 	ss_next.pin = ss->pin->next ;
 	if ( ss_next.pin == NULL ) {
 		threadbad = 1 ;
@@ -322,9 +322,9 @@ static void * Simultaneous_write_callback_port(void * v)
 		memcpy( &(ss_next.owq), &(ss->owq), sizeof(struct one_wire_query));	// shallow copy
 		threadbad = pthread_create(&thread, DEFAULT_THREAD_ATTR, Simultaneous_write_callback_port, (void *) (&ss_next)) ;
 	}
-	
+
 	ss->cin = ss->pin->first ;
-	
+
 	Simultaneous_write_callback_conn(v) ;
 
 	if (threadbad == 0) {		/* was a thread created? */
@@ -340,7 +340,7 @@ static ZERO_OR_ERROR FS_w_simultaneous(struct one_wire_query *owq)
 		return FS_w_given_bus(owq);
 	} else {
 		struct simultaneous_struct ss ;
-		ss.pin = Inbound_Control.head_port ; 
+		ss.pin = Inbound_Control.head_port ;
 		memcpy( &(ss.owq), owq, sizeof(struct one_wire_query));	// shallow copy
 		Simultaneous_write_callback_port( (void *) (&ss) ) ;
 	}
@@ -505,18 +505,18 @@ static ZERO_OR_ERROR FS_write_a_part( struct one_wire_query *owq_part )
 	struct filetype * ft = pn->selected_filetype ;
 	ZERO_OR_ERROR z_or_e ;
 	struct one_wire_query * owq_all ;
-	
+
 	// bitfield
 	if ( ft->format == ft_bitfield ) {
 		return FS_write_a_bit( owq_part ) ;
 	}
 
-	// non-bitfield 
+	// non-bitfield
 	owq_all = OWQ_create_aggregate( owq_part ) ;
 	if ( owq_all == NO_ONE_WIRE_QUERY ) {
 		return -ENOENT ;
 	}
-	
+
 	// First fill the whole array with current values
 	if ( FS_read_local( owq_all ) < 0 ) {
 		OWQ_destroy( owq_all ) ;
@@ -596,7 +596,7 @@ static ZERO_OR_ERROR FS_write_in_parts( struct one_wire_query *owq_all )
 	size_t extension ;
 	char *buffer_pointer;
 	ZERO_OR_ERROR z_or_e = 0 ;
-	
+
 	// Create a "single" OWQ copy to iterate with
 	if ( owq_part == NO_ONE_WIRE_QUERY ) {
 		return -ENOENT ;
@@ -646,7 +646,7 @@ static ZERO_OR_ERROR FS_write_as_bits( struct one_wire_query *owq_byte )
 	size_t elements = OWQ_pn(owq_byte).selected_filetype->ag->elements;
 	size_t extension ;
 	ZERO_OR_ERROR z_or_e = 0 ;
-	
+
 	if ( owq_bit == NO_ONE_WIRE_QUERY ) {
 		return -ENOENT ;
 	}
@@ -671,7 +671,7 @@ static ZERO_OR_ERROR FS_write_all_bits( struct one_wire_query *owq_all )
 {
 	struct one_wire_query * owq_byte = ALLtoBYTE( owq_all ) ;
 	ZERO_OR_ERROR z_or_e = -ENOENT ;
-	
+
 	if ( owq_byte != NO_ONE_WIRE_QUERY ) {
 		z_or_e = FS_write_owq( owq_byte ) ;
 		OWQ_destroy( owq_byte ) ;
@@ -685,7 +685,7 @@ static ZERO_OR_ERROR FS_write_a_bit(struct one_wire_query *owq_bit)
 {
 	struct one_wire_query * owq_byte = OWQ_create_separate( EXTENSION_BYTE, owq_bit ) ;
 	ZERO_OR_ERROR z_or_e = -ENOENT ;
-	
+
 	if ( owq_byte != NO_ONE_WIRE_QUERY ) {
 		if ( FS_read_local( owq_byte ) >= 0 ) {
 			UT_setbit_U( &OWQ_U( owq_byte ), OWQ_pn(owq_bit).extension, OWQ_Y(owq_bit) ) ;

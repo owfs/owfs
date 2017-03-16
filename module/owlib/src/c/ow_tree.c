@@ -171,7 +171,7 @@ void DeviceSort(void)
 	Device2Tree( & d_mDI001,         ePN_real);
 	Device2Tree( & d_IBLSS,          ePN_real);
 	Device2Tree( & d_simultaneous,   ePN_real);
-	
+
 	Device2Tree( & d_stats_cache,          ePN_statistics);
 	Device2Tree( & d_stats_directory,      ePN_statistics);
 	Device2Tree( & d_stats_errors,         ePN_statistics);
@@ -191,7 +191,7 @@ void DeviceSort(void)
 
 	Device2Tree( & d_interface_settings,   ePN_interface);
 	Device2Tree( & d_interface_statistics, ePN_interface);
-	
+
 	/* Add external devices */
 	External_Process() ;
 
@@ -276,7 +276,7 @@ static void External_propertycopy_action(const void *nodep, const VISIT which, c
 	case leaf:
 	case postorder:
 		if (strcmp(p->family, global_externalcount_struct.f->family) == 0 ) {
-			memcpy( 
+			memcpy(
 				& (global_externalcount_struct.f->dev.filetype_array[global_externalcount_struct.count]),
 				&(p->ft),
 				sizeof(struct filetype)
@@ -295,7 +295,7 @@ static void External_family_action(const void *nodep, const VISIT which, const i
 	const struct family_node *p = *(struct family_node * const *) nodep;
 	struct family_node * non_const_f ; // to allow assignments
 	(void) depth;
- 
+
  	switch (which) {
 	case leaf:
 	case postorder:
@@ -303,19 +303,19 @@ static void External_family_action(const void *nodep, const VISIT which, const i
 		global_externalcount_struct.f = p ;
 		global_externalcount_struct.count = 0 ;
 		twalk( property_tree, External_propertycount_action);
-		
+
 		// Refind this node to allow assignment
 		non_const_f = Find_External_Family( p->family ) ;
-		non_const_f->dev.filetype_array = owcalloc( 
-			global_externalcount_struct.count, 
-			sizeof( struct filetype) 
+		non_const_f->dev.filetype_array = owcalloc(
+			global_externalcount_struct.count,
+			sizeof( struct filetype)
 		) ;
 		non_const_f->dev.count_of_filetypes = global_externalcount_struct.count ;
-		
+
 		// Next copy
 		global_externalcount_struct.count = 0 ;
 		twalk( property_tree, External_propertycopy_action);
-		
+
 		// Finally add to tree
 		Device2Tree( & (p->dev), ePN_real);
 		break ;
