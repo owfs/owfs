@@ -51,6 +51,7 @@
 #include "ow_eeef.h"			// Hobby Boards UVI etc
 #include "ow_example_slave.h"   // Example of slave programming
 #include "ow_iblss.h"			// iButtonLink SmartSlave
+#include "ow_infernoembedded.h" // Inferno Embedded meta driver
 #include "ow_interface.h"		// interface pseudo-device
 #include "ow_lcd.h"				// LCD driver
 #include "ow_simultaneous.h"	// fake entry to address entire directory

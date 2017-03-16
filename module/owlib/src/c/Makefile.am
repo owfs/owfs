@@ -114,6 +114,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_get.c           \
                ow_help.c          \
                ow_iblss.c         \
+               ow_infernoembedded.c	      \
                ow_inotify.c       \
                ow_interface.c     \
                ow_iterate.c       \

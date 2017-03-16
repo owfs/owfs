@@ -163,6 +163,7 @@ void DeviceSort(void)
 	Device2Tree( & d_EDS,            ePN_real);
 	Device2Tree( & d_HobbyBoards_EE, ePN_real);
 	Device2Tree( & d_HobbyBoards_EF, ePN_real);
+	Device2Tree( & d_InfernoEmbedded,ePN_real);
 	Device2Tree( & d_LCD,            ePN_real);
 	Device2Tree( & d_mAM001,         ePN_real);
 	Device2Tree( & d_mCM001,         ePN_real);

@@ -75,6 +75,7 @@ noinst_HEADERS =           \
         ow_generic_write.h \
         ow_global.h        \
         ow_iblss.h         \
+        ow_infernoembedded.h \
         ow_inotify.h       \
         ow_integer.h       \
         ow_interface.h     \
