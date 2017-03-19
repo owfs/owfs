@@ -47,6 +47,7 @@
 /* Prototypes */
 #define  READ_FUNCTION( fname )  static int fname( struct one_wire_query * owq )
 #define  WRITE_FUNCTION( fname )  static int fname( struct one_wire_query * owq )
+#define  VISIBLE_FUNCTION( fname )  static enum e_visibility fname( const struct parsedname * pn );
 
 /* Prototypes for owlib.c -- libow overall control */
 void LibSetup(enum enum_program_type op);
