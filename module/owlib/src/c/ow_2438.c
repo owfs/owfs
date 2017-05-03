@@ -55,6 +55,7 @@ READ_FUNCTION(FS_Humid);
 READ_FUNCTION(FS_Humid_1735);
 READ_FUNCTION(FS_Humid_3600);
 READ_FUNCTION(FS_Humid_4000);
+READ_FUNCTION(FS_Humid_5030);
 READ_FUNCTION(FS_Humid_datanab);
 WRITE_FUNCTION(FS_reset_datanab);
 READ_FUNCTION(FS_Current);
@@ -151,6 +152,9 @@ static struct filetype DS2438[] = {
 
 	{"HIH4000", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"HIH4000/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Humid_4000, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+
+	{"HIH5030", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"HIH5030/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Humid_5030, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 
 	{"DATANAB", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_DATANAB, NO_FILETYPE_DATA, },
 	{"DATANAB/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Humid_datanab, NO_WRITE_FUNCTION, VISIBLE_DATANAB, NO_FILETYPE_DATA, },
@@ -393,6 +397,37 @@ static ZERO_OR_ERROR FS_Humid_4000(struct one_wire_query *owq)
 
 	return 0;
 }
+
+/* Calculations and compensation for HIH5030/HIH5031
+ * Formula from Datasheet
+ * https://sensing.honeywell.com/honeywell-sensing-hih5030-5031-series-product-sheet-009050-2-en.pdf
+ * */ 
+static ZERO_OR_ERROR FS_Humid_5030(struct one_wire_query *owq)
+{
+	_FLOAT T, VAD, VDD;
+	_FLOAT humidity_uncompensated ;
+	_FLOAT temperature_compensation ;
+
+	if (
+		FS_r_sibling_F( &T, "temperature", owq ) != 0
+		|| FS_r_sibling_F( &VAD, "VAD", owq ) != 0
+		|| FS_r_sibling_F( &VDD, "VDD", owq ) != 0
+	) {
+		return -EINVAL ;
+	}
+
+	if ( VDD < .01 ) {
+		LEVEL_DEBUG("Low measured VDD %g",VDD);
+		return -EINVAL ;
+	}
+	humidity_uncompensated = ((VAD/VDD) - 0.1515) / 0.00636 ;
+	// temperature compensation
+	temperature_compensation = 1.0546 - 0.00216 * T ;
+	OWQ_F(owq) = humidity_uncompensated / temperature_compensation ;
+
+	return 0;
+}
+
 
 /* The Datanab verion of the HIH-4000 */
 static ZERO_OR_ERROR FS_Humid_datanab(struct one_wire_query *owq)
