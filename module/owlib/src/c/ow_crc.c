@@ -90,25 +90,33 @@ int CRC16(const BYTE * bytes, const size_t length)
 	return CRC16seeded(bytes, length, 0);
 }
 
-/* Returns 0 for good match */
-int CRC16seeded(const BYTE * bytes, const size_t length, const UINT seed)
+uint16_t CRC16compute(const BYTE * bytes, const size_t length, const UINT seed)
 {
-	UINT sd = seed;
-	int ret;
+	UINT crc = seed;
 	size_t i;
 
 	for (i = 0; i < length; ++i) {
-		UINT c = (bytes[i] ^ (sd & 0xFF)) & 0xFF;
-		sd >>= 8;
+		UINT c = (bytes[i] ^ (crc & 0xFF)) & 0xFF;
+		crc >>= 8;
 		if (crc16_table[c & 0x0F] ^ crc16_table[c >> 4]) {
-			sd ^= 0xC001;
+			crc ^= 0xC001;
 		}
-		sd ^= (c <<= 6);
-		sd ^= (c << 1);
+		crc ^= (c <<= 6);
+		crc ^= (c << 1);
 	}
+
+	return (uint16_t)crc;
+}
+
+/* Returns 0 for good match */
+int CRC16seeded(const BYTE * bytes, const size_t length, const UINT seed)
+{
+	uint16_t crc = CRC16compute(bytes, length, seed);
+	int ret;
+
 	STATLOCK;
 	++CRC16_tries;				/* statistics */
-	if (sd == 0xB001) {
+	if (crc == 0xB001) {
 		ret = 0;				/* good */
 	} else {
 		ret = -1;				/* error */
