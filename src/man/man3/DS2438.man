@@ -57,6 +57,8 @@
 [.]XXXXXXXXXXXX[XX][/[
 .B HIH4000/humidity
 |
+.B HIH5030/humidity
+|
 .B HTM1735/humidity
 |
 .B DATANAB/reset
@@ -225,6 +227,12 @@ and setting either will change the other.
 Relative humidity, as percent (1-100 scale).
 .br
 This value is for a design based on Honeywell's HIH-4000 humidity sensor.
+.SS HIH5030/humidity
+.I read-only, floating point
+.br
+Relative humidity, as percent (1-100 scale).
+.br
+This value is for a design based on Honeywell's HIH-5030/5031 humidity sensor.
 .SS HTM1735/humidity
 .I read-only, floating point
 .br
