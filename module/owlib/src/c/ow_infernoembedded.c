@@ -42,10 +42,11 @@
 #include "owfs_config.h"
 #include "ow_infernoembedded.h"
 
-// This should mirror SoftDeviceType in SoftDevice.h from Inferno Embedded
+/* This should mirror SoftDeviceType in SoftDevice.h from Inferno Embedded */
 typedef enum SoftDeviceType {
 	UNKNOWN = 0x0000,
 	RGBW_CONTROLLER = 0x0001,
+	FIRMWARE_UPDATER = 0x0002,
 } SoftDeviceType;
 
 #if OW_UTHASH
@@ -60,6 +61,12 @@ typedef enum SoftDeviceType {
 
 /* ------- Prototypes ----------- */
 
+/* All Inferno Embedded Devices */
+READ_FUNCTION(ie_get_device);
+READ_FUNCTION(ie_get_version);
+READ_FUNCTION(ie_get_status);
+WRITE_FUNCTION(ie_boot_firmware_updater);
+
 /* Inferno Embedded RGBW Controller */
 VISIBLE_FUNCTION(is_visible_rgbw_device);
 VISIBLE_FUNCTION(is_visible_rgbw_channel);
@@ -68,11 +75,24 @@ READ_FUNCTION(rgbw_count_channels);
 READ_FUNCTION(rgbw_get_channel);
 WRITE_FUNCTION(rgbw_set_channel);
 
+/* Inferno Embedded Firmware Update */
+VISIBLE_FUNCTION(is_visible_firmware_device);
+READ_FUNCTION(firmware_range);
+READ_FUNCTION(firmware_get_bootloader_size);
+WRITE_FUNCTION(firmware_erase);
+WRITE_FUNCTION(firmware_update_binary);
+WRITE_FUNCTION(firmware_updater_exit);
 
 /* ------- Structures ----------- */
 
 static struct filetype InfernoEmbedded[] = {
 	F_STANDARD,
+	/* All Inferno Embedded devices */
+	{"device", 64, NON_AGGREGATE, ft_vascii, fc_volatile, ie_get_device, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"version", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, ie_get_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"status", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, ie_get_status, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"enter_firmware_update", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, NO_READ_FUNCTION, ie_boot_firmware_updater, VISIBLE, NO_FILETYPE_DATA, },
+
 	/* Inferno Embedded RGBW Controller */
 	{"rgbw_all_off", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, NO_READ_FUNCTION, rgbw_all_off, is_visible_rgbw_device, NO_FILETYPE_DATA, },
 	{"rgbw_channels", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_unsigned, fc_static, rgbw_count_channels, NO_WRITE_FUNCTION, is_visible_rgbw_device, NO_FILETYPE_DATA, },
@@ -108,12 +128,21 @@ static struct filetype InfernoEmbedded[] = {
 	{"rgbw_channel29", 3+1+3+1+3+1+3+1+8+1 /* "r,g,b,w,time" */, NON_AGGREGATE, ft_vascii, fc_volatile, rgbw_get_channel, rgbw_set_channel, is_visible_rgbw_channel, {.u = 29}, },
 	{"rgbw_channel30", 3+1+3+1+3+1+3+1+8+1 /* "r,g,b,w,time" */, NON_AGGREGATE, ft_vascii, fc_volatile, rgbw_get_channel, rgbw_set_channel, is_visible_rgbw_channel, {.u = 30}, },
 	{"rgbw_channel31", 3+1+3+1+3+1+3+1+8+1 /* "r,g,b,w,time" */, NON_AGGREGATE, ft_vascii, fc_volatile, rgbw_get_channel, rgbw_set_channel, is_visible_rgbw_channel, {.u = 31}, },
+
+	/* Inferno Embedded Firmware Updater */
+	{"firmware_bootloader_size", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_unsigned, fc_volatile, firmware_get_bootloader_size, NO_WRITE_FUNCTION, is_visible_firmware_device, NO_FILETYPE_DATA, },
+	{"firmware_range", 2+8+1+2+8+1 /* 0xval,0xval */, NON_AGGREGATE, ft_vascii, fc_volatile, firmware_range, NO_WRITE_FUNCTION, is_visible_firmware_device, NO_FILETYPE_DATA, },
+	{"erase_firmware", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, firmware_erase, is_visible_firmware_device, NO_FILETYPE_DATA, },
+	{"update_firmware", 64*1024, NON_AGGREGATE, ft_binary, fc_volatile, NO_READ_FUNCTION, firmware_update_binary, is_visible_firmware_device, NO_FILETYPE_DATA, },
+	{"exit_firmware_update", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, firmware_updater_exit, is_visible_firmware_device, NO_FILETYPE_DATA, },
 };
 
 DeviceEntryExtended(ED, InfernoEmbedded, DEV_resume, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
-#define _1W_VERSION 0xFE
-#define _1W_DEVICE 0xFF
+#define _1W_BOOT_FIRMWARE_UPDATER	0xFC
+#define _1W_STATUS_REGISTER			0xFD
+#define _1W_VERSION 				0xFE
+#define _1W_DEVICE 					0xFF
 
 typedef struct ie_device {
 	BYTE address[SERIAL_NUMBER_SIZE]; /* key */
@@ -148,17 +177,6 @@ static ie_device *new_device(void) {
 }
 
 /**
- * Free a device (and any device specific info)
- * @param device a pointer to the device pointer, we will clear the pointer
- */
-static void free_device(ie_device **device) {
-	owfree((*device)->info);
-	owfree(*device);
-	*device = NULL;
-}
-
-
-/**
  * A caller is done with a device (that has been malloced)
  * If we have a hash caching the data, don't do anything, otherwise we leave dangling pointers in the hash
  * If we don't have a hash, then free the device
@@ -167,9 +185,101 @@ static void free_device(ie_device **device) {
 #define DEVICE_TERM(__dev)
 #else
 #define DEVICE_TERM(__dev) free_device(&__dev)
+
+/**
+ * Free a device (and any device specific info)
+ * @param device a pointer to the device pointer, we will clear the pointer
+ */
+static void free_device(ie_device **device) {
+	owfree((*device)->info);
+	owfree(*device);
+	*device = NULL;
+}
 #endif
 
+#if OW_UTHASH
+/**
+ * Invalidate a device (eg. if the device has been rebooted and will present as a different device)
+ * @param device a pointer to the device pointer
+ */
+static void invalidate_device(ie_device **device) {
+	HASH_DEL(device_cache, *device);
+	free_device(device);
+}
+#endif
+
+/**
+ * Convert a little endian byte array to a uint16_t
+ * @param buf the byte array to convert (must be at least 2 bytes long)
+ * @return the converted value
+ */
+static inline uint16_t read_uint16(BYTE *buf) {
+	uint16_t val = 0;
+
+	for (int i = 0; i < 2; i++) {
+		val >>= 8;
+		val |= buf[i] << 8;
+	}
+
+	return val;
+}
+
+/**
+ * Convert a little endian byte array to a uint32_t
+ * @param buf the byte array to convert (must be at least 4 bytes long)
+ * @return the converted value
+ */
+static inline uint32_t read_uint32(BYTE *buf) {
+	uint32_t val = 0;
+
+	for (int i = 0; i < 4; i++) {
+		val >>= 8;
+		val |= buf[i] << 24;
+	}
+
+	return val;
+}
+
+/**
+ * Convert a little endian byte array to a uint64_t
+ * @param buf the byte array to convert (must be at least 8 bytes long)
+ * @return the converted value
+ */
+static inline uint64_t read_uint64(BYTE *buf) {
+	uint64_t val = 0;
+
+	for (int i = 0; i < 8; i++) {
+		val >>= 8;
+		val |= ((uint64_t)buf[i]) << 56;
+	}
+
+	return val;
+}
+
+/**
+ * Convert a uint16_t to a little endian byte array
+ * @param val the value to convert
+ * @param buf the buffer to write to (must be at least 2 bytes long)
+ */
+static inline void write_uint16(uint16_t val, BYTE *data) {
+	data[0] = (val & 0x000000FF);
+	data[1] = (val & 0x0000FF00) >> 8;
+}
+
+/**
+ * Convert a uint32_t to a little endian byte array
+ * @param val the value to convert
+ * @param buf the buffer to write to (must be at least 4 bytes long)
+ */
+static inline void write_uint32(uint32_t val, BYTE *data) {
+	data[0] = (val & 0x000000FF);
+	data[1] = (val & 0x0000FF00) >> 8;
+	data[2] = (val & 0x00FF0000) >> 16;
+	data[3] = (val & 0xFF000000) >> 24;
+}
+
 static GOOD_OR_BAD OW_rgbw_controller_info(const struct parsedname *pn, ie_device *device);
+static GOOD_OR_BAD OW_firmware_updater_info(const struct parsedname *pn, ie_device *device);
 
 /**
  * Populate the device information from the device on the bus
@@ -195,16 +305,7 @@ static GOOD_OR_BAD OW_device_info(const struct parsedname *pn, ie_device *device
 		return gbBAD;
 	}
 
-	uint64_t val = 0;
-
-	for (int i = 0; i < 4; i++) {
-		LEVEL_DEBUG("buf[%d]=%d", i, buf[i]);
-		val >>= 8;
-		val |= buf[i] << 24;
-	}
-	LEVEL_DEBUG("val='%l'", val);
-
-	device->device = val;
+	device->device = read_uint32(buf);
 
 	// Get the device version
 	write_string[0] = _1W_VERSION;
@@ -213,12 +314,7 @@ static GOOD_OR_BAD OW_device_info(const struct parsedname *pn, ie_device *device
 		return gbBAD;
 	}
 
-	for (int i = 0; i < 4; i++) {
-		val >>= 8;
-		val |= buf[i] << 24;
-	}
-
-	device->version = val;
+	device->version = read_uint32(buf);
 
 	// Populate device specific info
 	switch (device->device) {
@@ -226,11 +322,38 @@ static GOOD_OR_BAD OW_device_info(const struct parsedname *pn, ie_device *device
 		return OW_rgbw_controller_info(pn, device);
 		break;
 
+	case FIRMWARE_UPDATER:
+		return OW_firmware_updater_info(pn, device);
+		break;
+
 	default:
 		LEVEL_DEBUG("Unknown device type %ld", device->device);
 		return gbBAD;
 	}
 }
+
+static GOOD_OR_BAD OW_ie_get_status(const struct parsedname *pn, uint64_t *status)
+{
+	BYTE write_string[] = { _1W_STATUS_REGISTER};
+	BYTE buf[8];
+
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE1(write_string),
+		TRXN_READ(buf, 8),
+		TRXN_END,
+	};
+
+	if (BAD(BUS_transaction(t, pn))) {
+		LEVEL_DEBUG("Status transaction failed");
+		return gbBAD;
+	}
+
+	*status = read_uint64(buf);
+
+	return gbGOOD;
+}
+
 
 /**
  * Get metadata for a device
@@ -253,7 +376,6 @@ static GOOD_OR_BAD device_info(const struct parsedname *pn, ie_device **device)
 		return gbGOOD;
 	}
 
-
 	// Not found, better fetch it from the bus
 	*device = new_device();
 	if (*device == NULL) {
@@ -273,5 +395,115 @@ static GOOD_OR_BAD device_info(const struct parsedname *pn, ie_device **device)
 	return gbGOOD;
 }
 
+/**
+ * Reboot the device into the firmware updater
+ * @param pn the parsed device name
+ */
+static GOOD_OR_BAD OW_ie_boot_firmware_updater(const struct parsedname *pn)
+{
+	BYTE write_string[] = { _1W_BOOT_FIRMWARE_UPDATER,  0};
+	BYTE crc = CRC8compute(pn->sn, 8, 0);
+	crc = CRC8compute(write_string, 1, crc);
+	write_string[1] = crc;
+
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE2(write_string),
+		TRXN_END,
+	};
+
+	if (BAD(BUS_transaction(t, pn))) {
+		return gbBAD;
+	}
+
+#if OW_UTHASH
+	ie_device *device;
+	if (BAD(device_info(pn, &device))) {
+		return gbBAD;
+	}
+	invalidate_device(&device);
+#endif
+
+	return gbGOOD;
+}
+
+/**
+ * Get the name of the device
+ * @param owq the query
+ */
+static ZERO_OR_ERROR ie_get_device(struct one_wire_query *owq)
+{
+	ie_device *device;
+	int ret = 0;
+	int len = 0;
+
+	if (BAD(device_info(PN(owq), &device))) {
+		LEVEL_DEBUG("Could not get device info");
+		return 1;
+	}
+
+	switch (device->device) {
+	case RGBW_CONTROLLER:
+		len = snprintf(OWQ_buffer(owq), OWQ_size(owq), "Inferno Embedded RGBW Controller");
+		break;
+	case FIRMWARE_UPDATER:
+		len = snprintf(OWQ_buffer(owq), OWQ_size(owq), "Inferno Embedded Firmware Updater");
+		break;
+	default:
+		len = snprintf(OWQ_buffer(owq), OWQ_size(owq), "Unknown - is your OWFS install up to date?");
+		ret = 1;
+	}
+
+	memset(OWQ_buffer(owq)+ len, '\0', OWQ_size(owq) - len);
+	DEVICE_TERM(device);
+
+	return ret;
+}
+
+/**
+ * Get the version of the device
+ * @param owq the query
+ */
+static ZERO_OR_ERROR ie_get_version(struct one_wire_query *owq)
+{
+	ie_device *device;
+
+	if (BAD(device_info(PN(owq), &device))) {
+		LEVEL_DEBUG("Could not get device info");
+		return 1;
+	}
+
+	OWQ_U(owq) = device->version;
+	return 0;
+}
+
+/**
+ * Get the 64bit status register from the device
+ * @param owq the query
+ */
+static ZERO_OR_ERROR ie_get_status(struct one_wire_query *owq)
+{
+	uint64_t status;
+	RETURN_ERROR_IF_BAD(OW_ie_get_status(PN(owq), &status));
+
+	OWQ_U(owq) = status;
+	LEVEL_DEBUG("Device status is 0x%016llx", status);
+
+	return 0;
+}
+
+/**
+ * Reboot the device into the firmware updater
+ * @param owq the query
+ */
+static ZERO_OR_ERROR ie_boot_firmware_updater(struct one_wire_query *owq)
+{
+	if (OWQ_Y(owq)) {
+		RETURN_ERROR_IF_BAD(OW_ie_boot_firmware_updater(PN(owq)));
+	}
+	return 0;
+}
 
 #include "ow_ie_rgbw_controller.c"
+#include "ow_ie_firmware_updater.c"
+#include "ow_ie_switch_master.c"
