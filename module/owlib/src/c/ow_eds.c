@@ -52,8 +52,6 @@ READ_FUNCTION(FS_r_tag);
 READ_FUNCTION(FS_r_type);
 READ_FUNCTION(FS_r_float16);
 
-READ_FUNCTION(FS_r_i8) ;
-WRITE_FUNCTION(FS_w_i8) ;
 READ_FUNCTION(FS_r_8) ;
 WRITE_FUNCTION(FS_w_8) ;
 READ_FUNCTION(FS_r_16) ;
@@ -380,8 +378,8 @@ static struct filetype EDS[] = {
 	{"EDS0065/threshold", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_EDS0065, NO_FILETYPE_DATA, },
 	{"EDS0065/threshold/temp_hi" , PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {.u= _EDS0064_Temp_hi,}, },
 	{"EDS0065/threshold/temp_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {.u= _EDS0064_Temp_lo,}, },
-	{"EDS0065/threshold/humidity_hi" , PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {.u= _EDS0064_Hum_hi,}, },
-	{"EDS0065/threshold/humidity_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_i8, FS_w_i8, VISIBLE_EDS0065, {.u= _EDS0064_Hum_lo,}, },
+	{"EDS0065/threshold/humidity_hi" , PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {.u= _EDS0064_Hum_hi,}, },
+	{"EDS0065/threshold/humidity_low", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {.u= _EDS0064_Hum_lo,}, },
 	{"EDS0065/threshold/dew_point_hi" , PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {.u= _EDS0064_Dew_hi,}, },
 	{"EDS0065/threshold/dew_point_low", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {.u= _EDS0064_Dew_lo,}, },
 	{"EDS0065/threshold/heat_index_hi" , PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_stable, FS_r_float8, FS_w_float8, VISIBLE_EDS0065, {.u= _EDS0064_HI_hi,}, },
@@ -1074,28 +1072,6 @@ static ZERO_OR_ERROR FS_w_page(struct one_wire_query *owq)
 	return COMMON_offset_process( FS_w_mem, owq, OWQ_pn(owq).extension*_EDS_PAGESIZE) ;
 }
 
-/* read a signed 8 bit value from a register stored in filetype.data plus extension */
-static ZERO_OR_ERROR FS_r_i8(struct one_wire_query *owq)
-{
-	struct parsedname * pn = PN(owq) ;
-	int bytes = 8/8 ;
-	BYTE data[bytes] ;
-	
-	RETURN_ERROR_IF_BAD( OW_r_withoffset(data, bytes, pn ) );
-	OWQ_I(owq) = (int8_t) data[0] ;
-	return 0 ;
-}
-
-/* write a signed 8 bit value from a register stored in filetype.data plus extension */
-static ZERO_OR_ERROR FS_w_i8(struct one_wire_query *owq)
-{
-	struct parsedname * pn = PN(owq) ;
-	int bytes = 8/8 ;
-	BYTE data[bytes] ;
-	
-	data[0] = BYTE_MASK( OWQ_I(owq) ) ;
-	return OW_w_withoffset( data, bytes, pn ) ;
-}
 
 /* read an 8 bit value from a register stored in filetype.data plus extension */
 static ZERO_OR_ERROR FS_r_8(struct one_wire_query *owq)
