@@ -13,8 +13,8 @@ AM_SILENT_RULES([yes])
 # (In our case it's better to always keep AGE to 0, since nobody else will use our library)
 
 VERSION_MAJOR=3
-VERSION_MINOR=1
-VERSION_PATCHLEVEL=5
+VERSION_MINOR=2
+VERSION_PATCHLEVEL=0
 
 OWFS_INTERFACE_AGE=0
 OWFS_BINARY_AGE=0
