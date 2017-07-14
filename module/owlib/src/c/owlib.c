@@ -124,7 +124,7 @@ static GOOD_OR_BAD SetupSingleInboundConnection( struct port_in * pin )
 		}
 		// Fall Through
 		in->adapter_name = "DS9097";	// need to set adapter name for this approach to passive adapter
-
+		__attribute__ ((fallthrough));
 	case bus_passive:
 		if ( BAD( DS9097_detect(pin) )) {
 			LEVEL_DEFAULT("Cannot detect DS9097 (passive) interface on %s.", DEVICENAME(in));

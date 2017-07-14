@@ -426,6 +426,7 @@ static int To_Server( struct server_connection_state * scs, struct server_msg * 
 				break ;
 			}
 			// real error, fall through to close connection case
+			__attribute__ ((fallthrough));
 		case -2:
 			// fnctl error, fall through again
 		case 0:

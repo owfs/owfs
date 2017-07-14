@@ -44,7 +44,7 @@ static void Cleanup(void)
 #endif
 }
 
-void Exit(int exit_code)
+__attribute__((noreturn)) void Exit(int exit_code)
 {
 	Cleanup();
 	exit(exit_code);

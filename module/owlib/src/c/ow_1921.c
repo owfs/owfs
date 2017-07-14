@@ -787,10 +787,13 @@ static ZERO_OR_ERROR FS_w_atrig(struct one_wire_query *owq)
 	switch (OWQ_U(owq)) {		/* Intentional fall-throughs in cases */
 	case 1:
 		data[0] |= 0x80;
+		__attribute__ ((fallthrough));
 	case 2:
 		data[1] |= 0x80;
+		__attribute__ ((fallthrough));
 	case 3:
 		data[2] |= 0x80;
+		__attribute__ ((fallthrough));
 	case 4:
 		data[3] |= 0x80;
 	}

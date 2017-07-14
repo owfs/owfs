@@ -749,6 +749,7 @@ static GOOD_OR_BAD LINK_directory(struct device_search *ds, struct connection_in
 		case 'E':
 			LEVEL_DEBUG("LINK returned E: No devices in alarm");
 			// pass through
+			__attribute__ ((fallthrough));
 		case 'N':
 			// remove extra 2 bytes
 			LEVEL_DEBUG("LINK returned E or N: Empty bus");

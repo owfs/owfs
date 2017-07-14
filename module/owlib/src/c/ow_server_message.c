@@ -579,8 +579,10 @@ static GOOD_OR_BAD To_Server( struct server_connection_state * scs, struct serve
 				break ;
 			}
 			// real error, fall through to close connection case
+			__attribute__ ((fallthrough));
 		case -2:
 			// fnctl error, fall through again
+			__attribute__ ((fallthrough));
 		case 0:
 			LEVEL_DEBUG("Server connection was closed.  Reconnecting.");
 			Close_Persistent( scs);
