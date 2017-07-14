@@ -210,7 +210,7 @@ static GOOD_OR_BAD LinkVersion_unknownstring( const char * reported_string, stru
 	const char * version_pointer;
 	
 	// Apparently strcasestr isn't available by default, will hard code:
-	for ( version_pointer = reported_string ; version_pointer != '\0' ; ++version_pointer )  {
+	for ( version_pointer = reported_string ; (*version_pointer) != '\0' ; ++version_pointer )  {
 		switch ( *version_pointer ) {
 			case 'l':
 			case 'L':
