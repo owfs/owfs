@@ -51,17 +51,20 @@
 READ_FUNCTION(FS_r_convert);
 WRITE_FUNCTION(FS_w_convert_temp);
 WRITE_FUNCTION(FS_w_convert_volt);
+WRITE_FUNCTION(FS_w_convert_iblss);
 READ_FUNCTION(FS_r_present);
 READ_FUNCTION(FS_r_single);
 
 /* Internal properties */
 Make_SlaveSpecificTag_exportable(S_T, fc_volatile);	// simultaneous temperature
 Make_SlaveSpecificTag_exportable(S_V, fc_volatile);	// simultaneous voltage
+Make_SlaveSpecificTag_exportable(S_I, fc_volatile);	// simultaneous iButtonLink conversion
 
 /* -------- Structures ---------- */
 static struct filetype simultaneous[] = {
 	{"temperature", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_convert, FS_w_convert_temp, VISIBLE, {.v=SlaveSpecificTag(S_T)}, },
 	{"voltage", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_convert, FS_w_convert_volt, VISIBLE, {.v=SlaveSpecificTag(S_V)}, },
+	{"iblss", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_link, FS_r_convert, FS_w_convert_iblss, VISIBLE, {.v=SlaveSpecificTag(S_I)}, },
 	{"present", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_present, NO_WRITE_FUNCTION, VISIBLE, {.i=_1W_READ_ROM}, },
 	{"present_ds2400", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, FS_r_present, NO_WRITE_FUNCTION, VISIBLE, {.i=_1W_OLD_READ_ROM}, },
 	{"single", 18, NON_AGGREGATE, ft_ascii, fc_volatile, FS_r_single, NO_WRITE_FUNCTION, VISIBLE, {.i=_1W_READ_ROM}, },
@@ -72,6 +75,7 @@ DeviceEntry(simultaneous, simultaneous, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_CONVERT_T             0x44
 #define _1W_READ_POWERMODE        0xB4
+#define _1W_CONVERT_IBLSS         0xB4
 
 /* ------- Functions ------------ */
 //static void OW_single2cache(BYTE * sn, const struct parsedname *pn2);
@@ -216,6 +220,52 @@ static ZERO_OR_ERROR FS_w_convert_volt(struct one_wire_query *owq)
 
 	return 0;
 }
+
+
+/* Do a simultaneous conversion on all iButtonLink SmartSlaves. */
+static ZERO_OR_ERROR FS_w_convert_iblss(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+	struct parsedname pn_directory;
+	struct connection_in * in = pn->selected_connection ;
+
+	const BYTE cmd_iblss[] = { _1W_SKIP_ROM, _1W_CONVERT_IBLSS };
+	struct transaction_log t[] = {
+		TRXN_START,
+		TRXN_WRITE2(cmd_iblss),
+		TRXN_END,
+	};
+
+	if (OWQ_Y(owq) == 0) {
+		return 0;				// don't send convert
+	}
+
+	FS_LoadDirectoryOnly(&pn_directory, pn);
+	Cache_Del_Internal(pn->selected_filetype->data.v, &pn_directory);	// remove existing entry
+
+	switch (in->Adapter) {
+		case adapter_Bad:
+		case adapter_w1_monitor:
+		case adapter_browse_monitor:
+		case adapter_usb_monitor:
+		case adapter_fake:
+		case adapter_tester:
+		case adapter_mock:
+			/* Since writing to /simultaneous/voltage is done recursive to all
+			* adapters, we have to fake a successful write even if it's detected
+			* as an unsupported adapter. */
+			return gbGOOD ;
+		default:
+			break ;
+	}
+
+	if ( GOOD(BUS_transaction(t, &pn_directory)) ) {
+		Cache_Add_SlaveSpecific(NULL, 0, pn->selected_filetype->data.v, &pn_directory);
+	}
+
+	return 0;
+}
+
 
 static ZERO_OR_ERROR FS_r_convert(struct one_wire_query *owq)
 {
