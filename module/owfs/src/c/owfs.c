@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
 
 	// Unmount just in case
 	// No checks -- can fail without consequences
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	unmount( Outbound_Control.head->name, 0) ;
 #else
 	umount( Outbound_Control.head->name ) ;
