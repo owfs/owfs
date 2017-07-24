@@ -49,6 +49,7 @@ READ_FUNCTION(FS_TH_humidity);
 READ_FUNCTION(FS_TH_latesthumidity);
 READ_FUNCTION(FS_TH_temperature);
 READ_FUNCTION(FS_TH_latesttemp);
+READ_FUNCTION(FS_TH_version);
 WRITE_FUNCTION(FS_TH_w_led);
 
 
@@ -60,6 +61,7 @@ static struct filetype IBLSS[] = {
 	{"TH/latesthumidity", PROPERTY_LENGTH_FLOAT,  NON_AGGREGATE, ft_float,       fc_volatile, FS_TH_latesthumidity, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"TH/temperature",    PROPERTY_LENGTH_TEMP,   NON_AGGREGATE, ft_temperature, fc_volatile, FS_TH_temperature,    NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"TH/latesttemp",     PROPERTY_LENGTH_TEMP,   NON_AGGREGATE, ft_temperature, fc_volatile, FS_TH_latesttemp,     NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"TH/firmware",       5,                      NON_AGGREGATE, ft_ascii,       fc_stable,   FS_TH_version,        NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"TH/led",            PROPERTY_LENGTH_YESNO,  NON_AGGREGATE, ft_yesno,       fc_stable,   NO_READ_FUNCTION,     FS_TH_w_led,       VISIBLE, NO_FILETYPE_DATA, },
 };
 
@@ -153,6 +155,26 @@ static ZERO_OR_ERROR FS_TH_latesttemp(struct one_wire_query *owq)
 
 	/* Success. */
 	return 0;
+}
+
+/* read firmware version from memory page. */
+static ZERO_OR_ERROR FS_TH_version(struct one_wire_query *owq)
+{
+	BYTE p[_IBL_PAGE_SIZE+2];
+	ASCII v[6];
+
+	/* Read memory page from device. */
+	RETURN_ERROR_IF_BAD( OW_r_mem(p, PN(owq)) ) ;
+
+	/* Fail if this isn't a temperature/humidity SmartSlave. */
+	if (p[0] != _IBL_TH) {
+		return -ENOENT ;
+	}
+
+	/* Calculate firmware version from raw data. */
+	snprintf(v, sizeof(v), "%d.%d", (p[1] >> 4), (p[1] & 0xf));
+	return OWQ_format_output_offset_and_size((ASCII *) v, strlen((ASCII *) v), owq);
+
 }
 
 
