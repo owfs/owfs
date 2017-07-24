@@ -1,0 +1,301 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH IBLSS 3  2003 "OWFS Manpage" "One-Wire File System"
+.SH NAME
+.B IBLSS
+\- iButtonLink SmartSlave
+.SH SYNOPSIS
+.SS Wall-TH Humidity and Temperature Sensor.
+.PP
+.B FE
+[.]XXXXXXXX2X00[XX][/[
+.B TH/humidity
+|
+.B TH/latesthumidity
+|
+.B TH/temperature
+|
+.B TH/latesttemp
+|
+.B TH/led
+|
+.B TH/firmware
+|
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.B address
+|
+.B crc8
+|
+.B id
+|
+.B locator
+|
+.B r_address
+|
+.B r_id
+|
+.B r_locator
+|
+.B type
+]]
+.SH FAMILY CODE
+.PP
+.I FE
+.SH SPECIAL PROPERTIES
+.SS TH/humidity
+.I read-only, floating point
+.br
+.I Humidity
+read by the chip at high resolution (~13 bits). Unit is % relative humidity. Negative values indicate a condensing condition.
+Conversion takes about one second.
+.SS TH/latesthumidity
+.I read-only, floating point
+.br
+Latest measured humidity. Reading this node will never trigger a combined humidity/temperature conversion. Intended for use after a previous read of the
+.B TH/temperature
+node or in conjunction with
+.B /simultaneous/iblss.
+.SS TH/temperature
+.I read-only, floating point
+.br
+.I Temperature
+read by the chip at high resolution (~13 bits). Units are selected from the invoking command line. See
+.B owfs(1)
+or
+.B owhttpd(1)
+for choices. Default is Celsius.
+Conversion takes about one second.
+.SS TH/latesttemp
+.I read-only, floating point
+.br
+Latest measured temperature. Reading this node will never trigger a combined humidity/temperature conversion. Intended for use after a previous read of the
+.B TH/humidity
+node or in conjunction with
+.B /simultaneous/iblss.
+.SS TH/led
+.I write-only, yes-no
+.br
+Switches the indicator LED on/off.
+.SS TH/firmware
+.I read-only, ascii
+.br
+Firmware version of the Smart Slave displayed as major.major number. Firmware versions of the SS-WALL-TH before 1.4 had known issues with humidity reporting.
+.SH STANDARD PROPERTIES
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.SS address
+.SS r_address
+.I read-only, ascii
+.br
+The entire 64-bit unique ID. Given as upper case hexidecimal digits (0-9A-F).
+.br
+.I address
+starts with the
+.I family
+code
+.br
+.I r address
+is the
+.I address
+in reverse order, which is often used in other applications and labeling.
+.SS crc8
+.I read-only, ascii
+.br
+The 8-bit error correction portion. Uses cyclic redundancy check. Computed from the preceding 56 bits of the unique ID number. Given as upper case hexidecimal digits (0-9A-F).
+.SS family
+.I read-only, ascii
+.br
+The 8-bit family code. Unique to each
+.I type
+of device. Given as upper case hexidecimal digits (0-9A-F).
+.SS id
+.SS r_id
+.I read-only, ascii
+.br
+The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexidecimal digits (0-9A-F).
+.br
+.I r id
+is the
+.I id
+in reverse order, which is often used in other applications and labeling.
+.SS locator
+.SS r_locator
+.I read-only, ascii
+.br
+Uses an extension of the 1-wire design from iButtonLink company that associated 1-wire physical connections with a unique 1-wire code. If the connection is behind a
+.B Link Locator
+the
+.I locator will show a unique 8-byte number (16 character hexidecimal) starting with family code FE.
+.br
+If no
+.B Link Locator
+is between the device and the master, the
+.I locator
+field will be all FF.
+.br
+.I r locator
+is the
+.I locator
+in reverse order.
+.SS present (DEPRECATED)
+.I read-only, yes-no
+.br
+Is the device currently
+.I present
+on the 1-wire bus?
+.SS type
+.I read-only, ascii
+.br
+Part name assigned by Dallas Semi. E.g.
+.I DS2401
+Alternative packaging (iButton vs chip) will not be distiguished.
+.SH ALARMS
+None.
+.SH DESCRIPTION
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.SS 1-Wire
+.I 1-wire 
+is a wiring protocol and series of devices designed and manufactured
+by Dallas Semiconductor, Inc. The bus is a low-power low-speed low-connector
+scheme where the data line can also provide power.
+.PP
+Each device is uniquely and unalterably numbered during manufacture. There are a wide variety
+of devices, including memory, sensors (humidity, temperature, voltage,
+contact, current), switches, timers and data loggers. More complex devices (like
+thermocouple sensors) can be built with these basic devices. There are also
+1-wire devices that have encryption included.
+.PP
+The 1-wire scheme uses a single 
+.I bus master
+and multiple
+.I slaves
+on the same wire. The bus master initiates all communication. The slaves can be 
+individually discovered and addressed using their unique ID.
+.PP
+Bus masters come in a variety of configurations including serial, parallel, i2c, network or USB
+adapters.
+.SS OWFS design
+.I OWFS
+is a suite of programs that designed to make the 1-wire bus and its
+devices easily accessible. The underlying principle is to create a virtual
+filesystem, with the unique ID being the directory, and the individual
+properties of the device are represented as simple files that can be read and written.
+.PP 
+Details of the individual slave or master design are hidden behind a consistent interface. The goal is to 
+provide an easy set of tools for a software designer to create monitoring or control applications. There 
+are some performance enhancements in the implementation, including data caching, parallel access to bus 
+masters, and aggregation of device communication. Still the fundemental goal has been ease of use, flexibility 
+and correctness rather than speed.
+.SH ADDRESSING
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+All 1-wire devices are factory assigned a unique 64-bit address. This address is of the form:
+.TP
+.B Family Code
+8 bits
+.TP
+.B Address
+48 bits
+.TP
+.B CRC
+8 bits
+.IP
+.PP
+Addressing under OWFS is in hexidecimal, of form:
+.IP
+.B 01.123456789ABC
+.PP
+where
+.B 01
+is an example 8-bit family code, and
+.B 12345678ABC
+is an example 48 bit address.
+.PP
+The dot is optional, and the CRC code can included. If included, it must be correct.
+.SH DATASHEET
+.br
+https://www.ibuttonlink.com/products/ss-wall-th
+.SH SEE ALSO
+.SS Programs
+.B owfs (1) owhttpd (1) owftpd (1) owserver (1)
+.B owdir (1) owread (1) owwrite (1) owpresent (1)
+.B owtap (1)
+.SS Configuration and testing
+.B owfs (5) owtap (1) owmon (1)
+.SS Language bindings
+.B owtcl (3) owperl (3) owcapi (3)
+.SS Clocks
+.B DS1427 (3) DS1904 (3) DS1994 (3) DS2404 (3) DS2404S (3) DS2415 (3) DS2417 (3)
+.SS ID
+.B DS2401 (3) DS2411 (3) DS1990A (3)
+.SS Memory
+.B DS1982 (3) DS1985 (3) DS1986 (3) DS1991 (3) DS1992 (3) DS1993 (3) DS1995 (3) DS1996 (3) DS2430A (3) DS2431 (3) DS2433 (3) DS2502 (3) DS2506 (3) DS28E04 (3) DS28EC20 (3)
+.SS Switches
+.B DS2405 (3) DS2406 (3) DS2408 (3) DS2409 (3) DS2413 (3) DS28EA00 (3)
+.SS Temperature
+.B DS1822 (3) DS1825 (3) DS1820 (3) DS18B20 (3) DS18S20 (3) DS1920 (3) DS1921 (3) DS1821 (3) DS28EA00 (3) DS28E04 (3) EDS0064 (3) EDS0065 (3) EDS0066 (3) EDS0067 (3) EDS0068 (3) EDS0071 (3) EDS0072 (3) MAX31826 (3)
+.SS Humidity
+.B DS1922 (3) DS2438 (3) EDS0065 (3) EDS0068 (3)
+.SS Voltage
+.B DS2450 (3)
+.SS Resistance
+.B DS2890 (3)
+.SS Multifunction (current, voltage, temperature)
+.B DS2436 (3) DS2437 (3) DS2438 (3) DS2751 (3) DS2755 (3) DS2756 (3) DS2760 (3) DS2770 (3) DS2780 (3) DS2781 (3) DS2788 (3) DS2784 (3)
+.SS Counter
+.B DS2423 (3)
+.SS LCD Screen
+.B LCD (3) DS2408 (3)
+.SS Crypto
+.B DS1977 (3)
+.SS Pressure
+.B DS2406 (3) TAI8570 (3) EDS0066 (3) EDS0068 (3)
+.SS Moisture
+.B EEEF (3) DS2438 (3)
+.SH AVAILABILITY
+http://www.owfs.org
+.SH AUTHOR
+Paul Alfille <paul.alfille@gmail.com>
+Jan Kandziora <jjj@gmx.de>
