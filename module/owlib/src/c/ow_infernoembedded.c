@@ -47,6 +47,7 @@ typedef enum SoftDeviceType {
 	UNKNOWN = 0x0000,
 	RGBW_CONTROLLER = 0x0001,
 	FIRMWARE_UPDATER = 0x0002,
+	SWITCH_MASTER = 0x0003,
 } SoftDeviceType;
 
 #if OW_UTHASH
@@ -83,8 +84,31 @@ WRITE_FUNCTION(firmware_erase);
 WRITE_FUNCTION(firmware_update_binary);
 WRITE_FUNCTION(firmware_updater_exit);
 
-/* ------- Structures ----------- */
+/* Inferno Embedded Switch Master */
+VISIBLE_FUNCTION(is_visible_switch_master_device);
+VISIBLE_FUNCTION(is_visible_switch_master_switch);
+VISIBLE_FUNCTION(is_visible_switch_master_led);
+VISIBLE_FUNCTION(is_visible_switch_master_relay);
+READ_FUNCTION(switch_master_count_ports);
+READ_FUNCTION(switch_master_count_channels);
+READ_FUNCTION(switch_master_count_led_ports);
+READ_FUNCTION(switch_master_count_led_channels);
+READ_FUNCTION(switch_master_count_relay_ports);
+READ_FUNCTION(switch_master_count_relay_channels);
+WRITE_FUNCTION(switch_master_refresh_activations);
+WRITE_FUNCTION(switch_master_set_switch_type);
+READ_FUNCTION(switch_master_read_switch_port);
+READ_FUNCTION(switch_master_read_led_port);
+READ_FUNCTION(switch_master_write_led_port);
+READ_FUNCTION(switch_master_read_relay_state);
+READ_FUNCTION(switch_master_write_relay_state);
+READ_FUNCTION(switch_master_read_relay_mode);
+READ_FUNCTION(switch_master_write_relay_mode);
+READ_FUNCTION(switch_master_read_relay_timeout);
+READ_FUNCTION(switch_master_write_relay_timeout);
 
+
+/* ------- Structures ----------- */
 static struct filetype InfernoEmbedded[] = {
 	F_STANDARD,
 	/* All Inferno Embedded devices */
@@ -135,6 +159,56 @@ static struct filetype InfernoEmbedded[] = {
 	{"erase_firmware", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, firmware_erase, is_visible_firmware_device, NO_FILETYPE_DATA, },
 	{"update_firmware", 64*1024, NON_AGGREGATE, ft_binary, fc_volatile, NO_READ_FUNCTION, firmware_update_binary, is_visible_firmware_device, NO_FILETYPE_DATA, },
 	{"exit_firmware_update", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_volatile, NO_READ_FUNCTION, firmware_updater_exit, is_visible_firmware_device, NO_FILETYPE_DATA, },
+
+	/* Switch Master */
+	{"switch_ports", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_unsigned, fc_static, switch_master_count_ports, NO_WRITE_FUNCTION, is_visible_switch_master_device, NO_FILETYPE_DATA, },
+	{"switch_channels", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_unsigned, fc_static, switch_master_count_channels, NO_WRITE_FUNCTION, is_visible_switch_master_device, NO_FILETYPE_DATA, },
+	{"switch_refresh_activations", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, NO_READ_FUNCTION, switch_master_refresh_activations, is_visible_switch_master_device, NO_FILETYPE_DATA, },
+	{"switch_port0", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_switch_port, NO_WRITE_FUNCTION, is_visible_switch_master_switch, {.u = 0}, },
+	{"switch_port1", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_switch_port, NO_WRITE_FUNCTION, is_visible_switch_master_switch, {.u = 1}, },
+	{"switch_port2", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_switch_port, NO_WRITE_FUNCTION, is_visible_switch_master_switch, {.u = 2}, },
+	{"switch_port3", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_switch_port, NO_WRITE_FUNCTION, is_visible_switch_master_switch, {.u = 3}, },
+	{"switch_port4", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_switch_port, NO_WRITE_FUNCTION, is_visible_switch_master_switch, {.u = 4}, },
+	{"switch_port5", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_switch_port, NO_WRITE_FUNCTION, is_visible_switch_master_switch, {.u = 5}, },
+	{"switch_port6", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_switch_port, NO_WRITE_FUNCTION, is_visible_switch_master_switch, {.u = 6}, },
+	{"switch_port7", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_switch_port, NO_WRITE_FUNCTION, is_visible_switch_master_switch, {.u = 7}, },
+	{"set_switch_type", 3+1+2+1+1+1 /* 255,64,0 */, NON_AGGREGATE, ft_vascii, fc_volatile, NO_READ_FUNCTION, switch_master_set_switch_type, is_visible_switch_master_device, NO_FILETYPE_DATA, },
+	{"led_ports", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_unsigned, fc_static, switch_master_count_led_ports, NO_WRITE_FUNCTION, is_visible_switch_master_device, NO_FILETYPE_DATA, },
+	{"led_channels", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_unsigned, fc_static, switch_master_count_led_channels, NO_WRITE_FUNCTION, is_visible_switch_master_device, NO_FILETYPE_DATA, },
+	{"led_port0", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_led_port, switch_master_write_led_port, is_visible_switch_master_led, {.u = 0}, },
+	{"led_port1", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_led_port, switch_master_write_led_port, is_visible_switch_master_led, {.u = 1}, },
+	{"led_port2", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_led_port, switch_master_write_led_port, is_visible_switch_master_led, {.u = 2}, },
+	{"led_port3", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_led_port, switch_master_write_led_port, is_visible_switch_master_led, {.u = 3}, },
+	{"led_port4", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_led_port, switch_master_write_led_port, is_visible_switch_master_led, {.u = 4}, },
+	{"led_port5", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_led_port, switch_master_write_led_port, is_visible_switch_master_led, {.u = 5}, },
+	{"led_port6", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_led_port, switch_master_write_led_port, is_visible_switch_master_led, {.u = 6}, },
+	{"led_port7", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_led_port, switch_master_write_led_port, is_visible_switch_master_led, {.u = 7}, },
+	{"relay_ports", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_unsigned, fc_static, switch_master_count_relay_ports, NO_WRITE_FUNCTION, is_visible_switch_master_device, NO_FILETYPE_DATA, },
+	{"relay_channels", PROPERTY_LENGTH_INTEGER, NON_AGGREGATE, ft_unsigned, fc_static, switch_master_count_relay_channels, NO_WRITE_FUNCTION, is_visible_switch_master_device, NO_FILETYPE_DATA, },
+	{"relay_port0", 64*4+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_state, switch_master_write_relay_state, is_visible_switch_master_relay, {.u = 0}, },
+	{"relay_port1", 64*4+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_state, switch_master_write_relay_state, is_visible_switch_master_relay, {.u = 1}, },
+	{"relay_port2", 64*4+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_state, switch_master_write_relay_state, is_visible_switch_master_relay, {.u = 2}, },
+	{"relay_port3", 64*4+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_state, switch_master_write_relay_state, is_visible_switch_master_relay, {.u = 3}, },
+	{"relay_port4", 64*4+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_state, switch_master_write_relay_state, is_visible_switch_master_relay, {.u = 4}, },
+	{"relay_port5", 64*4+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_state, switch_master_write_relay_state, is_visible_switch_master_relay, {.u = 5}, },
+	{"relay_port6", 64*4+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_state, switch_master_write_relay_state, is_visible_switch_master_relay, {.u = 6}, },
+	{"relay_port7", 64*4+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_state, switch_master_write_relay_state, is_visible_switch_master_relay, {.u = 7}, },
+	{"relay_mode0", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_mode, switch_master_write_relay_mode, is_visible_switch_master_relay, {.u = 0}, },
+	{"relay_mode1", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_mode, switch_master_write_relay_mode, is_visible_switch_master_relay, {.u = 1}, },
+	{"relay_mode2", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_mode, switch_master_write_relay_mode, is_visible_switch_master_relay, {.u = 2}, },
+	{"relay_mode3", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_mode, switch_master_write_relay_mode, is_visible_switch_master_relay, {.u = 3}, },
+	{"relay_mode4", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_mode, switch_master_write_relay_mode, is_visible_switch_master_relay, {.u = 4}, },
+	{"relay_mode5", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_mode, switch_master_write_relay_mode, is_visible_switch_master_relay, {.u = 5}, },
+	{"relay_mode6", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_mode, switch_master_write_relay_mode, is_visible_switch_master_relay, {.u = 6}, },
+	{"relay_mode7", 64*2+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_mode, switch_master_write_relay_mode, is_visible_switch_master_relay, {.u = 7}, },
+	{"relay_timeout0", 64*4+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_timeout, switch_master_write_relay_timeout, is_visible_switch_master_relay, {.u = 0}, },
+	{"relay_timeout1", 64*4+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_timeout, switch_master_write_relay_timeout, is_visible_switch_master_relay, {.u = 1}, },
+	{"relay_timeout2", 64*4+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_timeout, switch_master_write_relay_timeout, is_visible_switch_master_relay, {.u = 2}, },
+	{"relay_timeout3", 64*4+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_timeout, switch_master_write_relay_timeout, is_visible_switch_master_relay, {.u = 3}, },
+	{"relay_timeout4", 64*4+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_timeout, switch_master_write_relay_timeout, is_visible_switch_master_relay, {.u = 4}, },
+	{"relay_timeout5", 64*4+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_timeout, switch_master_write_relay_timeout, is_visible_switch_master_relay, {.u = 5}, },
+	{"relay_timeout6", 64*4+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_timeout, switch_master_write_relay_timeout, is_visible_switch_master_relay, {.u = 6}, },
+	{"relay_timeout7", 64*4+1 /* 0,0,0... */, NON_AGGREGATE, ft_vascii, fc_volatile, switch_master_read_relay_timeout, switch_master_write_relay_timeout, is_visible_switch_master_relay, {.u = 7}, },
 };
 
 DeviceEntryExtended(ED, InfernoEmbedded, DEV_resume, NO_GENERIC_READ, NO_GENERIC_WRITE);
@@ -143,6 +217,8 @@ DeviceEntryExtended(ED, InfernoEmbedded, DEV_resume, NO_GENERIC_READ, NO_GENERIC
 #define _1W_STATUS_REGISTER			0xFD
 #define _1W_VERSION 				0xFE
 #define _1W_DEVICE 					0xFF
+
+#define STATUS_POWER_ON_RESET		0
 
 typedef struct ie_device {
 	BYTE address[SERIAL_NUMBER_SIZE]; /* key */
@@ -185,6 +261,7 @@ static ie_device *new_device(void) {
 #define DEVICE_TERM(__dev)
 #else
 #define DEVICE_TERM(__dev) free_device(&__dev)
+#endif
 
 /**
  * Free a device (and any device specific info)
@@ -195,7 +272,6 @@ static void free_device(ie_device **device) {
 	owfree(*device);
 	*device = NULL;
 }
-#endif
 
 #if OW_UTHASH
 /**
@@ -280,6 +356,7 @@ static inline void write_uint32(uint32_t val, BYTE *data) {
 
 static GOOD_OR_BAD OW_rgbw_controller_info(const struct parsedname *pn, ie_device *device);
 static GOOD_OR_BAD OW_firmware_updater_info(const struct parsedname *pn, ie_device *device);
+static GOOD_OR_BAD OW_switch_master_info(const struct parsedname *pn, ie_device *device);
 
 /**
  * Populate the device information from the device on the bus
@@ -320,11 +397,12 @@ static GOOD_OR_BAD OW_device_info(const struct parsedname *pn, ie_device *device
 	switch (device->device) {
 	case RGBW_CONTROLLER:
 		return OW_rgbw_controller_info(pn, device);
-		break;
 
 	case FIRMWARE_UPDATER:
 		return OW_firmware_updater_info(pn, device);
-		break;
+
+	case SWITCH_MASTER:
+		return OW_switch_master_info(pn, device);
 
 	default:
 		LEVEL_DEBUG("Unknown device type %ld", device->device);
@@ -448,6 +526,9 @@ static ZERO_OR_ERROR ie_get_device(struct one_wire_query *owq)
 		break;
 	case FIRMWARE_UPDATER:
 		len = snprintf(OWQ_buffer(owq), OWQ_size(owq), "Inferno Embedded Firmware Updater");
+		break;
+	case SWITCH_MASTER:
+		len = snprintf(OWQ_buffer(owq), OWQ_size(owq), "Inferno Embedded Switch Master");
 		break;
 	default:
 		len = snprintf(OWQ_buffer(owq), OWQ_size(owq), "Unknown - is your OWFS install up to date?");
