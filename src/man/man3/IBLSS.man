@@ -27,6 +27,8 @@
 |
 .B TH/led
 |
+.B TH/firmware
+|
 .so man3/standard_mini.3so
 ]]
 .SH FAMILY CODE
@@ -67,6 +69,10 @@ node or in conjunction with
 .I write-only, yes-no
 .br
 Switches the indicator LED on/off.
+.SS TH/firmware
+.I read-only, ascii
+.br
+Firmware version of the Smart Slave displayed as major.major number. Firmware versions of the SS-WALL-TH before 1.4 had known issues with humidity reporting.
 .SH STANDARD PROPERTIES
 .so man3/standard.3so
 .SH ALARMS
