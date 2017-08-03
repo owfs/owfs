@@ -27,7 +27,9 @@
 |
 .B TH/led
 |
-.B TH/firmware
+.B firmware
+|
+.B subtype
 |
 .so man3/standard_mini.3so
 ]]
@@ -69,10 +71,14 @@ node or in conjunction with
 .I write-only, yes-no
 .br
 Switches the indicator LED on/off.
-.SS TH/firmware
+.SS firmware
 .I read-only, ascii
 .br
 Firmware version of the Smart Slave displayed as major.major number. Firmware versions of the SS-WALL-TH before 1.4 had known issues with humidity reporting.
+.SS subtype
+.I read-only, ascii
+.br
+Subtype of the Smart Slave. Currently only possible value is "TH" signifying an SS-WALL-TH drywall temperature/humidity sensor.
 .SH STANDARD PROPERTIES
 .so man3/standard.3so
 .SH ALARMS

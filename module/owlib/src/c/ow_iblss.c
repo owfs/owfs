@@ -50,8 +50,18 @@ READ_FUNCTION(FS_TH_latesthumidity);
 READ_FUNCTION(FS_TH_temperature);
 READ_FUNCTION(FS_TH_latesttemp);
 READ_FUNCTION(FS_TH_version);
+READ_FUNCTION(FS_SS_subtype);
 WRITE_FUNCTION(FS_TH_w_led);
 
+/* Internal properties */
+#define _1W_IBL_CONVERT 0xB4
+#define _1W_IBL_READ_MEMORY 0xF0
+#define _1W_IBL_SET_LED 0xA5
+
+#define _IBL_TH 0x04
+#define _IBL_PAGE_SIZE 32
+#define _IBL_VERSION_SIZE 5
+#define _IBL_SUBTYPE_SIZE 2
 
 /* ------- Structures ----------- */
 static struct filetype IBLSS[] = {
@@ -61,21 +71,12 @@ static struct filetype IBLSS[] = {
 	{"TH/latesthumidity", PROPERTY_LENGTH_FLOAT,  NON_AGGREGATE, ft_float,       fc_volatile, FS_TH_latesthumidity, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"TH/temperature",    PROPERTY_LENGTH_TEMP,   NON_AGGREGATE, ft_temperature, fc_volatile, FS_TH_temperature,    NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"TH/latesttemp",     PROPERTY_LENGTH_TEMP,   NON_AGGREGATE, ft_temperature, fc_volatile, FS_TH_latesttemp,     NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
-	{"TH/firmware",       5,                      NON_AGGREGATE, ft_ascii,       fc_stable,   FS_TH_version,        NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"TH/led",            PROPERTY_LENGTH_YESNO,  NON_AGGREGATE, ft_yesno,       fc_stable,   NO_READ_FUNCTION,     FS_TH_w_led,       VISIBLE, NO_FILETYPE_DATA, },
+	{"firmware",          _IBL_VERSION_SIZE,      NON_AGGREGATE, ft_ascii,       fc_stable,   FS_TH_version,        NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"subtype",           _IBL_SUBTYPE_SIZE,      NON_AGGREGATE, ft_ascii,       fc_stable,   FS_SS_subtype,        NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 };
 
 DeviceEntryExtended(FE, IBLSS, DEV_temp, NO_GENERIC_READ, NO_GENERIC_WRITE);
-
-
-/* Internal properties */
-#define _1W_IBL_CONVERT 0xB4
-#define _1W_IBL_READ_MEMORY 0xF0
-#define _1W_IBL_SET_LED 0xA5
-
-#define _IBL_TH 0x04
-#define _IBL_PAGE_SIZE 32
-
 
 /* ------- Functions ------------ */
 
@@ -161,7 +162,7 @@ static ZERO_OR_ERROR FS_TH_latesttemp(struct one_wire_query *owq)
 static ZERO_OR_ERROR FS_TH_version(struct one_wire_query *owq)
 {
 	BYTE p[_IBL_PAGE_SIZE+2];
-	ASCII v[6];
+	ASCII v[_IBL_VERSION_SIZE + 1];
 
 	/* Read memory page from device. */
 	RETURN_ERROR_IF_BAD( OW_r_mem(p, PN(owq)) ) ;
@@ -177,6 +178,24 @@ static ZERO_OR_ERROR FS_TH_version(struct one_wire_query *owq)
 
 }
 
+/* read smart slave subtype from memory page */
+static ZERO_OR_ERROR FS_SS_subtype(struct one_wire_query *owq)
+{
+	BYTE p[_IBL_PAGE_SIZE+2];
+	ASCII s[_IBL_SUBTYPE_SIZE + 1];
+
+	/* Read memory page from device */
+	RETURN_ERROR_IF_BAD(OW_r_mem(p, PN(owq)));
+	switch (p[0])
+	{
+		case _IBL_TH: /* It's an SS-WALL-TH */
+			strncpy(s, "TH", sizeof(s));
+			break;
+		default: /* It's something we don't recognise */
+			return -ENOENT;
+	}
+	return OWQ_format_output_offset_and_size((ASCII *) s, strlen((ASCII *) s), owq);
+}
 
 /* convert and read temperature value. */
 static ZERO_OR_ERROR FS_TH_temperature(struct one_wire_query *owq)
