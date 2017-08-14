@@ -27,7 +27,7 @@ prefix to address a FTDI-based USB device.
 For details, see the FTDI ADDRESSING section.
 .TP
 \fI-d port\fI \fR|\fR \fI--device=port\fI \fB(DS2480B)\fB
-DS2480B-based bus master (like the DS9097U or the LINK in emulation mode). If the adapter doesn't respond, a passive type (DS9907E or diode/resistor) circuit will be assumed.
+DS2480B-based bus master (like the DS9097U or the LinkUSB in emulation mode). If the adapter doesn't respond, a passive type (DS9907E or diode/resistor) circuit will be assumed.
 .TP
 .I --serial_flextime | --serial_regulartime \fB(DS2480B)\fB
 .br
@@ -36,17 +36,17 @@ Changes details of bus timing (see DS2480B datasheet). Some devices, like the
 cannot work with
 .I flextime.
 .TP
-\fI--baud=\fI\fR1200|9600|19200|38400|57600|115200\fR \fB(DS2480B,LINK,HA5)\fB
+\fI--baud=\fI\fR1200|9600|19200|38400|57600|115200\fR \fB(DS2480B,LinkUSB,HA5)\fB
 Sets the initial serial port communication speed for all bus masters. Not all serial devices support all speeds. You can change the individual bus master speed for the
-.B LINK
+.B LinkUSB
 and
 .B DS2880B
 in the interface/settings directory. The
 .B HA5
 speed is set in hardware, so the command line buad rate should match that rate.
 .br
-Usually the default settings (9600 for
-.B LINK
+Usually the default settings (9600 for the
+.B LinkUSB
 and
 .B DS2480B
 ) and 115200 for the
@@ -56,9 +56,9 @@ are sane and shouldn't be changed.
 \fI--straight_polarity\fI  \fR|\fR \fI--reverse_polarity\fI \fB(DS2480B)\fB
 Reverse polarity of the DS2480B output transistors? Not needed for the DS9097U, but required for some other designs.
 .TP
-\fI--link=port\fI \fB(LINK)\fB
+\fI--link=port\fI \fB(LinkUSB)\fB
 .B iButtonLink
-.I LINK
+.I LinkUSB
 adapter (all versions) in non-emulation mode. Uses an ascii protocol over serial.
 .br
 This supports the simplified \fIftdi:\fB<serial>\fR addressing scheme.
@@ -163,7 +163,7 @@ is of the form tcp_address:port
 E.g. 192.168.0.1:3000 or localhost:3000
 .TP
 .I \-\-link=network_address
-LinkHubE network LINK adapter by 
+LinkHubE Ethernet network adapter by 
 .B iButtonLink
 .TP
 .I \-\-ha7net=network_address | \-\-ha7net
@@ -256,4 +256,4 @@ An additional format is supported, for certain bus types. This only specifies th
 Identifies a FTDI device by serial only.
 Currently, this is only valid for the VID/PID found on the LinkUSB (i.e. --link).
 Note that those VID/PID's are the default for any FT232R device, and in no way exclusive
-to LinkUSB.
+to the LinkUSB.
