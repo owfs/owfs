@@ -14,11 +14,11 @@ These options specify the device (bus master) connecting the computer to the 1-w
 .P
 At least one device option is required. There is no default. More than one device can be listed, and all will be used. (A logical union unless you explore the \fI/bus.n/\fR directories.)
 .P
-Linux and BSD enforce a security policy restricting access to hardware ports. You must have sufficient rights to access the given port or access will silently fail.
+Linux and BSD enforce a security policy restricting access to hardware ports. You must have sufficient rights to access the given port or access will silently fail. It is ABSOLUTELY NOT recommended to run owserver as root or with sudo!
 .SH "* Serial devices"
 .I port 
 specifies a serial port, e.g. 
-.I /dev/ttyS0
+.I /dev/ttyS0 or /dev/ttyUSB<n>
 .P
 If OWFS was built with \fBlibftdi\fR support, you may be able to use the
 .I ftdi:
