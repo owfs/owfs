@@ -272,7 +272,9 @@ GOOD_OR_BAD LINK_detect(struct port_in *pin)
 			 */
 			RETURN_BAD_IF_BAD(LINK_detect_serial(in));
 
-			if(pin->type == ct_ftdi) {
+			if(pin->type == ct_serial) {
+				return gbGOOD;
+			} else if(pin->type == ct_ftdi) {
 				// ct_serial handling of BREAK, which is required to re-set to 9600bps, is not
 				// reliable. Only enable for ftdi devices with proper BREAK support.
 				LEVEL_DEBUG("Reconfiguring found LinkUSB to 19200bps");
