@@ -26,6 +26,19 @@ static regex_t rx_pa_one;
 static regex_t rx_pa_two;
 static regex_t rx_pa_three;
 
+static void regex_fini(void)
+{
+	regfree(&rx_pa_none);
+	regfree(&rx_pa_all);
+	regfree(&rx_pa_scan);
+	regfree(&rx_pa_star);
+	regfree(&rx_pa_quad);
+	regfree(&rx_pa_num);
+	regfree(&rx_pa_one);
+	regfree(&rx_pa_two);
+	regfree(&rx_pa_three);
+}
+
 static pthread_once_t regex_init_once = PTHREAD_ONCE_INIT;
 
 static void regex_init(void)
@@ -39,6 +52,8 @@ static void regex_init(void)
 	ow_regcomp(&rx_pa_one, "^ *([^ ]+)[ \r]*$", 0);
 	ow_regcomp(&rx_pa_two, "^ *([^ ]+) *: *([^ ]+)[ \r]*$", 0);
 	ow_regcomp(&rx_pa_three, "^ *([^ ]+) *: *([^ ]+) *: *([^ ]+)[ \r]*$", 0);
+
+	atexit(regex_fini);
 }
 
 static void Parse_Single_Address( struct address_entry * ae )

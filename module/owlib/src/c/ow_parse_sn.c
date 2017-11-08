@@ -16,11 +16,18 @@
 
 static regex_t rx_sn_parse;
 
+static void regex_fini(void)
+{
+	regfree(&rx_sn_parse);
+}
+
 static pthread_once_t regex_init_once = PTHREAD_ONCE_INIT;
 
 static void regex_init(void)
 {
 	ow_regcomp(&rx_sn_parse, "^([[:xdigit:]]{2})\\.?([[:xdigit:]]{12})\\.?([[:xdigit:]]{2}){0,1}$", 0);
+
+	atexit(regex_fini);
 }
 
 /* Fill get serikal number from a character string */ 

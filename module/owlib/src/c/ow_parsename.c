@@ -72,6 +72,29 @@ static regex_t rx_byte;
 static regex_t rx_number;
 static regex_t rx_letter;
 
+static void regex_fini(void)
+{
+	regfree(&rx_bus);
+	regfree(&rx_set);
+	regfree(&rx_sta);
+	regfree(&rx_str);
+	regfree(&rx_sys);
+	regfree(&rx_int);
+	regfree(&rx_tex);
+	regfree(&rx_jso);
+	regfree(&rx_unc);
+	regfree(&rx_una);
+	regfree(&rx_ala);
+	regfree(&rx_sim);
+	regfree(&rx_the);
+	regfree(&rx_p_bus);
+	regfree(&rx_extension);
+	regfree(&rx_all);
+	regfree(&rx_byte);
+	regfree(&rx_number);
+	regfree(&rx_letter);
+}
+
 static pthread_once_t regex_init_once = PTHREAD_ONCE_INIT;
 
 static void regex_init(void)
@@ -95,6 +118,8 @@ static void regex_init(void)
 	ow_regcomp(&rx_byte, "\\.byte$", REG_ICASE);
 	ow_regcomp(&rx_number, "\\.[[:digit:]]+$", 0);
 	ow_regcomp(&rx_letter, "\\.[[:alpha:]]$", REG_ICASE);
+
+	atexit(regex_fini);
 }
 
 /* ---------------------------------------------- */
