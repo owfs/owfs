@@ -16,118 +16,17 @@
 #include "owfs_config.h"
 #include "ow.h"
 
-// tree to hold pointers to compiled regex expressions to cache compilation and free
-void * regex_tree = NULL ;
-
-enum e_regcomp_test { e_regcomp_exists, e_regcomp_new, e_regcomp_error, } ;
-
-struct s_regex {
-	regex_t * reg ;
-} ;
-
-static int reg_compare( const void * a, const void *b)
-{
-	const struct s_regex * pa = (const struct s_regex *) a ;
-	const struct s_regex * pb = (const struct s_regex *) b ;
-
-	return (int) (pa->reg - pb->reg) ;
-}
-
-// Add a reg comp to tree if doesn't already exist
-static enum e_regcomp_test regcomp_test( regex_t * reg )
-{
-	struct s_regex * pnode = owmalloc( sizeof( struct s_regex ) ) ;
-	struct s_regex * found ;
-	void * result ;
-
-	if ( pnode == NULL ) {
-		LEVEL_DEBUG("memory exhuasted") ;
-		return e_regcomp_error ;
-	}
-	
-	pnode->reg = reg ;
-	result = tsearch( (void *) pnode, &regex_tree, reg_compare ) ;
-	found = *(struct s_regex **) result ;
-	if ( found == pnode ) {
-		// new entry
-		return e_regcomp_new ;
-	}
-	// existing entry
-	owfree( pnode ) ;
-	return e_regcomp_exists ;
-}
-
 // Compile a regex
-// Actually only compile if needed, check first if it's already
-// cached in the regex tree
 void ow_regcomp( regex_t * reg, const char * regex, int cflags )
 {
-	switch ( regcomp_test( reg ) ) {
-		case e_regcomp_error:
-			return ;
-		case e_regcomp_exists:
-			return ;
-		case e_regcomp_new:
-		{
-			int reg_res = regcomp( reg, regex, cflags | REG_EXTENDED ) ;
-			if ( reg_res == 0 ) {
-				LEVEL_DEBUG("Reg Ex expression <%s> compiled to %p",regex,reg) ;
-			} else {
-				char e[101];
-				regerror( reg_res, reg, e, 100 ) ;
-				LEVEL_DEBUG("Problem compiling reg expression <%s>: %s",regex, e ) ;
-			}
-		}
-	}
-}
-// free a regex node (cached compiled action)
-void ow_regfree( regex_t * reg )
-{
-	struct s_regex node = { reg, } ;
-	void * result = tdelete( (void *) (&node), &regex_tree, reg_compare ) ;
-
-	if ( result != NULL ) {
-		regfree( reg ) ;
+	int reg_res = regcomp( reg, regex, cflags | REG_EXTENDED ) ;
+	if ( reg_res == 0 ) {
+		LEVEL_DEBUG("Reg Ex expression <%s> compiled to %p",regex,reg) ;
 	} else {
-		LEVEL_DEBUG( "attempt to free an uncompiled regex" ) ;
+		char e[101];
+		regerror( reg_res, reg, e, 100 ) ;
+		LEVEL_DEBUG("Problem compiling reg expression <%s>: %s",regex, e ) ;
 	}
-}
-
-#if 0
-// Debugging to show tree contents
-static void regexaction(const void *t, const VISIT which, const int depth)
-{
-	(void) depth;
-	switch (which) {
-	case leaf:
-	case postorder:
-		LEVEL_DEBUG("Regex compiled pointer %p",(*(const struct s_regex * const *) t)->reg ) ;
-	default:
-		break;
-	}
-}
-#endif
-
-static void regexkillaction(const void *t, const VISIT which, const int depth)
-{
-	(void) depth;
-	switch (which) {
-	case leaf:
-	case postorder:
-		LEVEL_DEBUG("Regex Free %p",(*(const struct s_regex * const *) t)->reg ) ;
-		regfree((*(const struct s_regex * const *) t)->reg ) ;
-	default:
-		break;
-	}
-}
-
-void ow_regdestroy( void )
-{
-	// twalk( regex_tree, regexaction ) ;
-	twalk( regex_tree, regexkillaction ) ;
-	SAFETDESTROY( regex_tree, owfree_func ) ;
-	LEVEL_DEBUG("Regex destroy done") ;
-	regex_tree = NULL ;
 }
 
 // wrapper for regcomp

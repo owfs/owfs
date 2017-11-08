@@ -14,14 +14,21 @@
 #include "owfs_config.h"
 #include "ow.h"
 
+static regex_t rx_sn_parse;
+
+static pthread_once_t regex_init_once = PTHREAD_ONCE_INIT;
+
+static void regex_init(void)
+{
+	ow_regcomp(&rx_sn_parse, "^([[:xdigit:]]{2})\\.?([[:xdigit:]]{12})\\.?([[:xdigit:]]{2}){0,1}$", 0);
+}
 
 /* Fill get serikal number from a character string */ 
 enum parse_serialnumber Parse_SerialNumber(char *sn_char, BYTE * sn)
 {
-	static regex_t rx_sn_parse ;
+	pthread_once(&regex_init_once,regex_init);
+
 	struct ow_regmatch orm ;
-	
-	ow_regcomp( &rx_sn_parse, "^([[:xdigit:]]{2})\\.?([[:xdigit:]]{12})\\.?([[:xdigit:]]{2}){0,1}$", 0 ) ;
 	orm.number = 3 ;
 	
 	if ( sn_char == NULL ) {

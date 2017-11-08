@@ -52,6 +52,51 @@ static char * find_segment_in_path( char * segment, char * path ) ;
 
 #define BRANCH_INCR (9)
 
+static regex_t rx_bus;
+static regex_t rx_set;
+static regex_t rx_sta;
+static regex_t rx_str;
+static regex_t rx_sys;
+static regex_t rx_int;
+static regex_t rx_tex;
+static regex_t rx_jso;
+static regex_t rx_unc;
+static regex_t rx_una;
+static regex_t rx_ala;
+static regex_t rx_sim;
+static regex_t rx_the;
+static regex_t rx_p_bus;
+static regex_t rx_extension;
+static regex_t rx_all;
+static regex_t rx_byte;
+static regex_t rx_number;
+static regex_t rx_letter;
+
+static pthread_once_t regex_init_once = PTHREAD_ONCE_INIT;
+
+static void regex_init(void)
+{
+	ow_regcomp(&rx_bus, "^bus\\.([[:digit:]]+)/?", REG_ICASE);
+	ow_regcomp(&rx_set, "^settings/?", REG_ICASE | REG_NOSUB);
+	ow_regcomp(&rx_sta, "^statistics/?", REG_ICASE | REG_NOSUB);
+	ow_regcomp(&rx_str, "^structure/?", REG_ICASE | REG_NOSUB);
+	ow_regcomp(&rx_sys, "^system/?", REG_ICASE | REG_NOSUB);
+	ow_regcomp(&rx_int, "^interface/?", REG_ICASE | REG_NOSUB);
+	ow_regcomp(&rx_tex, "^text/?", REG_ICASE | REG_NOSUB);
+	ow_regcomp(&rx_jso, "^json/?", REG_ICASE | REG_NOSUB);
+	ow_regcomp(&rx_unc, "^uncached/?", REG_ICASE | REG_NOSUB);
+	ow_regcomp(&rx_una, "^unaliased/?", REG_ICASE | REG_NOSUB);
+	ow_regcomp(&rx_ala, "^alarm\?", REG_ICASE | REG_NOSUB);
+	ow_regcomp(&rx_sim, "^simultaneous/?", REG_ICASE | REG_NOSUB);
+	ow_regcomp(&rx_the, "^thermostat/?", REG_ICASE | REG_NOSUB);
+	ow_regcomp(&rx_p_bus, "^/bus\\.[[:digit:]]+/?", REG_ICASE);
+	ow_regcomp(&rx_extension, "\\.", 0);
+	ow_regcomp(&rx_all, "\\.all$", REG_ICASE);
+	ow_regcomp(&rx_byte, "\\.byte$", REG_ICASE);
+	ow_regcomp(&rx_number, "\\.[[:digit:]]+$", 0);
+	ow_regcomp(&rx_letter, "\\.[[:alpha:]]$", REG_ICASE);
+}
+
 /* ---------------------------------------------- */
 /* Filename (path) parsing functions              */
 /* ---------------------------------------------- */
@@ -341,31 +386,11 @@ static enum parse_enum set_type( enum ePN_type epntype, struct parsedname * pn )
 // Early parsing -- only bus entries, uncached and text may have preceeded
 static enum parse_enum Parse_Unspecified(char *pathnow, enum parse_pass remote_status, struct parsedname *pn)
 {
-	static regex_t rx_bus ;
-	static regex_t rx_set ;
-	static regex_t rx_sta ;
-	static regex_t rx_str ;
-	static regex_t rx_sys ;
-	static regex_t rx_int ;
-	static regex_t rx_tex ;
-	static regex_t rx_jso ;
-	static regex_t rx_unc ;
-	static regex_t rx_una ;
-	
+	pthread_once(&regex_init_once, regex_init);
+
 	struct ow_regmatch orm ;
 	orm.number = 1 ; // for bus
-	
-	ow_regcomp( &rx_bus, "^bus\\.([[:digit:]]+)/?", REG_ICASE ) ;
-	ow_regcomp( &rx_set, "^settings/?", REG_ICASE | REG_NOSUB ) ;
-	ow_regcomp( &rx_sta, "^statistics/?", REG_ICASE | REG_NOSUB ) ;
-	ow_regcomp( &rx_str, "^structure/?", REG_ICASE | REG_NOSUB ) ;
-	ow_regcomp( &rx_sys, "^system/?", REG_ICASE | REG_NOSUB ) ;
-	ow_regcomp( &rx_int, "^interface/?", REG_ICASE | REG_NOSUB ) ;
-	ow_regcomp( &rx_tex, "^text/?", REG_ICASE | REG_NOSUB ) ;
-	ow_regcomp( &rx_jso, "^json/?", REG_ICASE | REG_NOSUB ) ;
-	ow_regcomp( &rx_unc, "^uncached/?", REG_ICASE | REG_NOSUB ) ;
-	ow_regcomp( &rx_una, "^unaliased/?", REG_ICASE | REG_NOSUB ) ;
-	
+
 	if ( ow_regexec( &rx_bus, pathnow, &orm ) == 0) {
 		INDEX_OR_ERROR bus_number = (INDEX_OR_ERROR) atoi(orm.match[1]) ;
 		ow_regexec_free( &orm ) ;
@@ -414,10 +439,8 @@ static enum parse_enum Parse_Unspecified(char *pathnow, enum parse_pass remote_s
 
 static enum parse_enum Parse_Branch(char *pathnow, enum parse_pass remote_status, struct parsedname *pn)
 {
-	static regex_t rx_ala ;
-	
-	ow_regcomp( &rx_ala, "^alarm\?", REG_ICASE | REG_NOSUB ) ;
-	
+	pthread_once(&regex_init_once, regex_init);
+
 	if (ow_regexec( &rx_ala, pathnow, NULL ) == 0) {
 		pn->state |= ePS_alarm;
 		pn->type = ePN_real;
@@ -428,20 +451,8 @@ static enum parse_enum Parse_Branch(char *pathnow, enum parse_pass remote_status
 
 static enum parse_enum Parse_Real(char *pathnow, enum parse_pass remote_status, struct parsedname *pn)
 {
-	static regex_t rx_sim ;
-	static regex_t rx_the ;
-	static regex_t rx_tex ;
-	static regex_t rx_jso ;
-	static regex_t rx_unc ;
-	static regex_t rx_una ;
-	
-	ow_regcomp( &rx_sim, "^simultaneous/?", REG_ICASE | REG_NOSUB ) ;
-	ow_regcomp( &rx_the, "^thermostat/?", REG_ICASE | REG_NOSUB ) ;
-	ow_regcomp( &rx_tex, "^text/?", REG_ICASE | REG_NOSUB ) ;
-	ow_regcomp( &rx_jso, "^json/?", REG_ICASE | REG_NOSUB ) ;
-	ow_regcomp( &rx_unc, "^uncached/?", REG_ICASE | REG_NOSUB ) ;
-	ow_regcomp( &rx_una, "^unaliased/?", REG_ICASE | REG_NOSUB ) ;
-	
+	pthread_once(&regex_init_once, regex_init);
+
 	if (ow_regexec( &rx_sim, pathnow, NULL ) == 0) {
 		pn->selected_device = DeviceSimultaneous;
 		return parse_prop;
@@ -473,15 +484,7 @@ static enum parse_enum Parse_Real(char *pathnow, enum parse_pass remote_status, 
 
 static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn)
 {
-	static regex_t rx_tex ;
-	static regex_t rx_jso ;
-	static regex_t rx_unc ;
-	static regex_t rx_una ;
-	
-	ow_regcomp( &rx_tex, "^text/?", REG_ICASE | REG_NOSUB ) ;
-	ow_regcomp( &rx_jso, "^json/?", REG_ICASE | REG_NOSUB ) ;
-	ow_regcomp( &rx_unc, "^uncached/?", REG_ICASE | REG_NOSUB ) ;
-	ow_regcomp( &rx_una, "^unaliased/?", REG_ICASE | REG_NOSUB ) ;
+	pthread_once(&regex_init_once, regex_init);
 
 	if (ow_regexec( &rx_tex, pathnow, NULL )  == 0) {
 		pn->state |= ePS_text;
@@ -509,10 +512,9 @@ static enum parse_enum Parse_NonReal(char *pathnow, struct parsedname *pn)
 /* We've reached a /bus.n entry */
 static enum parse_enum Parse_Bus( INDEX_OR_ERROR bus_number, struct parsedname *pn)
 {
-	static regex_t rx_p_bus ;
+	pthread_once(&regex_init_once, regex_init);
+
 	struct ow_regmatch orm ;
-	
-	ow_regcomp( &rx_p_bus, "^/bus\\.[[:digit:]]+/?", REG_ICASE ) ;
 	orm.number = 0 ;
 
 	/* Processing for bus.X directories -- eventually will make this more generic */
@@ -728,25 +730,16 @@ static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn
 
 static enum parse_enum Parse_Property(char *filename, struct parsedname *pn)
 {
+	pthread_once(&regex_init_once, regex_init);
+
 	struct device * pdev = pn->selected_device ;
 	struct filetype * ft ;
 	
-	static regex_t rx_extension ;
-	static regex_t rx_all ;
-	static regex_t rx_byte ;
-	static regex_t rx_number ;
-	static regex_t rx_letter ;
 	int extension_given ;
 
 	struct ow_regmatch orm ;
 	orm.number = 0 ;
-	
-	ow_regcomp( &rx_extension, "\\.", 0 ) ; 
-	ow_regcomp( &rx_all, "\\.all$", REG_ICASE ) ; 
-	ow_regcomp( &rx_byte, "\\.byte$", REG_ICASE ) ; 
-	ow_regcomp( &rx_number, "\\.[[:digit:]]+$", 0 ) ; 
-	ow_regcomp( &rx_letter, "\\.[[:alpha:]]$", REG_ICASE ) ; 
-	
+
 	//printf("FilePart: %s %s\n", filename, pn->path);
 
 	// Special case for remote device. Use distant data

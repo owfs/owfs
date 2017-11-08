@@ -34,8 +34,6 @@
 #include <regex.h>
 
 void ow_regcomp( regex_t * preg, const char * regex, int cflags ) ;
-void ow_regdestroy( void ) ;
-void ow_regfree( regex_t * reg ) ;
 
 struct ow_regmatch {
 	int number ;

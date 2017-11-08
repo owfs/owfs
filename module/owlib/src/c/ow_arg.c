@@ -23,20 +23,26 @@ enum arg_address { arg_addr_device, arg_addr_null,
 	arg_addr_number, arg_addr_ftdi,
 	arg_addr_other, arg_addr_error, } ;
 
+static regex_t rx_dev;
+static regex_t rx_num;
+static regex_t rx_ip;
+static regex_t rx_ftdi;
+static regex_t rx_col;
+
+static pthread_once_t regex_init_once = PTHREAD_ONCE_INIT;
+
+static void regex_init(void)
+{
+	ow_regcomp(&rx_dev, "/", REG_NOSUB);
+	ow_regcomp(&rx_num, "^[:digit:]+$", REG_NOSUB);
+	ow_regcomp(&rx_ip, "[:digit:]{1,3}\\.[:digit:]{1,3}\\.[:digit:]{1,3}\\.[:digit:]{1,3}", REG_NOSUB);
+	ow_regcomp(&rx_ftdi, "^ftdi:", REG_NOSUB);
+	ow_regcomp(&rx_col, ":", REG_NOSUB);
+}
+
 static enum arg_address ArgType( const char * arg )
 {
-	static regex_t rx_dev ;
-	static regex_t rx_num ;
-	static regex_t rx_ip ;
-	static regex_t rx_ftdi ;
-	static regex_t rx_col ;
-	
-	// compile regex expressions
-	ow_regcomp( &rx_dev, "/", REG_NOSUB ) ;
-	ow_regcomp( &rx_num, "^[:digit:]+$", REG_NOSUB ) ;
-	ow_regcomp( &rx_ip, "[:digit:]{1,3}\\.[:digit:]{1,3}\\.[:digit:]{1,3}\\.[:digit:]{1,3}", REG_NOSUB ) ;
-	ow_regcomp( &rx_ftdi, "^ftdi:", REG_NOSUB ) ;
-	ow_regcomp( &rx_col, ":", REG_NOSUB ) ;
+	pthread_once(&regex_init_once, regex_init);
 
 	if ( arg == NULL ) {
 		return arg_addr_null ;

@@ -16,22 +16,34 @@
 static void Init_Address( struct address_pair * ap ) ;
 static void Parse_Single_Address( struct address_entry * ae ) ;
 
+static regex_t rx_pa_none;
+static regex_t rx_pa_all;
+static regex_t rx_pa_scan;
+static regex_t rx_pa_star;
+static regex_t rx_pa_quad;
+static regex_t rx_pa_num;
+static regex_t rx_pa_one;
+static regex_t rx_pa_two;
+static regex_t rx_pa_three;
+
+static pthread_once_t regex_init_once = PTHREAD_ONCE_INIT;
+
+static void regex_init(void)
+{
+	ow_regcomp(&rx_pa_none, "^$", REG_NOSUB);
+	ow_regcomp(&rx_pa_all, "^all$", REG_NOSUB | REG_ICASE);
+	ow_regcomp(&rx_pa_scan, "^scan$", REG_NOSUB | REG_ICASE);
+	ow_regcomp(&rx_pa_star, "^\\*$", REG_NOSUB);
+	ow_regcomp(&rx_pa_quad, "^[[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3}$", REG_NOSUB);
+	ow_regcomp(&rx_pa_num, "^-?[[:digit:]]+$", REG_NOSUB);
+	ow_regcomp(&rx_pa_one, "^ *([^ ]+)[ \r]*$", 0);
+	ow_regcomp(&rx_pa_two, "^ *([^ ]+) *: *([^ ]+)[ \r]*$", 0);
+	ow_regcomp(&rx_pa_three, "^ *([^ ]+) *: *([^ ]+) *: *([^ ]+)[ \r]*$", 0);
+}
 
 static void Parse_Single_Address( struct address_entry * ae )
 {
-	static regex_t rx_pa_none ;
-	static regex_t rx_pa_all ;
-	static regex_t rx_pa_scan ;
-	static regex_t rx_pa_star ;
-	static regex_t rx_pa_quad ;
-	static regex_t rx_pa_num ;
-		
-	ow_regcomp( &rx_pa_none, "^$", REG_NOSUB ) ;
-	ow_regcomp( &rx_pa_all, "^all$", REG_NOSUB | REG_ICASE ) ;
-	ow_regcomp( &rx_pa_scan, "^scan$", REG_NOSUB | REG_ICASE ) ;
-	ow_regcomp( &rx_pa_star, "^\\*$", REG_NOSUB ) ;
-	ow_regcomp( &rx_pa_quad, "^[[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3}$", REG_NOSUB ) ;
-	ow_regcomp( &rx_pa_num, "^-?[[:digit:]]+$", REG_NOSUB ) ;
+	pthread_once(&regex_init_once, regex_init);
 
 	if ( ae->alpha == NULL  ) {
 		// null entry
@@ -67,15 +79,10 @@ static void Parse_Single_Address( struct address_entry * ae )
 */
 void Parse_Address( char * address, struct address_pair * ap )
 {
-	static regex_t rx_pa_one ;
-	static regex_t rx_pa_two ;
-	static regex_t rx_pa_three ;
+	pthread_once(&regex_init_once, regex_init);
+
 	struct ow_regmatch orm ;
 	
-	ow_regcomp( &rx_pa_one, "^ *([^ ]+)[ \r]*$", 0 ) ;
-	ow_regcomp( &rx_pa_two, "^ *([^ ]+) *: *([^ ]+)[ \r]*$", 0 ) ;
-	ow_regcomp( &rx_pa_three, "^ *([^ ]+) *: *([^ ]+) *: *([^ ]+)[ \r]*$", 0 ) ;
-
 	// Set up address structure into previously allocated structure
 	if ( ap == NULL ) {
 		return ;
