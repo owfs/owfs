@@ -237,6 +237,7 @@ static ZERO_OR_ERROR FS_r_page(struct one_wire_query *owq)
 	BYTE data[8];
 	RETURN_ERROR_IF_BAD( OW_r_page(data, pn->extension, pn) ) ;
 	memcpy((BYTE *) OWQ_buffer(owq), &data[OWQ_offset(owq)], OWQ_size(owq));
+	OWQ_length(owq) = OWQ_size(owq);
 	return 0;
 }
 
