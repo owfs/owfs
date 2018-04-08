@@ -2,8 +2,6 @@
 
 """
 ::BOH
-$HeadURL: http://subversion/stuff/svn/owfs/trunk/unittest/owtest.py $
-
 Copyright (c) 2004 Peter Kropf. All rights reserved.  
 
 This program is free software; you can redistribute it and/or modify

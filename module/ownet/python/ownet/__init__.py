@@ -1,7 +1,5 @@
 """
 ::BOH
-$HeadURL: http://subversion/stuff/svn/owfs/trunk/ow/__init__.py $
-
 Copyright (c) 2006 Peter Kropf. All rights reserved.
 
 This program is free software; you can redistribute it and/or modify

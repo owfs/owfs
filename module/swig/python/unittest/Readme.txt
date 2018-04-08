@@ -1,5 +1,3 @@
-$HeadURL: http://subversion/stuff/svn/owfs/trunk/unittest/Readme.txt $
-
 Unittests
 
 Status
