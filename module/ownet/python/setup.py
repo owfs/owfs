@@ -1,6 +1,5 @@
 """
 ::BOH
-$Id$
 $HeadURL: http://subversion/stuff/svn/owfs/trunk/setup.py $
 
 Copyright (c) 2006 Peter Kropf. All rights reserved.

@@ -1,7 +1,6 @@
 #!/bin/sh
 
 # routine to make skeleton device directories to show structure
-# $Id$
 # Paul Alfille 2007
 
 mountpoint=~/1wire

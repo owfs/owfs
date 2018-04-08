@@ -2,8 +2,6 @@
 # the next line restarts using wish \
 if [ -z `which wish` ] ; then exec tclsh "$0" -- "$@" ; else exec wish "$0" -- "$@" ; fi
 
-# $Id$
-
 package require Tk
 
 # directories to monitor

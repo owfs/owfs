@@ -1,5 +1,4 @@
 <?php
-  // $Id$
   // $Author$
 
   // File: bcadd

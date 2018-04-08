@@ -42,5 +42,3 @@ Submitting dist/ownet-0.2.tar.gz to http://www.python.org/pypi
 Server response (200): OK
 $
 
-
-$Id$

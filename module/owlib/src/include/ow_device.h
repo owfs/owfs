@@ -1,5 +1,4 @@
 /*
-$Id$
     OW -- One-Wire filesystem
 
     LICENSE (As of version 2.5p4 2-Oct-2006)

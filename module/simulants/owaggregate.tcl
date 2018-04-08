@@ -1,7 +1,6 @@
 #!/bin/sh
 # the next line restarts using tclsh \
 exec wish owsim.tcl "$@"
-# $Id$
 ###########################################################
 ###########################################################
 ########## Enough of notebook, lets do Simulant! ##########

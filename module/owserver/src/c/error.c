@@ -1,5 +1,4 @@
 /*
-$Id$
     OW_HTML -- OWFS used for the web
     OW -- One-Wire filesystem
 

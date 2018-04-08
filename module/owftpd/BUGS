@@ -1,5 +1,3 @@
-$Id$
-
 - On Solaris, new POSIX threads cannot be created from a chroot() jail!
   pthread_create() uses mmap() on /dev/mem (or something like that) to
   create the stack for new threads.  However, in a chroot() jail, no

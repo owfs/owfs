@@ -1,5 +1,4 @@
 /*
-$Id$
 * jsmn -- a JSON parser
 * Obtained from http://zserge.bitbucket.org/jsmn.html
 * MIT licence 

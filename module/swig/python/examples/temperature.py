@@ -2,7 +2,6 @@
 
 """
 ::BOH
-$Id$
 
 Copyright (c) 2004 Peter Kropf. All rights reserved.
 

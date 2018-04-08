@@ -79,5 +79,3 @@ $
 where "kuro2" should be the host name where owserver is running and
 "9999" is the port to be used to communicate with the owserver.
 
-
-$Id$

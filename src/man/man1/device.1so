@@ -6,7 +6,6 @@
 '\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
 '\"
 '\" Free for all use. No warranty. None. Use at your own risk.
-'\" $Id$
 '\"
 .SH "Device Options (1-wire Bus Master)"
 These options specify the device (bus master) connecting the computer to the 1-wire bus. The 1-wire slaves are connected to the 1-wire bus, and the bus master connects to a port on the computer and controls the 1-wire bus. The bus master is either an actual physical device, the kernel w1 module, or an 

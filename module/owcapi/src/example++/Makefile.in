@@ -1,5 +1,4 @@
 # Makefile for owcapi example program -- invoked separately from this directory
-# $Id$
 
 CXXFLAGS = -g -I@prefix@/include -Wno-deprecated
 

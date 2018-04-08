@@ -6,7 +6,6 @@
 '\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
 '\"
 '\" Free for all use. No waranty. None. Use at your own risk.
-'\" $Id$
 '\"
 .TH DS1995 3  2003 "OWFS Manpage" "One-Wire File System"
 .SH NAME

@@ -3,8 +3,6 @@
 //
 // Created: Mon Jan 10 22:53:33 2005
 //
-// $Id$
-//
 
 /*
  * The following string is the startup script executed when the ow is

@@ -3,8 +3,6 @@
  *
  * Example of org.owfs.ownet package usage
  *
- * $Id$
- *
  * (c) 2007 George M. Zouganelis - gzoug@aueb.gr
  *
  * GPL
@@ -33,7 +31,6 @@ import org.owfs.ownet.*;
 import java.io.*;
 
 /**
- * @version $Id$
  * @author George M. Zouganelis (gzoug@aueb.gr)
  */
 

@@ -1,6 +1,5 @@
 #!/bin/sh
 #
-# $Id$
 # OWFS setup routines for SUSE systems
 # Written by Paul Alfille and others.
 # udev routines by Peter Kropf

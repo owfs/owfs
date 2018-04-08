@@ -1,5 +1,4 @@
 # Makefile for owcapi example program -- invoked separately from this directory
-# $Id$
 
 CFLAGS = -g -I/opt/owfs/include -I../../../../src/include -I../../../owlib/src/include
 

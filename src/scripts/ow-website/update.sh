@@ -1,7 +1,5 @@
 #! /bin/sh
 #
-# $Id$
-#
 # This script updates the owfs web site from the contents of the
 # ow-website CVS module. Its run on a regular basis from a crontab
 # entry on shell.sf.net.

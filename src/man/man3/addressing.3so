@@ -6,7 +6,6 @@
 '\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
 '\"
 '\" Free for all use. No waranty. None. Use at your own risk.
-'\" $Id$
 '\"
 All 1-wire devices are factory assigned a unique 64-bit address. This address is of the form:
 .TP
