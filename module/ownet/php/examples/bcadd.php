@@ -1,6 +1,4 @@
 <?php
-  // $Author$
-
   // File: bcadd
   //
   //This function is meant to be a drop-in replacement for those
