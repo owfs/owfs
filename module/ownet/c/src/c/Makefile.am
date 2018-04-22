@@ -57,5 +57,6 @@ AM_CFLAGS = -I../include \
 	-D__EXTENSIONS__ \
 	${EXTRACFLAGS} \
 	${PTHREAD_CFLAGS} \
+	${LIBAVAHI_CFLAGS} \
 	${PIC_FLAGS}
 
