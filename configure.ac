@@ -662,8 +662,6 @@ if test "${ENABLE_OWPHP}" = "true" ; then
 		if test -z "${PHPCONFIG}" ; then
 			AC_MSG_WARN([Cannot find php-config binary. Install php-devel or php5-dev package])
 			AC_MSG_WARN([include and library paths will be guessed])
-		else
-			AM_CONDITIONAL([PHP7], [ expr `${PHPCONFIG} --version | cut -f1 -d.` = 7 ])
 		fi
 		if test -z "${PHPINC}" ; then
 			AC_MSG_WARN([Cannot find php include-file. Install php-devel or php5-dev package])
