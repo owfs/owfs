@@ -1,5 +1,9 @@
 language: c
 
+os:
+  - linux
+  - osx
+
 compiler:
   - clang
   - gcc
@@ -14,7 +18,7 @@ addons:
 #    - libusb-dev
     - libavahi-client-dev
 
-before_install:
+before_script:
   - ./bootstrap
 
 script:
