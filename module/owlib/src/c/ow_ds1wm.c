@@ -135,7 +135,7 @@ GOOD_OR_BAD DS1WM_detect(struct port_in *pin)
 	}
 	LEVEL_DEBUG("DS1WM at address %p",(void *)base);
 	
-	in->master.ds1wm.mm_size = (size_t) getpagesize() ;
+	in->master.ds1wm.mm_size = (size_t) sysconf(_SC_PAGESIZE) ;
 	in->master.ds1wm.base = base ;
 	in->master.ds1wm.page_offset = base % in->master.ds1wm.mm_size ;
 	in->master.ds1wm.page_start = base - in->master.ds1wm.page_offset ;
