@@ -618,8 +618,9 @@ AM_CONDITIONAL(ENABLE_PERL, test "${ENABLE_PERL}" = "true")
 AC_MSG_CHECKING(if owphp is enabled)
 ENABLE_OWPHP="true"
 AC_ARG_ENABLE(owphp,
-[  --enable-owphp          Enable owphp module (default true)],
-[
+	[AS_HELP_STRING([--enable-owphp],
+		[Enable owphp module (default true)])],
+	[
 	AC_MSG_RESULT([$enableval])
 	if test "$enableval" = "no" ; then
 		ENABLE_OWPHP="false"
@@ -628,24 +629,24 @@ AC_ARG_ENABLE(owphp,
 		ENABLE_OWPHP="true"
 	fi
 	if test -z "$SWIG"  ; then
-		AC_MSG_WARN([Cannot find swig program. Look for it at http://www.swig.org or use CPAN])
 		AC_MSG_WARN([OWPHP is disabled because swig is not found])
 		ENABLE_OWPHP="false"
 	fi
-],
-[
+	],
+	[
 	if test -z "$SWIG" ; then
 		AC_MSG_RESULT([no (swig disabled)])
 		ENABLE_OWPHP="false"
 	else
 		AC_MSG_RESULT([yes (default)])
 	fi
-])
+	])
 
 PHP=""
+PHPVMAJOR=""
 if test "${ENABLE_OWPHP}" = "true" ; then
 	m4_include(module/swig/php/php.m4)
-	AC_MSG_RESULT(Looking for location of Php executable)
+	AC_MSG_NOTICE([Looking for location of php executable])
 	SC_PATH_PHP 		
 	AC_SUBST(PHPCONFIG)
 	AC_SUBST(PHPINC)
@@ -658,9 +659,6 @@ if test "${ENABLE_OWPHP}" = "true" ; then
 	else
 		if test -z "${PHPCONFIG}" ; then
 			AC_MSG_WARN([Cannot find php-config binary. Install php-devel or php5-dev package])
-			AC_MSG_WARN([include and library paths will be guessed])
-		else
-			AM_CONDITIONAL([PHP7], [ expr `${PHPCONFIG} --version | cut -f1 -d.` = 7 ])
 		fi
 		if test -z "${PHPINC}" ; then
 			AC_MSG_WARN([Cannot find php include-file. Install php-devel or php5-dev package])
@@ -677,6 +675,7 @@ if test "${ENABLE_OWPHP}" = "true" ; then
 fi
 AC_SUBST(PHP)
 AC_SUBST(ENABLE_OWPHP)
+AM_CONDITIONAL(PHP7, test "${PHPVMAJOR}" = "7")
 AM_CONDITIONAL(ENABLE_OWPHP, test "${ENABLE_OWPHP}" = "true")
 if test -z "$PHP" ; then
 	ENABLE_PHP="false"
