@@ -1,7 +1,6 @@
 package OWNet ;
 
 # OWNet module for perl
-# $Id$
 #
 # Paul H Alfille -- copyright 2007
 # Part of the OWFS suite:

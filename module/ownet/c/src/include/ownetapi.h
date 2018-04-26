@@ -1,5 +1,4 @@
 /*
-$Id$
    OWFS (owfs, owhttpd, owserver, owperl, owtcl, owphp, owpython, owcapi)
    one-wire file system and related programs
 

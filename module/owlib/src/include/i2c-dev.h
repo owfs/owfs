@@ -19,8 +19,6 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-/* $Id$ */
-
 #ifndef LIB_I2CDEV_H
 #define LIB_I2CDEV_H
 

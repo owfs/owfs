@@ -3,8 +3,6 @@
 //
 // Created: Mon Jan 10 22:34:41 2005
 //
-// $Id$
-//
 
 // Some Ugly code to keep command line #define from being over_written by <config.h>
 #define SAVE_FOR_NOW_PACKAGE_NAME    PACKAGE_NAME

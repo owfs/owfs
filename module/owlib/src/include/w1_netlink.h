@@ -1,5 +1,4 @@
 /*
-$Id$
 Much thanks to Evgeniy Polyakov
 This file itself is a snapshop version of netlink.h by Evgeniy Polyakov
 */

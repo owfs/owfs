@@ -42,6 +42,7 @@ AM_CFLAGS = -I../owlib/src/include \
 	${EXTRACFLAGS} \
 	${LIBUSB_CFLAGS} \
 	${PTHREAD_CFLAGS} \
+	${LIBAVAHI_CFLAGS} \
 	$(TCL_DEFS) \
 	$(TCL_SHLIB_CFLAGS) \
 	$(TCL_INCLUDE_SPEC) \

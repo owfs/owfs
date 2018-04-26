@@ -23,6 +23,7 @@ AM_CFLAGS = -I../include \
 	-Wcast-align \
 	-Wstrict-prototypes \
 	-Wredundant-decls \
+	${LIBAVAHI_CFLAGS} \
 	${EXTRACFLAGS}
 
 LDADD = -low ${LD_EXTRALIBS} ${OSLIBS}

@@ -6,7 +6,6 @@
 '\" Protocol sniffer for owserver tcp protocol
 '\"
 '\" Free for all use. No waranty. None. Use at your own risk.
-'\" $Id$
 '\"
 .TH OWTAP 1 2007 "OWTAP Manpage" "One-Wire File System"
 .SH NAME

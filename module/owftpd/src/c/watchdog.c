@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "owftpd.h"
 
 static int invariant(struct watchdog_s *w);

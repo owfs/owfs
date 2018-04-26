@@ -1,5 +1,3 @@
-// $Id$
-
 // xt.c                Copyright (C) 2001, Real-Time Systems Inc.
 //------------------------------------------ www.realtime.bc.ca -------------
 //

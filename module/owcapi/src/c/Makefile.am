@@ -32,5 +32,6 @@ AM_CFLAGS = -I../include \
 	${EXTRACFLAGS} \
 	${PTHREAD_CFLAGS} \
 	${LIBUSB_CFLAGS} \
+	${LIBAVAHI_CFLAGS} \
 	${PIC_FLAGS}
 

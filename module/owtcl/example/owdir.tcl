@@ -2,8 +2,6 @@
 # -*- Tcl -*-
 # File: owdir.tcl
 #
-# $Id$
-#
 # Start script with this command:  tclsh owdir.tcl
 #
 

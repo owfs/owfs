@@ -5,7 +5,6 @@
  * Example of org.owfs.ownet assembly usage
  *
  *  Author: George M. Zouganelis (gzoug@aueb.gr)
- * Version: $Id$
  *
  *
  * OWFS is an open source project developed by Paul Alfille and hosted at

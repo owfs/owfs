@@ -1,6 +1,4 @@
 /*
-$Id$
-
     Written 2006 Paul H Alfille
 
     MIT license

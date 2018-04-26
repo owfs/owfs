@@ -2,8 +2,6 @@
 # -*- Tcl -*-
 # File: test.tcl
 #
-# $Id$
-#
 # Start script with this command:  tclsh test.tcl
 #
 

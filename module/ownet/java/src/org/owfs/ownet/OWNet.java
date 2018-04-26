@@ -3,7 +3,6 @@
   * Package: org.owfs.ownet.OWNet
   *
   * @author George M. Zouganelis (gzoug@aueb.gr)
-  * @version $Id$
   *
   * This program is free software; you can redistribute it and/or modify
   * it under the terms of the GNU General Public License as published by

@@ -1,0 +1,28 @@
+language: c
+
+os:
+  - linux
+  - osx
+
+compiler:
+  - clang
+  - gcc
+
+
+addons:
+  apt:
+    packages:
+# only have check 0.9 on trusty.
+#    - check
+# Only have libusb-dev 0.1.. we want 0.9.1+
+#    - libusb-dev
+    - libavahi-client-dev
+
+before_script:
+  - ./bootstrap
+
+script:
+  - ./configure
+  - make
+# libcheck no present
+#  - make check

@@ -43,6 +43,7 @@ AM_CFLAGS = -I../include \
 	-Wstrict-prototypes \
 	-Wredundant-decls \
 	${PTHREAD_CFLAGS} \
+	${LIBAVAHI_CFLAGS} \
 	${EXTRACFLAGS}
 
 LDADD = -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}

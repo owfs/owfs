@@ -51,6 +51,9 @@ AC_CONFIG_MACRO_DIR([src/scripts/m4])
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE(${PACKAGE}, ${VERSION})dnl
 
+PKG_PROG_PKG_CONFIG
+PKG_INSTALLDIR
+
 # Process config.h.in
 AH_TOP([
 #ifndef OWCONFIG_H
@@ -1758,6 +1761,7 @@ AC_CONFIG_FILES([
 	module/owcapi/src/c/Makefile
 	module/owcapi/src/example/Makefile
 	module/owcapi/src/example++/Makefile
+	module/owcapi/owcapi.pc
 
 	module/owtap/Makefile
 

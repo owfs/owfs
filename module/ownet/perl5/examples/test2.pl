@@ -4,7 +4,6 @@
 # See owfs.sourceforge.net for details
 # {copyright} 2007 Paul H. Alfille
 # GPL license
-# $Id$
 
 # Start a test-server before running this script:
 #    owserver -p 4304 --fake 10,10

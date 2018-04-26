@@ -1,5 +1,4 @@
 # Makefile for ownet example program -- invoked separately from this directory
-# $Id$
 
 CFLAGS = -g -I@prefix@/include
 

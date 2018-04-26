@@ -8,7 +8,6 @@
  *       Requires: .NET Framework 2.0
  *
  *  Author: George M. Zouganelis (gzoug@aueb.gr)
- * Version: $Id$
  *               OWNet.cs,v 1.3 2012/20/12 adho (adam.horvath@hotswap.eu)
  *                      Added: public byte[] safeReadRaw(String path)
  *                      And    public byte[] safeWriteRaw(String path)

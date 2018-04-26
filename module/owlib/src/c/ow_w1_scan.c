@@ -1,5 +1,4 @@
 /*
-$Id$
 W1 Announce -- daemon  for showing w1 busmasters using Avahi
 Written 2008 Paul H Alfille
 email: paul.alfille@gmail.com

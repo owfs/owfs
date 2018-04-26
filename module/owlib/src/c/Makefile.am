@@ -255,6 +255,7 @@ AM_CFLAGS = -I../include \
 	${PTHREAD_CFLAGS} \
 	${LIBUSB_CFLAGS} \
 	${LIBFTDI_CFLAGS} \
+	${LIBAVAHI_CFLAGS} \
 	${PIC_FLAGS}
 
 

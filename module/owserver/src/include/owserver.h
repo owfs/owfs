@@ -1,5 +1,4 @@
 /*
-$Id$
    OWFS and OWHTTPD
    one-wire file system and
    one-wire web server

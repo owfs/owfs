@@ -3,7 +3,6 @@ program console;
   * Console Demo usage for ownet/pascal module
   * 
   * Author:  George M. Zouganelis (gzoug@aueb.gr)
-  * Version: $Id$
   *
   * This program is free software; you can redistribute it and/or modify
   * it under the terms of the GNU General Public License as published by

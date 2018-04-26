@@ -1,9 +1,6 @@
 #! /usr/bin/env python
 
 """
-$Id$
-$HeadURL: http://void/svn/peter/playground/nud/categories.py $
-
 Copyright (c) 2006 Peter Kropf. All rights reserved.
 
 Nagios (http://nagios.org) plugin to check the value of a 1-wire sensor.

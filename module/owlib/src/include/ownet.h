@@ -1,5 +1,4 @@
 /*
-$Id$
     OW -- One-Wire filesystem
 
     Written 2008 Paul H Alfille
