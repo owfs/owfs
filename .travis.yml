@@ -17,12 +17,16 @@ addons:
 # Only have libusb-dev 0.1.. we want 0.9.1+
 #    - libusb-dev
     - libavahi-client-dev
+    - swig
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install swig; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install php; fi
 
 before_script:
   - ./bootstrap
 
 script:
-  - ./configure
-  - make
+  - ./configure && make -j 2
 # libcheck no present
 #  - make check
