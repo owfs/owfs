@@ -1,5 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
+AC_PREREQ(2.57)
+
 AC_INIT
 AM_SILENT_RULES([yes])
 
@@ -62,7 +64,6 @@ AH_TOP([
 AH_BOTTOM([#endif])
 AM_CONFIG_HEADER(src/include/config.h)
 
-AC_PREREQ(2.57)dnl
 AC_PREFIX_DEFAULT(/opt/owfs)dnl
 
 AC_PATH_PROG(ECHO,echo,,$PATH)dnl
@@ -70,7 +71,8 @@ AC_PATH_PROG(TEST,test,,$PATH)dnl
 AC_PATH_PROG(RM,rm,,$PATH)dnl
 AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
-AC_PATH_PROG([SWIG],[swig],,$PATH)dnl
+AC_ARG_VAR([SWIG], [path to SWIG utility])
+AC_PATH_PROG([SWIG],[swig])
 AC_PATH_PROG([SOELIM],[soelim])
 AM_CONDITIONAL([SOELIM], [test -n "${SOELIM}"])
 # This macro should appair before any other PKG_* macro
@@ -650,7 +652,7 @@ PHPVMAJOR=""
 if test "${ENABLE_OWPHP}" = "true" ; then
 	m4_include(module/swig/php/php.m4)
 	AC_MSG_NOTICE([Looking for location of php executable])
-	SC_PATH_PHP 		
+	SC_PATH_PHP
 	AC_SUBST(PHPCONFIG)
 	AC_SUBST(PHPINC)
 	AC_SUBST(PHPEXT)
