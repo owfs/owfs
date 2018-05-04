@@ -71,8 +71,11 @@ AC_PATH_PROG(TEST,test,,$PATH)dnl
 AC_PATH_PROG(RM,rm,,$PATH)dnl
 AC_PATH_PROG(RPM,rpm,,$PATH)dnl
 AC_PATH_PROG(RPMBUILD,rpmbuild,,$PATH)dnl
+
+# swig support
 AC_ARG_VAR([SWIG], [path to SWIG utility])
-AC_PATH_PROG([SWIG],[swig])
+AC_PATH_PROGS([SWIG],[swig swig3.0 swig2.0])
+
 AC_PATH_PROG([SOELIM],[soelim])
 AM_CONDITIONAL([SOELIM], [test -n "${SOELIM}"])
 # This macro should appair before any other PKG_* macro
