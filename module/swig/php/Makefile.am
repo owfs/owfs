@@ -24,6 +24,7 @@ AM_CFLAGS = -fexceptions \
 	${EXTRACFLAGS} \
 	${LIBUSB_CFLAGS} \
 	${PTHREAD_CFLAGS} \
+	${LIBAVAHI_CFLAGS} \
 	@PHPINC@
 
 LDADD = -L../../owlib/src/c -low
