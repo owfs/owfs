@@ -37,7 +37,7 @@ OW/blib/lib/OW.pm: OW/ow_wrap.c
 	$(MAKE) -C OW -fMakefile
 	@INSTALL@ -d OW/blib/lib
 	@INSTALL@ OW/OW.pm OW/blib/lib/
-	@ECHO@ >> OW/blib/lib/OW.pm 'our $$VERSION='\''@VERSION@'\'' ;'
+	printf '%s\n' 'our $$VERSION='\''@VERSION@'\'' ; 1;' >> OW/blib/lib/OW.pm
 
 install-data-local: OW/Makefile OW/ow_wrap.c OW/blib/lib/OW.pm
 	$(MAKE) -C OW install DESTDIR="$(DESTDIR)"
