@@ -89,6 +89,17 @@ extern "C" {
 	 */
 	int OW_present(const char *path);
 
+	/* OW_visible -- check if path is visible
+	   path is OWFS style name,
+	   "" or "/" for root directory
+	   "01.23456708ABDE" for device directory
+	   "10.468ACE13579B/temperature for a specific device property
+
+	   return value = 0 ok
+                    < 0 error
+	 */
+	int OW_visible(const char *path);
+
 /* OW_put -- data write
   path is OWFS style name,
     "05.468ACE13579B/PIO.A for a specific device property

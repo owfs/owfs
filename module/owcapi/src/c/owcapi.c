@@ -132,6 +132,32 @@ int OW_present(const char *path)
 	return ReturnAndErrno(ret);
 }
 
+int OW_visible(const char *path)
+{
+	int ret = -ENOENT;
+	struct parsedname s_pn;
+
+	if (API_access_start() == 0) {
+		if (FS_ParsedName(path, &s_pn) == 0) {
+			switch(FS_visible(&s_pn)) {
+				case visible_always:
+				case visible_now:
+					ret = 0;
+					break;
+				case visible_never:
+				case visible_not_now:
+					ret = -ENOENT;
+					break;
+			}
+			FS_ParsedName_destroy(&s_pn);
+		} else {
+			ret = -ENOENT;
+		}
+		API_access_end();
+	}
+	return ReturnAndErrno(ret);
+}
+
 ssize_t OW_lread(const char *path, char *buffer, const size_t size, const off_t offset)
 {
 	ssize_t ret = -EACCES;		/* current buffer string length */
