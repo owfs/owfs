@@ -384,7 +384,7 @@ void AddProperty( char * input_string, enum external_type et )
 		goto cleanup;
 	}
 
-	// persistance
+	// persistence
 	owfree(s_dummy);
 	GetQuotedString( dummy ) ;
 	switch ( s_dummy[0] ) {
@@ -404,7 +404,7 @@ void AddProperty( char * input_string, enum external_type et )
 			s_change = fc_uncached ;
 			break ;
 		default:
-			LEVEL_DEFAULT("Unrecognized persistance <%s> for property <%s> family <%s>",s_dummy,s_property,s_family);
+			LEVEL_DEFAULT("Unrecognized persistence <%s> for property <%s> family <%s>",s_dummy,s_property,s_family);
 			goto cleanup;
 	}
 

@@ -40,8 +40,8 @@ const struct option owopts_long[] = {
 
 	{"hex", no_argument, &hexflag, 1 },
 	{"HEX", no_argument, &hexflag, 1 },
-	{"hexidecimal", no_argument, &hexflag, 1 },
-	{"HEXIDECIMAL", no_argument, &hexflag, 1 },
+	{"hexadecimal", no_argument, &hexflag, 1 },
+	{"HEXADECIMAL", no_argument, &hexflag, 1 },
 
 	{"dir", no_argument, &slashflag, 1 },
 	{"slash", no_argument, &slashflag, 1 },

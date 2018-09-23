@@ -92,7 +92,7 @@ on the original port (4304) and offering a new port (3000) for clients.
 .B owtap (1)
 is a pure
 .I Tcl/TK
-program and will run whereever
+program and will run wherever
 .I Tcl/TK
 is available (Windows, Macintosh, Linux, Unix)
 .SH LINKS

@@ -118,7 +118,7 @@ configured as STRB output
 .br
 Specifies whether the device has performed power-on reset. This bit can only
 be cleared to 0 under software control. As long as this bit is 1 the device
-will allways respond to a conditional search.
+will always respond to a conditional search.
 .SS out_of_testmode
 .I write-only, yes-no
 .br

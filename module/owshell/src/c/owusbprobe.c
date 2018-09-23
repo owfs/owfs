@@ -264,7 +264,7 @@ static void describe_usb_device(const dev_info *dev, const char *ttys_found) {
 			 pid == 0x6014 || pid == 0x6015)) {
 		char addr[255];
 		snprintf(addr, sizeof(addr), "ftdi:s:0x%04x:0x%04x:%s", vid, pid, dev->serial);
-		log("This device is identified as a generic FTDI adapter. To address it, use the following adressing:\n");
+		log("This device is identified as a generic FTDI adapter. To address it, use the following addressing:\n");
 		log("  %s\n", addr);
 
 		if(pid == 0x6001) {
@@ -297,7 +297,7 @@ static void describe_usb_device(const dev_info *dev, const char *ttys_found) {
 		log("  --usb %d:%d", dev->busNo, dev->devAddr);
 		log("  --usb %d\n", dev->usbNr);
 
-		log("Please be aware that these adressing schemes are non-stable, and numbers may\n"
+		log("Please be aware that these addressing schemes are non-stable, and numbers may\n"
 			"change between reboots or reconnects. Please read owserver manual page for more info.");
 	}else if((vid == 0x067B && pid == 0x2303) || (vid == 0x0B6A && pid == 0x5A03)) {
 		// DS2480b-emulating devices

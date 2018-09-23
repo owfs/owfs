@@ -278,7 +278,7 @@ specific
 .I nozero
 #   turn off zeroconf announcement
 .br
-. I annouce
+. I announce
 = name  # name of announced service (optional)
 .br
 .I autoserver

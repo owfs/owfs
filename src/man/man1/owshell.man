@@ -164,7 +164,7 @@ there is not persistent connection with the 1-wire bus, no caching and no multit
 and performs a quick set of queries.
 .PP
 .B owserver (1)
-performs the actual 1-wire connection (to physical 1-wire busses or other
+performs the actual 1-wire connection (to physical 1-wire buses or other
 .B owserver
 programs), performs concurrency locking, caching, and error collection.
 .PP
@@ -225,9 +225,9 @@ process can be local or remote.
 If the server option is not specified, the default is the local machine and the IANA allocated default port of 4304. Thus "\-s localhost:4304" is the equivalent.
 .SH DATA OPTIONS
 .SH \-\-hex
-Hexidecimal mode. For reading data, each byte of character will be displayed as two characrters 0-9ABCDEF. Most useful for reading memory locations. No spaces between data.
+Hexadecimal mode. For reading data, each byte of character will be displayed as two characrters 0-9ABCDEF. Most useful for reading memory locations. No spaces between data.
 .P
-Writing data in hexidecimal mode just means that the data should be given as one long hexidecimal string.
+Writing data in hexadecimal mode just means that the data should be given as one long hexadecimal string.
 .SH \-\-start=offset
 Read or write memory locations starting at the offset byte rather than the beginning. An offset of 0 means the beginning (and is the default).
 .P

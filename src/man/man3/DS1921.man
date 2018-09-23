@@ -232,7 +232,7 @@ properties.
 .SS undertemp/count.0 ... undertemp/count.11 undertemp/count.ALL
 .I read-only, unsigned integer
 .br
-Number of sampling periods that the Thermochron stayed out of range durring a mission. Each sampling period is
+Number of sampling periods that the Thermochron stayed out of range during a mission. Each sampling period is
 .I mission/frequency
 minutes long.
 .SS overtemp/end.0 ... overtemp/end.11 overtemp/end.ALL

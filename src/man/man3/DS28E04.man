@@ -112,7 +112,7 @@ PIO powers up 1
 .br
 Specifies whether the device has performed power-on reset. This bit can only
 be cleared to 0 under software control. As long as this bit is 1 the device
-will allways respond to a conditional search.
+will always respond to a conditional search.
 .SS set_alarm
 .I read-write, integer unsigned (0-333)
 .br

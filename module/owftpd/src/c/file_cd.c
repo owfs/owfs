@@ -181,7 +181,7 @@ static void WildLexCD(struct cd_parse_s *cps, ASCII * match)
 {
 	struct parsedname pn;
 
-	LEVEL_DEBUG("FTP Wildcard patern matching: Path=%s, Pattern=%s, rest=%s", SAFESTRING(cps->buffer), SAFESTRING(match), SAFESTRING(cps->rest));
+	LEVEL_DEBUG("FTP Wildcard pattern matching: Path=%s, Pattern=%s, rest=%s", SAFESTRING(cps->buffer), SAFESTRING(match), SAFESTRING(cps->rest));
 	/* Check potential length */
 	if (strlen(cps->buffer) + OW_FULLNAME_MAX + 2 > PATH_MAX) {
 		cps->ret = -ENAMETOOLONG;

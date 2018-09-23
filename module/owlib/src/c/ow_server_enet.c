@@ -225,7 +225,7 @@ static GOOD_OR_BAD OWServer_Enet_reopen_prompt(struct connection_in *in)
 	char cmd_response[1+in->CRLF_size] ;
 	
 	if ( BAD( OWServer_Enet_read( BYTE_string(cmd_response), 1, in )) ) {
-		LEVEL_DEBUG("Error reading inital telnet prompt" ) ;
+		LEVEL_DEBUG("Error reading initial telnet prompt" ) ;
 		return gbBAD ;
 	}
 	switch( cmd_response[0] ) {

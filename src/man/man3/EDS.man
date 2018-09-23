@@ -609,7 +609,7 @@ Device name. E.g: "EDS0071"
 .SS device_id
 .I read-only, unsigned
 .br
-Number corresponding to the hexidecimal type. E.g:
+Number corresponding to the hexadecimal type. E.g:
 .br
 EDS0071 -> 0x0071 -> 113 in decimal
 .SH STANDARD PROPERTIES
