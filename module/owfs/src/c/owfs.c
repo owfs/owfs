@@ -16,6 +16,9 @@
 
 #include "owfs.h"
 #include "ow_connection.h"
+#ifdef __FreeBSD_kernel__
+#include "sys/param.h"
+#endif
 #include "sys/mount.h"
 
 /*
@@ -127,7 +130,7 @@ int main(int argc, char *argv[])
 
 	// Unmount just in case
 	// No checks -- can fail without consequences
-#if defined(__FreeBSD__) || defined(__APPLE__)
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__APPLE__)
 	unmount( Outbound_Control.head->name, 0) ;
 #else
 	umount( Outbound_Control.head->name ) ;
