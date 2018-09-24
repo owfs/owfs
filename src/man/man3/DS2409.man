@@ -106,7 +106,7 @@ branch switched in
 .SS discharge
 .I write-only, yes-no
 .br
-Writing a non-zero value to this property will electrically reset both the main and auxillary branches of the 1-wire bus by dropping power for 100 milliseconds. All devices on those branches will lose parasitic power and reset to power-up defaults. As a side effect, both
+Writing a non-zero value to this property will electrically reset both the main and auxiliary branches of the 1-wire bus by dropping power for 100 milliseconds. All devices on those branches will lose parasitic power and reset to power-up defaults. As a side effect, both
 .I event
 flags and thus, the alarm state, are cleared, too.
 .SS event.0 event.1 event.ALL event.BYTE

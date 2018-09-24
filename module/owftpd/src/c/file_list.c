@@ -254,7 +254,7 @@ static void WildLexParse(struct file_parse_s *fps, ASCII * match)
 	struct parsedname pn;
 	/* Embedded callback function */
 
-	LEVEL_DEBUG("FTP Wildcard patern matching: Path=%s, Pattern=%s, File=%s", SAFESTRING(fps->buffer), SAFESTRING(match), SAFESTRING(fps->rest));
+	LEVEL_DEBUG("FTP Wildcard pattern matching: Path=%s, Pattern=%s, File=%s", SAFESTRING(fps->buffer), SAFESTRING(match), SAFESTRING(fps->rest));
 
 	/* Check potential length */
 	if (strlen(fps->buffer) + OW_FULLNAME_MAX + 2 > PATH_MAX) {

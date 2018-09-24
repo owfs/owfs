@@ -453,7 +453,7 @@ static GOOD_OR_BAD DS2480_detect_serial(struct connection_in *in)
 {
 	in->pown->state = cs_virgin ;
 	if ( BAD(DS2480_initialize_repeatedly(in)) ) {
-		LEVEL_DEBUG("Could not initilize the DS9097U even after several tries") ;
+		LEVEL_DEBUG("Could not initialize the DS9097U even after several tries") ;
 		COM_close(in) ;
 		return gbBAD ;
 	}

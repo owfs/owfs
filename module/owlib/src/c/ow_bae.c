@@ -95,7 +95,7 @@ WRITE_FUNCTION(FS_w_32) ;
 #define _FC_EEPROM_PAGE_SIZE   512
 #define _FC_SDCARD_SECTOR_SIZE 512
 #define _FC_MAX_EEPROM_PAGES    32
-#define _FC_EEPROM_OFFSET   0x0000 //changed adressing scheme, valid from 0911 models 
+#define _FC_EEPROM_OFFSET   0x0000 //changed addressing scheme, valid from 0911 models
 #define _FC_MAX_FLASH_SIZE  0x4000
 #define _FC_MAX_INTERLEAVE     255
 #define _FC02_MEMORY_SIZE      128

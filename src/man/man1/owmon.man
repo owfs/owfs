@@ -73,7 +73,7 @@ with
 .B owmon (1)
 is a pure
 .I Tcl/TK
-program and will run whereever
+program and will run wherever
 .I Tcl/TK
 is available (Windows, Macintosh, Linux, Unix)
 .SH LINKS

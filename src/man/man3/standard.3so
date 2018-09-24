@@ -25,18 +25,18 @@ in reverse order, which is often used in other applications and labeling.
 .SS crc8
 .I read-only, ascii
 .br
-The 8-bit error correction portion. Uses cyclic redundancy check. Computed from the preceding 56 bits of the unique ID number. Given as upper case hexidecimal digits (0-9A-F).
+The 8-bit error correction portion. Uses cyclic redundancy check. Computed from the preceding 56 bits of the unique ID number. Given as upper case hexadecimal digits (0-9A-F).
 .SS family
 .I read-only, ascii
 .br
 The 8-bit family code. Unique to each
 .I type
-of device. Given as upper case hexidecimal digits (0-9A-F).
+of device. Given as upper case hexadecimal digits (0-9A-F).
 .SS id
 .SS r_id
 .I read-only, ascii
 .br
-The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexidecimal digits (0-9A-F).
+The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexadecimal digits (0-9A-F).
 .br
 .I r id
 is the
@@ -49,7 +49,7 @@ in reverse order, which is often used in other applications and labeling.
 Uses an extension of the 1-wire design from iButtonLink company that associated 1-wire physical connections with a unique 1-wire code. If the connection is behind a
 .B Link Locator
 the
-.I locator will show a unique 8-byte number (16 character hexidecimal) starting with family code FE.
+.I locator will show a unique 8-byte number (16 character hexadecimal) starting with family code FE.
 .br
 If no
 .B Link Locator

@@ -628,7 +628,7 @@ static RESET_TYPE DS9490_reset(const struct parsedname *pn)
 			if (val & COMMCMDERRORRESULT_NRS) {
 				// empty bus detected, no presence pulse detected
 				in->AnyDevices = anydevices_no;
-				LEVEL_DATA("no presense pulse detected");
+				LEVEL_DATA("no presence pulse detected");
 			}
 		}
 	}

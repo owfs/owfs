@@ -107,7 +107,7 @@
   systems with both RFC 2553 and XNET formats
 
 2001-03-27, Shane Kerr <shane@time-travellers.org>
-- Fixed bug where wrong server address was used on initalization of
+- Fixed bug where wrong server address was used on initialization of
   ftp_server class.  Passive probably didn't work in the 0.3.x series
   for IPv4!
 

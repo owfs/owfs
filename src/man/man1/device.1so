@@ -191,12 +191,12 @@ Used for testing and development. No actual hardware is needed. Useful for separ
 is a list of comma-separated 1-wire devices in the following formats. Note that a valid CRC8 code is created automatically.
 .TP
 10,05,21
-Hexidecimal
+Hexadecimal
 .I family codes
 (the DS18S20, DS2405 and DS1921 in this example).
 .TP
 10.12AB23431211
-A more complete hexidecimal unique address. Useful when an actual hardware device should be simulated.
+A more complete hexadecimal unique address. Useful when an actual hardware device should be simulated.
 .TP
 DS2408,DS2489
 The 1-wire device name. (Full ID cannot be speciifed in this format).

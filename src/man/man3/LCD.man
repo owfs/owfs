@@ -74,7 +74,7 @@ is an aggregate of the properties, comma separated. Read atomically.
 .br
 Cumulative sum of the
 .I counters
-property. To reset, write a zero. The cumulative counter can have any value written, which allows preservation of counts accross program restarts if the value at program termination is stored.
+property. To reset, write a zero. The cumulative counter can have any value written, which allows preservation of counts across program restarts if the value at program termination is stored.
 .br
 Reading
 .I cumulative

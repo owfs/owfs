@@ -442,7 +442,7 @@ is a class of battery charging controllers. There are minor hardware difference 
 .B DS2760, DS2761
 and
 .B DS2762
-battery chip, but they are indistiguishable to the software.
+battery chip, but they are indistinguishable to the software.
 .PP
 A number of interesting devices can be built with the
 .B DS276x 

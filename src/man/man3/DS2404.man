@@ -353,7 +353,7 @@ Both the
 .B DS2404 (3)
 and
 .B DS2404S (3)
-have 1-wire and 3-wire interfaces, which might be useful for transferring data between the 2 buses. They act as a passive slave to both busses. The
+have 1-wire and 3-wire interfaces, which might be useful for transferring data between the 2 buses. They act as a passive slave to both buses. The
 .B DS2404 (3)
 and
 .B DS2404S (3)

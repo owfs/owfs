@@ -19,7 +19,7 @@ All 1-wire devices are factory assigned a unique 64-bit address. This address is
 8 bits
 .IP
 .PP
-Addressing under OWFS is in hexidecimal, of form:
+Addressing under OWFS is in hexadecimal, of form:
 .IP
 .B 01.123456789ABC
 .PP
