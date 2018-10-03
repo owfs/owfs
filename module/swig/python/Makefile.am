@@ -9,7 +9,7 @@ ow_wrap.c: ../ow.i ${LIBOW}
 	$(SWIG) -python -o $@ ../ow.i
 
 OW.py: ow_wrap.c setup.py $(LIBOW)
-	CFLAGS="@LIBUSB_CFLAGS@" $(PYTHON) setup.py build
+	CFLAGS="@LIBUSB_CFLAGS@ @LIBAVAHI_CFLAGS@" $(PYTHON) setup.py build
 
 install-data-local:
 #	OpenSUSE is buggy and install libraries at /usr/local.
