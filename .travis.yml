@@ -21,7 +21,7 @@ addons:
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install swig; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install php; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install openldap libiconv php; fi
 
 before_script:
   - ./bootstrap
