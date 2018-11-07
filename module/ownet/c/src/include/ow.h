@@ -118,9 +118,12 @@
 
 #include <netdb.h>				/* addrinfo */
 
-#ifdef HAVE_SYS_MKDEV_H
-#include <sys/mkdev.h>			/* for major() */
-#endif							/* HAVE_SYS_MKDEV_H */
+/* for major() if sys/types.h is not enough */
+#ifdef MAJOR_IN_MKDEV
+#include <sys/mkdev.h>
+#elif defined MAJOR_IN_SYSMACROS
+#include <sys/sysmacros.h>
+#endif
 
 /* Can't include search.h when compiling owperl on Fedora Core 1. */
 #ifndef SKIP_SEARCH_H

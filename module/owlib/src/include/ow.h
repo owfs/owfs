@@ -188,13 +188,12 @@
 #include <netdb.h>				/* for getaddrinfo */
 #endif							/* HAVE_NETDB_H */
 
-#ifdef HAVE_SYS_SYSMACROS_H
-#include <sys/sysmacros.h>			/* for major() */
-#endif							/* HAVE_SYS_SYSMACROS_H */
-
-#ifdef HAVE_SYS_MKDEV_H
-#include <sys/mkdev.h>			/* for major() on Solaris */
-#endif							/* HAVE_SYS_MKDEV_H */
+/* for major() if sys/types.h is not enough */
+#ifdef MAJOR_IN_MKDEV
+#include <sys/mkdev.h>
+#elif defined MAJOR_IN_SYSMACROS
+#include <sys/sysmacros.h>
+#endif
 
 #include <stddef.h> // for offsetof()
 
