@@ -24,7 +24,7 @@ void HTTPstart(struct OutputControl * oc, const char *status, const enum content
 	size_t l = strftime(d, sizeof(d), "%a, %d %b %Y %T GMT", gmtime(&t));
 
 	fprintf(out, "HTTP/1.0 %s\r\n", status);
-	fprintf(out, "Date: %*s\n", (int) l, d);
+	fprintf(out, "Date: %*s\r\n", (int) l, d);
 	fprintf(out, "Server: %s\r\n", SVERSION);
 	fprintf(out, "Last-Modified: %*s\r\n", (int) l, d);
 	/*
