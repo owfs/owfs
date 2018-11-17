@@ -174,7 +174,8 @@ case "${host_os}" in
 esac
 AC_SUBST(LIBPOSTFIX)
 
-
+# Set C Standard and other flags applicable to all compilers
+CFLAGS="$CFLAGS -std=c99"
 
 if test "$cross_compiling" != yes; then
 	OW_CHECK_NESTED_FUNCTIONS
