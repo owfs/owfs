@@ -8,7 +8,7 @@ MANFILES = \
     DS2502.man DS2505.man DS2506.man DS2720.man DS2740.man DS2751.man \
     DS2755.man DS2760.man DS2770.man DS2780.man DS2781.man DS2890.man \
     DS28E04.man DS28EA00.man DS28EC20.man EDS.man EEEF.man LCD.man mAM001.man \
-    mCM001.man mDI001.man mRS001.man IBLSS.man owperl.man
+    mCM001.man mDI001.man mRS001.man IBLSS.man owperl.man InfernoEmbedded.man
 ## .so includes
 SOFILES = \
     addressing.3so description.3so seealso.3so standard.3so standard_mini.3so \

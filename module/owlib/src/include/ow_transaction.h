@@ -120,6 +120,16 @@ struct transaction_log {
 #define TRXN_READ2(readdata)    TRXN_READ(readdata,2)
 #define TRXN_WRITE3(writedata)  TRXN_WRITE(writedata,3)
 #define TRXN_READ3(readdata)    TRXN_READ(readdata,3)
+#define TRXN_WRITE4(writedata)  TRXN_WRITE(writedata,4)
+#define TRXN_READ4(readdata)    TRXN_READ(readdata,4)
+#define TRXN_WRITE5(writedata)  TRXN_WRITE(writedata,5)
+#define TRXN_READ5(readdata)    TRXN_READ(readdata,5)
+#define TRXN_WRITE6(writedata)  TRXN_WRITE(writedata,6)
+#define TRXN_READ6(readdata)    TRXN_READ(readdata,6)
+#define TRXN_WRITE7(writedata)  TRXN_WRITE(writedata,7)
+#define TRXN_READ7(readdata)    TRXN_READ(readdata,7)
+#define TRXN_WRITE8(writedata)  TRXN_WRITE(writedata,8)
+#define TRXN_READ8(readdata)    TRXN_READ(readdata,8)
 
 #define TRXN_WR_CRC16(pointer,writelength,readlength) \
                 TRXN_WRITE((BYTE *)pointer,writelength), \

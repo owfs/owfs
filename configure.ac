@@ -174,7 +174,8 @@ case "${host_os}" in
 esac
 AC_SUBST(LIBPOSTFIX)
 
-
+# Set C Standard and other flags applicable to all compilers
+CFLAGS="$CFLAGS -std=c99"
 
 if test "$cross_compiling" != yes; then
 	OW_CHECK_NESTED_FUNCTIONS
@@ -1524,6 +1525,37 @@ AC_COMPILE_IFELSE(
 	AC_DEFINE(__HAS_IPV6__, 0, [No ipv6 support available.])
 ])
 
+# Test if uthash is enabled
+AC_MSG_CHECKING(if uthash is enabled)
+ENABLE_UTHASH="auto"
+AC_ARG_ENABLE(uthash,
+[  --enable-uthash         Enable uthash (default auto)],
+[
+	if test "$enableval" = "no"; then
+		ENABLE_UTHASH="false"
+		AC_MSG_RESULT([no])
+	else
+		ENABLE_UTHASH="true"
+		AC_MSG_RESULT([yes])
+	fi
+],
+[
+	AC_MSG_RESULT([auto (default)])
+])
+if test "${ENABLE_UTHASH}" != "false" ; then
+	AC_CHECK_HEADER(uthash.h,,[
+		if test "${ENABLE_UTHASH}" = "true" ; then
+			AC_MSG_ERROR([uthash.h must be installed])
+		else
+			AC_MSG_WARN([uthash.h not found, hash optimisations will be disabled])
+			ENABLE_UTHASH=false
+		fi
+	])
+	if test "${ENABLE_UTHASH}" != "false" ; then
+		ENABLE_UTHASH=true
+	fi
+fi
+
 
 AC_CACHE_CHECK(if sem_timedwait exists,ac_cv_sem_timedwait, [
    save_LIBS="$LIBS"; LIBS="$LIBS $PTHREAD_LIBS" ; save_CFLAGS="$CFLAGS"; CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
@@ -1614,6 +1646,13 @@ else
 	OW_FTDI=0
 fi
 AC_SUBST(OW_FTDI)
+
+if test "${ENABLE_UTHASH}" = "true" ; then
+	OW_UTHASH=1
+else
+	OW_UTHASH=0
+fi
+AC_SUBST(OW_UTHASH)
 
 if test "${ENABLE_DEBUG}" = "true" ; then
 	OW_DEBUG=1
@@ -1854,6 +1893,11 @@ if test "${ENABLE_ZERO}" = "true"; then
 else
 	AC_MSG_RESULT([         Zeroconf/Bonjour is DISABLED])
 fi
+if test "${ENABLE_UTHASH}" = "true"; then
+	AC_MSG_RESULT([                   uthash is enabled])
+else
+	AC_MSG_RESULT([                   uthash is DISABLED])
+fi
 if test "${ENABLE_DEBUG}" = "true"; then
 	AC_MSG_RESULT([             Debug-output is enabled])
 else
@@ -1874,6 +1918,7 @@ if test "${ENABLE_OWMALLOC}" = "true"; then
 else
 	AC_MSG_RESULT([Tracing memory allocation is DISABLED])
 fi
+
 
 AC_MSG_RESULT()
 AC_MSG_RESULT([Module configuration:])

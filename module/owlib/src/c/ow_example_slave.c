@@ -50,7 +50,7 @@ A. Property functions:
   4. Write all the appropriate property functions
   5. Add any visibility functions if needed
   6. Add this file and the header file to the CVS
- 
+
 B. Header
   1. Create a similarly named header file in ../include
   2. Protect inclusion with #ifdef / #define / #endif
@@ -59,19 +59,19 @@ B. Header
 C. Makefile and include
   1. Add this file to Makefile.am
   2. Add the header to ../include/Makefile.am
-  3. Add the header file to ../include/devices.h
+  3. Add the header file to ../include/ow_devices.h
 
 D. Device tree
   1. Add the appropriate entry to the device tree in
   * ow_tree.c
-  * 
+  *
   SUMMARY:
   * create the slave_support file (this one) and the (simple) header file
   * add references to the slave in ow_tree.c ow_devices.h and both Makefile.am
   * Add the files the the CVS repository
 
-*/ 
- 
+*/
+
 
 #include <config.h>
 #include "owfs_config.h"
@@ -82,11 +82,11 @@ D. Device tree
 /* Here are the functions that perform the tasks of the listed properties
  * Unually there is on function for each read and write task, but there is
  * a data field that can be used to distinguish similar tasks and pool the code
- * 
+ *
  * The functions get the onw_wire_query structure that contains buffers for data or results
- * and the parsedname structure that contains information on the name, serial number, 
+ * and the parsedname structure that contains information on the name, serial number,
  * extra data and extension
- * 
+ *
  * sometimes it makes sense to have an internal (hidden) field that corresponds better
  * to the devices registers, and different "linked" properties that access the register
  * for presentation
@@ -104,7 +104,7 @@ READ_FUNCTION(FS_r_extension_characters);
  * For properties that have an extension
  * e.g. PIO.A PIO.B
  * one set of functions can be used to manage the data
- * 
+ *
  * There are several aggregate types:
  * 1. aggregate -- a single internal value is access on the slave, but it's also addressable separately
  *              And example would be an 8-bit register that corresponds to 8 pio pins. Read set and cleared
@@ -141,7 +141,7 @@ static ZERO_OR_ERROR FS_r_read_number(struct one_wire_query *owq)
 	// Simple function that returns an integer.
 	// More usual case would be to send instructions to the slave over the 1-wire bus
 	// and return the (interpreted) result.
-	
+
 	OWQ_I(owq) = _EXAMPLE_SLAVE_DEFAULT_VALUE ;
 	// OWQ structure holds the result. the format (integer in this case) comes from a
 	// property field (ft_integer in this case)
@@ -157,10 +157,10 @@ static ZERO_OR_ERROR FS_r_read_bits(struct one_wire_query *owq)
 	// bit list: bits.ALL
 	// unsigned number: bits.BYTE
 	// or individual bits: bits.0, ... bits.7
-	
+
 	// Note that all this handling is done at a higher level
 	// All we need to do here is return a single unsigned number
-	
+
 	OWQ_U(owq) = _EXAMPLE_SLAVE_DEFAULT_VALUE ;
 	// OWQ structure holds the result. the format (integer in this case) comes from a
 	// property field (ft_integer in this case)
@@ -173,17 +173,17 @@ static ZERO_OR_ERROR FS_r_is_index_prime(struct one_wire_query *owq)
 {
 	struct parsedname * pn = PN(owq) ; // Get the parsename reference
 	int array_index ; // array index
-	
+
 	// Here we'll use the index as a number (integer) and test whether the number is prime
 	// The index is not an array index.
 	// There is no pre-defined number of elements
 	// There is no ".ALL" function available
-	
+
 	// The index string was parsed and converted to a number, but
 	// no bounds checking was done (unlike a normal array).
-	
+
 	array_index = pn->extension ;
-	
+
 	// Prime number test
 	// pick off negatives, 0, 1, 2, evens
 	// Then test by dividing by odds up to square root
@@ -196,10 +196,10 @@ static ZERO_OR_ERROR FS_r_is_index_prime(struct one_wire_query *owq)
 	} else if ( array_index % 2 == 0 ) {
 		OWQ_Y(owq) = 0 ; // even is not prime
 	} else {
-		int idiv = 1 ; // test devisor 
-		
+		int idiv = 1 ; // test devisor
+
 		OWQ_Y(owq) = 1 ; // assume prime
-		
+
 		do {
 			idiv += 2 ; // still odd
 			if ( array_index % idiv == 0 ) {
@@ -220,12 +220,12 @@ static ZERO_OR_ERROR FS_r_extension_characters(struct one_wire_query *owq)
 	// This is another sparse array -- no ALL or max element
 	// Even more, it is really a hash array -- the index is text.
 	// We can use the text however we want.
-	
+
 	// Unlike normal arrays, any parsing and bounds checking is up to us.
 	if ( pn->sparse_name == NULL ) {
 		return -EINVAL ;
 	}
-	
+
 	// In this case, just return the string length
 	OWQ_U(owq) = strlen( pn->sparse_name ) ;
 	return 0;
