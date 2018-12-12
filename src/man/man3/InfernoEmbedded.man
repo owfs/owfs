@@ -5,7 +5,7 @@
 '\" Device manual page for the OWFS -- 1-wire filesystem package.
 '\" InfernoEmbedded Softdevices
 '\"
-'\" Free for all use. No waranty. None. Use at your own risk.
+'\" Free for all use. No warranty. None. Use at your own risk.
 '\"
 .TH InfernoEmbedded 3  2018 "OWFS Manpage" "One-Wire File System"
 .SH NAME

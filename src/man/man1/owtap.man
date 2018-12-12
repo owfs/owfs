@@ -5,7 +5,7 @@
 '\" Device manual page for owtap -- 1-wire filesystem package
 '\" Protocol sniffer for owserver tcp protocol
 '\"
-'\" Free for all use. No waranty. None. Use at your own risk.
+'\" Free for all use. No warranty. None. Use at your own risk.
 '\"
 .TH OWTAP 1 2007 "OWTAP Manpage" "One-Wire File System"
 .SH NAME

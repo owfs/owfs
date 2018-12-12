@@ -5,7 +5,7 @@
 '\" Library manual page for the OWFS -- 1-wire filesystem package
 '\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
 '\"
-'\" Free for all use. No waranty. None. Use at your own risk.
+'\" Free for all use. No warranty. None. Use at your own risk.
 '\"
 .TH OWCAPI 1 2004 "OWFS Manpage" "One-Wire File System"
 .SH NAME
