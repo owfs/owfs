@@ -21,6 +21,9 @@ distutils setup file for use in creating a Python module from the owfs
 project.
 """
 
+# allows one to use the python3 syntax for print()
+from __future__ import print_function
+
 import os
 # platform doesn't exist for python 2.2
 #import platform
@@ -59,15 +62,15 @@ def write_configuration(define_macros, include_dirs, libraries, library_dirs,
                         runtime_library_dirs,extra_objects):    
     #Write the compilation configuration into a file
     out=open('configuration.log','w')
-    print >> out, "Current configuration"
-    print >> out, "libraries", libraries
-    print >> out, "library_dirs", library_dirs
-    print >> out, "include_dirs", include_dirs
-    print >> out, "define_macros", define_macros
-    print >> out, "extra_link_args", extra_link_args
-    print >> out, "extra_compile_args", extra_compile_args
-    print >> out, "runtime_library_dirs", runtime_library_dirs
-    print >> out, "extra_objects", extra_objects
+    print("Current configuration", file=out)
+    print("libraries", libraries, file=out)
+    print("library_dirs", library_dirs, file=out)
+    print("include_dirs", include_dirs, file=out)
+    print("define_macros", define_macros, file=out)
+    print("extra_link_args", extra_link_args, file=out)
+    print("extra_compile_args", extra_compile_args, file=out)
+    print("runtime_library_dirs", runtime_library_dirs, file=out)
+    print("extra_objects", extra_objects, file=out)
     out.close()
 
 have_darwin = '@HAVE_DARWIN@'
