@@ -41,10 +41,10 @@ path   = args[2]
 
 try:
     s = ownet.Sensor(path, server=server, port=port)
-except ownet.exUnknownSensor, ex:
+except ownet.exUnknownSensor as ex:
     print 'OW ' + nagios.unknown[1] + ' - unknown sensor ' + str(ex)
     sys.exit(nagios.unknown[0])
-except socket.error, ex:
+except socket.error as ex:
     print 'OW ' + nagios.unknown[1] + ' - communication error ' + str(ex)
     sys.exit(nagios.unknown[0])
 

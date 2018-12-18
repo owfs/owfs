@@ -37,7 +37,7 @@ load    = True
 class OWLoad( unittest.TestCase ):
     def setUp( self ):
         if not os.path.exists( 'owtest.ini' ):
-            raise IOError, 'owtest.ini'
+            raise IOError('owtest.ini')
 
         self.config = ConfigParser.ConfigParser( )
         self.config.read( 'owtest.ini' )

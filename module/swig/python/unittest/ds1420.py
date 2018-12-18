@@ -35,7 +35,7 @@ import ow
 __version__ = '0.0'
 
 if not os.path.exists( 'owtest.ini' ):
-    raise IOError, 'owtest.ini'
+    raise IOError('owtest.ini')
 
 config = ConfigParser.ConfigParser( )
 config.read( 'owtest.ini' )

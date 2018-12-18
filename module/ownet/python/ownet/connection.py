@@ -224,7 +224,7 @@ class Connection(object):
 
         #print 'Connection.unpack("%s")' % msg
         if len(msg) is not 24:
-            raise exInvalidMessage, msg
+            raise exInvalidMessage(msg)
 
         val          = struct.unpack('iiiiii', msg)
         version      = socket.ntohl(val[0])
