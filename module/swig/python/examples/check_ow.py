@@ -59,7 +59,7 @@ if options.temperature:
 try:
     ow.error_print(ow.error_print.suppressed) # needed to exclude debug output which confuses nagios
     ow.init(init)
-except ow.exUnknownSensor, ex:
+except ow.exUnknownSensor as ex:
     exit(nagios.unknown[0], 'unable to initialize sensor adapter ' + str(ex))
 
 
@@ -72,7 +72,7 @@ else:
 
 try:
     s = ow.Sensor(sensor)
-except ow.exUnknownSensor, ex:
+except ow.exUnknownSensor as ex:
     exit(nagios.unknown, 'unknown sensor ' + str(ex))
 
 
