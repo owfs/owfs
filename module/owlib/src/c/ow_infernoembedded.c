@@ -67,6 +67,7 @@ READ_FUNCTION(ie_get_device);
 READ_FUNCTION(ie_get_version);
 READ_FUNCTION(ie_get_status);
 WRITE_FUNCTION(ie_boot_firmware_updater);
+WRITE_FUNCTION(ie_refresh_cache);
 
 /* Inferno Embedded RGBW Controller */
 VISIBLE_FUNCTION(is_visible_rgbw_device);
@@ -116,6 +117,7 @@ static struct filetype InfernoEmbedded[] = {
 	{"version", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, ie_get_version, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"status", PROPERTY_LENGTH_UNSIGNED, NON_AGGREGATE, ft_unsigned, fc_volatile, ie_get_status, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"enter_firmware_update", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, NO_READ_FUNCTION, ie_boot_firmware_updater, VISIBLE, NO_FILETYPE_DATA, },
+	{"refresh", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, NO_READ_FUNCTION, ie_refresh_cache, VISIBLE, NO_FILETYPE_DATA, },
 
 	/* Inferno Embedded RGBW Controller */
 	{"rgbw_all_off", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_static, NO_READ_FUNCTION, rgbw_all_off, is_visible_rgbw_device, NO_FILETYPE_DATA, },
@@ -584,6 +586,24 @@ static ZERO_OR_ERROR ie_boot_firmware_updater(struct one_wire_query *owq)
 	}
 	return 0;
 }
+
+/**
+ * Refresh device info
+ * @param owq the query
+ */
+static ZERO_OR_ERROR ie_refresh_cache(struct one_wire_query *owq)
+{
+#if OW_UTHASH
+	ie_device *device;
+	if (BAD(device_info(PN(owq), &device))) {
+		return gbBAD;
+	}
+	invalidate_device(&device);
+#endif
+
+	return gbGOOD;
+}
+
 
 #include "ow_ie_rgbw_controller.c"
 #include "ow_ie_firmware_updater.c"
