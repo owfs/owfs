@@ -780,36 +780,34 @@ static ZERO_OR_ERROR switch_master_write_relay_state(struct one_wire_query *owq)
 			val = 255;
 		}
 
-		if (val != master->relays[port][channel].state) {
-			LEVEL_DEBUG("Setting relay port %d channel %d to %d", port, channel, val);
+		LEVEL_DEBUG("Setting relay port %d channel %d to %d", port, channel, val);
 
-			BYTE write_string[] = { _1W_SWITCH_MASTER_SET_RELAY_STATE, 0, 0, 0, 0};
-			BYTE command_ok[1];
+		BYTE write_string[] = { _1W_SWITCH_MASTER_SET_RELAY_STATE, 0, 0, 0, 0};
+		BYTE command_ok[1];
 
-			write_string[1] = port;
-			write_string[2] = channel;
-			write_string[3] = val;
+		write_string[1] = port;
+		write_string[2] = channel;
+		write_string[3] = val;
 
-			BYTE crc = CRC8compute(PN(owq)->sn, 8, 0);
-			crc = CRC8compute(write_string, 4, crc);
-			write_string[4] = crc;
+		BYTE crc = CRC8compute(PN(owq)->sn, 8, 0);
+		crc = CRC8compute(write_string, 4, crc);
+		write_string[4] = crc;
 
-			struct transaction_log t[] = {
-					TRXN_START,
-					TRXN_WRITE5(write_string),
-					TRXN_READ1(command_ok),
-					TRXN_END,
-			};
+		struct transaction_log t[] = {
+				TRXN_START,
+				TRXN_WRITE5(write_string),
+				TRXN_READ1(command_ok),
+				TRXN_END,
+		};
 
-			RETURN_ERROR_IF_BAD(BUS_transaction(t, PN(owq)));
+		RETURN_ERROR_IF_BAD(BUS_transaction(t, PN(owq)));
 
-			if (command_ok[0]) {
-				LEVEL_DEBUG("Device reported bad command");
-				return 1;
-			}
-
-			master->relays[port][channel].state = val;
+		if (command_ok[0]) {
+			LEVEL_DEBUG("Device reported bad command");
+			return 1;
 		}
+
+		master->relays[port][channel].state = val;
 
 		while (!isdigit(*next) && (next != NULL)) {
 			next++;
@@ -880,36 +878,34 @@ static ZERO_OR_ERROR switch_master_write_relay_mode(struct one_wire_query *owq)
 			val = 255;
 		}
 
-		if (val != master->relays[port][channel].state) {
-			LEVEL_DEBUG("Setting relay mode for port %d channel %d to %d", port, channel, val);
+		LEVEL_DEBUG("Setting relay mode for port %d channel %d to %d", port, channel, val);
 
-			BYTE write_string[] = { _1W_SWITCH_MASTER_SET_RELAY_MODE, 0, 0, 0, 0};
-			BYTE command_ok[1];
+		BYTE write_string[] = { _1W_SWITCH_MASTER_SET_RELAY_MODE, 0, 0, 0, 0};
+		BYTE command_ok[1];
 
-			write_string[1] = port;
-			write_string[2] = channel;
-			write_string[3] = val;
+		write_string[1] = port;
+		write_string[2] = channel;
+		write_string[3] = val;
 
-			BYTE crc = CRC8compute(PN(owq)->sn, 8, 0);
-			crc = CRC8compute(write_string, 4, crc);
-			write_string[4] = crc;
+		BYTE crc = CRC8compute(PN(owq)->sn, 8, 0);
+		crc = CRC8compute(write_string, 4, crc);
+		write_string[4] = crc;
 
-			struct transaction_log t[] = {
-					TRXN_START,
-					TRXN_WRITE5(write_string),
-					TRXN_READ1(command_ok),
-					TRXN_END,
-			};
+		struct transaction_log t[] = {
+				TRXN_START,
+				TRXN_WRITE5(write_string),
+				TRXN_READ1(command_ok),
+				TRXN_END,
+		};
 
-			RETURN_ERROR_IF_BAD(BUS_transaction(t, PN(owq)));
+		RETURN_ERROR_IF_BAD(BUS_transaction(t, PN(owq)));
 
-			if (command_ok[0]) {
-				LEVEL_DEBUG("Device reported bad command");
-				return 1;
-			}
-
-			master->relays[port][channel].state = val;
+		if (command_ok[0]) {
+			LEVEL_DEBUG("Device reported bad command");
+			return 1;
 		}
+
+		master->relays[port][channel].state = val;
 
 		while (!isdigit(*next) && (next != NULL)) {
 			next++;
@@ -979,36 +975,34 @@ static ZERO_OR_ERROR switch_master_write_relay_timeout(struct one_wire_query *ow
 			val = 255;
 		}
 
-		if (val != master->relays[port][channel].timeout) {
-			LEVEL_DEBUG("Setting relay timeout for port %d channel %d to %d", port, channel, val);
+		LEVEL_DEBUG("Setting relay timeout for port %d channel %d to %d", port, channel, val);
 
-			BYTE write_string[] = { _1W_SWITCH_MASTER_SET_RELAY_TIMEOUT, 0, 0, 0, 0};
-			BYTE command_ok[1];
+		BYTE write_string[] = { _1W_SWITCH_MASTER_SET_RELAY_TIMEOUT, 0, 0, 0, 0};
+		BYTE command_ok[1];
 
-			write_string[1] = port;
-			write_string[2] = channel;
-			write_string[3] = val;
+		write_string[1] = port;
+		write_string[2] = channel;
+		write_string[3] = val;
 
-			BYTE crc = CRC8compute(PN(owq)->sn, 8, 0);
-			crc = CRC8compute(write_string, 4, crc);
-			write_string[4] = crc;
+		BYTE crc = CRC8compute(PN(owq)->sn, 8, 0);
+		crc = CRC8compute(write_string, 4, crc);
+		write_string[4] = crc;
 
-			struct transaction_log t[] = {
-					TRXN_START,
-					TRXN_WRITE5(write_string),
-					TRXN_READ1(command_ok),
-					TRXN_END,
-			};
+		struct transaction_log t[] = {
+				TRXN_START,
+				TRXN_WRITE5(write_string),
+				TRXN_READ1(command_ok),
+				TRXN_END,
+		};
 
-			RETURN_ERROR_IF_BAD(BUS_transaction(t, PN(owq)));
+		RETURN_ERROR_IF_BAD(BUS_transaction(t, PN(owq)));
 
-			if (command_ok[0]) {
-				LEVEL_DEBUG("Device reported bad command");
-				return 1;
-			}
-
-			master->relays[port][channel].timeout = val;
+		if (command_ok[0]) {
+			LEVEL_DEBUG("Device reported bad command");
+			return 1;
 		}
+
+		master->relays[port][channel].timeout = val;
 
 		while (!isdigit(*next) && (next != NULL)) {
 			next++;
