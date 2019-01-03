@@ -28,6 +28,7 @@ import os
 import socket
 import struct
 import re
+from six import ensure_binary, ensure_str
 
 
 __author__ = 'Peter Kropf'
@@ -124,7 +125,7 @@ class Connection(object):
 
         smsg = self.pack(OWMsg.read, len(path) + 1, 8192)
         s.sendall(smsg)
-        s.sendall(path + '\x00')
+        s.sendall(ensure_binary(path + '\x00'))
 
         while 1:
             data = s.recv(24)
@@ -136,7 +137,7 @@ class Connection(object):
 
             if payload_len >= 0:
                 data = s.recv(payload_len)
-                rtn = self.toNumber(data[:data_len])
+                rtn = self.toNumber(ensure_str(data[:data_len]))
                 break
             else:
                 # ping response
@@ -158,7 +159,7 @@ class Connection(object):
         value = str(value)
         smsg = self.pack(OWMsg.write, len(path) + 1 + len(value) + 1, len(value) + 1)
         s.sendall(smsg)
-        s.sendall(path + '\x00' + value + '\x00')
+        s.sendall(ensure_binary(path + '\x00' + value + '\x00'))
 
         data = s.recv(24)
 
@@ -181,7 +182,7 @@ class Connection(object):
 
         smsg = self.pack(OWMsg.dir, len(path) + 1, 0)
         s.sendall(smsg)
-        s.sendall(path + '\x00')
+        s.sendall(ensure_binary(path + '\x00'))
 
         fields = []
         while 1:
@@ -194,7 +195,7 @@ class Connection(object):
 
             if payload_len > 0:
                 data = s.recv(payload_len)
-                fields.append(data[:data_len])
+                fields.append(ensure_str(data[:data_len]))
             else:
                 # end of dir list or 'ping' response
                 break
