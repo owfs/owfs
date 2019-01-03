@@ -424,7 +424,7 @@ class Sensor( object ):
             for entry in list.split( ',' ):
                 try:
                     owfs_get(entry + 'type')
-                except exUnknownSensor as ex:
+                except exUnknownSensor:
                     yield entry.split( '/' )[ 0 ]
 
 
@@ -464,14 +464,14 @@ class Sensor( object ):
                 path = self._usePath + '/' + branch
                 try:
                     list = owfs_get( path )
-                except exUnknownSensor as ex:
+                except exUnknownSensor:
                     continue
                 if list:
                     for branch_entry in list.split( ',' ):
                         branch_path = self._usePath + '/' + branch + '/' + branch_entry.split( '/' )[ 0 ]
                         try:
                             owfs_get( branch_path + '/type' )
-                        except exUnknownSensor as ex:
+                        except exUnknownSensor:
                             continue
                         yield Sensor( branch_path )
 
@@ -481,7 +481,7 @@ class Sensor( object ):
                 for branch_entry in list.split( ',' ):
                     try:
                         owfs_get( branch_entry + 'type' )
-                    except exUnknownSensor as ex:
+                    except exUnknownSensor:
                         continue
                     path = self._usePath + '/' + branch_entry.split( '/' )[ 0 ]
                     if path[ :2 ] == '//':

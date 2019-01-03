@@ -89,14 +89,14 @@ my_extra_compile_args = [ '-D_FILE_OFFSET_BITS=64' ]
 my_extra_link_args = [ ]
 
 if bsd_fixes:
-    my_extra_link_args = my_extra_link_args + str.split('../../owlib/src/c/.libs/libow.so', ' ')
+    my_extra_link_args = my_extra_link_args + '../../owlib/src/c/.libs/libow.so'.split(' ')
 
 my_libraries = [ 'ow' ]
 
 #if ARCH == "x64":
 #    my_extra_objects = [ '../../owlib/src/c/.libs/libow.a' ]
 #    my_libraries = [ ]
-#    #my_extra_link_args = my_extra_link_args + str.split('-Wl,--export-dynamic', ' ')
+#    #my_extra_link_args = my_extra_link_args + '-Wl,--export-dynamic'.split(' ')
 #elif ARCH != "x64":
 #    my_extra_objects = ""
 #    my_libraries = [ 'ow' ]
