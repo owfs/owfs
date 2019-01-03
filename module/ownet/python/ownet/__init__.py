@@ -31,7 +31,7 @@ from __future__ import generators
 
 import sys
 import os
-from connection import Connection
+from ownet.connection import Connection
 
 __author__ = 'Peter Kropf'
 __email__ = 'pkropf@gmail.com'
@@ -379,7 +379,7 @@ class Sensor(object):
                         # print 'branch_entry(%s)' % str(branch_entry)
                         try:
                             self._connection.read(branch_entry + '/type')
-                        except exUnknownSensor as ex:
+                        except exUnknownSensor:
                             continue
                         yield Sensor(branch_entry, connection=self._connection)
 
