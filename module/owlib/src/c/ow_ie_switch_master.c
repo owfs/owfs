@@ -809,7 +809,7 @@ static ZERO_OR_ERROR switch_master_write_relay_state(struct one_wire_query *owq)
 
 		master->relays[port][channel].state = val;
 
-		while (!isdigit(*next) && (next != NULL)) {
+		while (!isdigit(*next) && (*next != '\0')) {
 			next++;
 		}
 	}
@@ -907,7 +907,7 @@ static ZERO_OR_ERROR switch_master_write_relay_mode(struct one_wire_query *owq)
 
 		master->relays[port][channel].state = val;
 
-		while (!isdigit(*next) && (next != NULL)) {
+		while (!isdigit(*next) && (*next != '\0')) {
 			next++;
 		}
 	}
@@ -1004,7 +1004,7 @@ static ZERO_OR_ERROR switch_master_write_relay_timeout(struct one_wire_query *ow
 
 		master->relays[port][channel].timeout = val;
 
-		while (!isdigit(*next) && (next != NULL)) {
+		while (!isdigit(*next) && (*next != '\0')) {
 			next++;
 		}
 	}
