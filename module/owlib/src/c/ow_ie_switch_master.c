@@ -423,7 +423,7 @@ static enum e_visibility is_visible_switch_master_relay(const struct parsedname 
 	}
 
 	DEVICE_TERM(device);
-	return visible_now;
+	return visible_not_now;
 }
 
 /**
