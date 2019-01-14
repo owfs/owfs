@@ -1,15 +1,16 @@
 language: c
 
 os:
-  - linux
-  - osx
+- linux
+- osx
 
 compiler:
-  - clang
-  - gcc
+- clang
+- gcc
 
 
 addons:
+
   apt:
     packages:
 # only have check 0.9 on trusty.
@@ -19,14 +20,15 @@ addons:
     - libavahi-client-dev
     - swig
 
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install swig; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install openldap libiconv php; fi
+  homebrew:
+    packages:
+    - swig
+    - php
 
 before_script:
-  - ./bootstrap
+- ./bootstrap
 
 script:
-  - ./configure && make -j 2
+- ./configure && make -j 2
 # libcheck no present
 #  - make check
