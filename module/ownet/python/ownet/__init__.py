@@ -26,12 +26,11 @@ OWFS is an open source project developed by Paul Alfille and hosted at
 http://www.owfs.org
 """
 
-# avoid error with python2.2
-from __future__ import generators
+from __future__ import generators, absolute_import
 
 import sys
 import os
-from connection import Connection
+from .connection import Connection
 
 __author__ = 'Peter Kropf'
 __email__ = 'pkropf@gmail.com'
@@ -247,8 +246,8 @@ class Sensor(object):
         try:
             #print 'Sensor.__getattr__(%s)' % name
             attr = self._connection.read(object.__getattribute__(self, '_attrs')[name])
-        except:
-            raise AttributeError, name
+        except Exception as exc:
+            raise AttributeError(name) from exc
 
         return attr
 
@@ -379,7 +378,7 @@ class Sensor(object):
                         # print 'branch_entry(%s)' % str(branch_entry)
                         try:
                             self._connection.read(branch_entry + '/type')
-                        except exUnknownSensor, ex:
+                        except exUnknownSensor as ex:
                             continue
                         yield Sensor(branch_entry, connection=self._connection)
 

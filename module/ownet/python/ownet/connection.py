@@ -121,10 +121,12 @@ class Connection(object):
         #print 'Connection.read("%s", %i, "%s")' % (path)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((self._server, self._port))
+        if not isinstance(path,bytes):
+            path = path.encode("ascii")
 
         smsg = self.pack(OWMsg.read, len(path) + 1, 8192)
         s.sendall(smsg)
-        s.sendall(path + '\x00')
+        s.sendall(path + b'\x00')
 
         while 1:
             data = s.recv(24)
@@ -154,11 +156,14 @@ class Connection(object):
         #print 'Connection.write("%s", "%s")' % (path, str(value))
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((self._server, self._port))
+        if not isinstance(path,bytes):
+            path = path.encode("ascii")
 
-        value = str(value)
+        if not isinstance(value, bytes):
+            value = str(value).encode("ascii")
         smsg = self.pack(OWMsg.write, len(path) + 1 + len(value) + 1, len(value) + 1)
         s.sendall(smsg)
-        s.sendall(path + '\x00' + value + '\x00')
+        s.sendall(path + b'\x00' + value + b'\x00')
 
         data = s.recv(24)
 
@@ -178,10 +183,12 @@ class Connection(object):
         #print 'Connection.dir("%s")' % (path)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((self._server, self._port))
+        if not isinstance(path,bytes):
+            path = path.encode("ascii")
 
         smsg = self.pack(OWMsg.dir, len(path) + 1, 0)
         s.sendall(smsg)
-        s.sendall(path + '\x00')
+        s.sendall(path + b'\x00')
 
         fields = []
         while 1:
@@ -224,7 +231,7 @@ class Connection(object):
 
         #print 'Connection.unpack("%s")' % msg
         if len(msg) is not 24:
-            raise exInvalidMessage, msg
+            raise exInvalidMessage(msg)
 
         val          = struct.unpack('iiiiii', msg)
         version      = socket.ntohl(val[0])
@@ -244,7 +251,7 @@ class Connection(object):
         """
         """
 
-        stripped = str.strip()
+        stripped = str.decode("ascii").strip()
         if re.compile('^-?\d+$').match(stripped) :
             return int(stripped)
 
