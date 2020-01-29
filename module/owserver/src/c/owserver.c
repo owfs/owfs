@@ -36,6 +36,9 @@
 
 #include "owserver.h"
 
+/* defined in handler.c */
+extern pthread_mutex_t persistence_mutex ;
+
 /* --- Prototypes ------------ */
 static void SetupAntiloop(int argc, char **argv);
 

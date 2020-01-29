@@ -36,6 +36,10 @@
 
 #include "owserver.h"
 
+pthread_mutex_t persistence_mutex ;
+#define PERSISTENCELOCK    _MUTEX_LOCK(   persistence_mutex ) ;
+#define PERSISTENCEUNLOCK  _MUTEX_UNLOCK( persistence_mutex ) ;
+
 /* Counters for persistent connections */
 int persistent_connections = 0;
 int handler_count = 0 ;
