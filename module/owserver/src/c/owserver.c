@@ -36,6 +36,8 @@
 
 #include "owserver.h"
 
+pthread_mutex_t persistence_mutex ;
+
 /* --- Prototypes ------------ */
 static void SetupAntiloop(int argc, char **argv);
 
