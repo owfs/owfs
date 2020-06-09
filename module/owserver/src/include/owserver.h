@@ -18,7 +18,7 @@
 #include "ow.h"
 #include "ow_connection.h"
 
-pthread_mutex_t persistence_mutex ;
+extern pthread_mutex_t persistence_mutex ;
 #define PERSISTENCELOCK    _MUTEX_LOCK(   persistence_mutex ) ;
 #define PERSISTENCEUNLOCK  _MUTEX_UNLOCK( persistence_mutex ) ;
 
