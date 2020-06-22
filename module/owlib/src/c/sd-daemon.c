@@ -449,13 +449,13 @@ _sd_export_ int sd_notify(int unset_environment, const char *state) {
 
         memset(&sockaddr, 0, sizeof(sockaddr));
         sockaddr.sa.sa_family = AF_UNIX;
-        strncpy(sockaddr.un.sun_path, e, sizeof(sockaddr.un.sun_path));
+        strncpy(sockaddr.un.sun_path, e, sizeof(sockaddr.un.sun_path)-1);
 
         if (sockaddr.un.sun_path[0] == '@')
                 sockaddr.un.sun_path[0] = 0;
 
         memset(&iovec, 0, sizeof(iovec));
-        iovec.iov_base = (char*) state;
+        iovec.iov_base = state;
         iovec.iov_len = strlen(state);
 
         memset(&msghdr, 0, sizeof(msghdr));
