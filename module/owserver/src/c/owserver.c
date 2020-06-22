@@ -44,7 +44,7 @@ static void SetupAntiloop(int argc, char **argv);
 int main(int argc, char **argv)
 {
 	int c;
-	
+
 	/* Set up owlib */
 	LibSetup(program_type_server);
 	Setup_Systemd() ; // systemd?
@@ -98,8 +98,8 @@ int main(int argc, char **argv)
 
 	/* Set up "Antiloop" -- a unique token */
 	SetupAntiloop( argc, argv );
-	
-	/* Call up main processing routine -- waits for network queries */ 
+
+	/* Call up main processing routine -- waits for network queries */
 	ServerProcess( Handler );
 	LEVEL_DEBUG("ServerProcess done");
 
@@ -119,20 +119,20 @@ static void SetupAntiloop(int argc, char **argv)
 		long int rand ;
 		char args[ARG_STRING_LENGTH+1] ;
 	} data_struct ;
-	
-	int argnum ; 
+
+	int argnum ;
 	int left = ARG_STRING_LENGTH ;
-	
+
 	// current time
 	times( & (data_struct.t) );
-	
+
 	// process ID
 	data_struct.pid = getpid() ;
-	
+
 	// random number (seeded from current time)
 	srandom(time(0)) ;
 	data_struct.rand = random() ;
-	
+
 	// command line arguments (don't clear out buffer)
 	for ( argnum=0 ; argnum < argc ; ++argnum )
 	{
@@ -143,11 +143,11 @@ static void SetupAntiloop(int argc, char **argv)
 		strncat( data_struct.args, argv[argnum], argsize ) ;
 		left -= argsize ;
 	}
-	
+
 	// backup definition
 	memcpy( Globals.Token.uuid, (void *) &data_struct, 16 ) ;
-	
+
 	// use MD5 has (gives the required 16 bytes)
 	md5( (void *) &data_struct, sizeof(data_struct) , Globals.Token.uuid ) ;
-	
+
 }
