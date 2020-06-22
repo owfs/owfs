@@ -49,7 +49,7 @@ struct sensor_node {
 	char * family ;
 	char * description ;
 	char * data ;
-	char payload[0] ;
+	char payload[] ;
 } ;
 
 struct property_node {
@@ -62,13 +62,13 @@ struct property_node {
 	enum external_type et ;
 	struct filetype ft ;
 	struct aggregate ag ;
-	char payload[0] ;
+	char payload[] ;
 } ;
 
 struct family_node {
 	struct device dev ; // Must be first since this is actual entry in device tree.
 	char * family ;
-	char payload[0] ;
+	char payload[] ;
 } ;
 
 extern void * property_tree ;
