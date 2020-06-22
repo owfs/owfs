@@ -214,7 +214,8 @@ static int list_tty_devices(dev_info **out_list_head) {
 			if(!(curr = dev_info_create(out_list_head, &tail)))
 				return -1;
 
-			snprintf((char*)curr->tty_name, sizeof(curr->tty_name), "/dev/%s", e->d_name);
+			if(snprintf((char*)curr->tty_name, sizeof(curr->tty_name), "/dev/%s", e->d_name) != sizeof(curr->tty_name))
+				return -1;
 			i++;
 		}
 	}
@@ -263,7 +264,10 @@ static void describe_usb_device(const dev_info *dev, const char *ttys_found) {
 			(pid == 0x6001 || pid == 0x6010 || pid == 0x6011 ||
 			 pid == 0x6014 || pid == 0x6015)) {
 		char addr[255];
-		snprintf(addr, sizeof(addr), "ftdi:s:0x%04x:0x%04x:%s", vid, pid, dev->serial);
+		if(snprintf(addr, sizeof(addr), "ftdi:s:0x%04x:0x%04x:%s", vid, pid, dev->serial) != sizeof(addr)) {
+			log("This device cannot be enumerated as a generic FTDI adapter. Its too long device filename was truncated.");
+			return;
+		}
 		log("This device is identified as a generic FTDI adapter. To address it, use the following addressing:\n");
 		log("  %s\n", addr);
 
