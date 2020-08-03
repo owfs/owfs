@@ -162,6 +162,7 @@ OWLIB_SOURCE = ow_dl.c            \
                ow_return_code.c   \
                ow_rwlock.c        \
                ow_stats.c         \
+               ow_seahu_CD.c      \
                ow_search.c        \
                ow_serial_free.c   \
                ow_serial_open.c   \
