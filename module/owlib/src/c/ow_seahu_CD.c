@@ -121,7 +121,6 @@ LEVEL_DEBUG("+++++++++++++++++++++++ seahu  READ BEEPER +++++++ duration %s, %d"
 
 #include <config.h>
 #include "owfs_config.h"
-#include "ow_seahu.h"
 #include "ow_seahu_CD.h"
 #include<stdbool.h>
 #include<stdio.h>
