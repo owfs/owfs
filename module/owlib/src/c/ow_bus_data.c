@@ -103,6 +103,7 @@ static GOOD_OR_BAD BUS_sendback_data_bitbang(const BYTE * data, BYTE * resp, con
 		if (remain > 0) {
 			RETURN_BAD_IF_BAD( BUS_sendback_data_bitbang(data, resp, max_split_bytes, pn) );
 			RETURN_BAD_IF_BAD( BUS_sendback_data_bitbang(&data[max_split_bytes], resp ? (&resp[max_split_bytes]) : NULL, remain, pn) );
+			return gbGOOD;
 		}
 	}
 
