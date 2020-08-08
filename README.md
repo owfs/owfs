@@ -26,7 +26,7 @@ front ends.
 
 This is the **recommended** way of accessing your 1-Wire bus.
 
-## ohwttpd
+## owhttpd
 
 owhttpd is a simple webserver exposing owlib. It does not need a kernel
 module and will probably run on a greater platform variety.
