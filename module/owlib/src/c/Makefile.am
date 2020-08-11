@@ -219,6 +219,10 @@ OWLIB_SOURCE = ow_dl.c            \
                sd-daemon.c        \
                globals.c
 
+EXTRA_DIST = ow_ie_rgbw_controller.c  \
+             ow_ie_firmware_updater.c \
+             ow_ie_switch_master.c
+
 lib_LTLIBRARIES = libow.la
 
 libow_la_SOURCES = ${OWLIB_SOURCE}
@@ -273,4 +277,3 @@ AM_CFLAGS = -I../include \
 #
 #clean-generic:
 #	@RM@ -f *~ .*~ *.lint *.lint.txt .#* *.bak
-
