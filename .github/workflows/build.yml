@@ -14,11 +14,10 @@ jobs:
         os: [ubuntu-18.04, ubuntu-20.04, macos-10.15]
         cc: [""]
         include:
+        # gcc-10 on ubuntu-20.04
         - os: ubuntu-20.04
-          cc: CC=/usr/bin/gcc-10 CXX=/usr/bin/g++-10
-          setup: |
-            sudo apt-get update
-            sudo apt-get install -y gcc-10 g++-10
+          cc: CC=/usr/bin/gcc-10
+          setup: sudo apt-get install -y gcc-10
     steps:
     - uses: actions/checkout@v2
     - name: setup
@@ -47,8 +46,8 @@ jobs:
       run: ./bootstrap
     - name: configure
       run: ./configure
-    - name: make dist
-      run: make dist
+    - name: make dist (.tar.gz)
+      run: make dist-gzip
     - uses: actions/upload-artifact@v2
       with:
         name: source-dist
@@ -58,7 +57,7 @@ jobs:
     needs: dist
     runs-on: ubuntu-latest
     steps:
-    # FIXME: reusing steps from job build.
+    # FIXME: reusing steps from "jobs.build".
     # Verify if this is possible without copying verbatim.
     # Natural solution would be YAML anchors and pointers, but these
     # are not supported yet.
