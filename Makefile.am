@@ -6,10 +6,6 @@ RPMDIR = ${HOME}/.rpm
 
 EXTRA_DIST = bootstrap
 
-clean-generic:
-
-	@RM@ -f *~ .*~
-
 preparerpm: dist
 
 	@ if @TEST@ -z "@RPMBUILD@" ; then \
