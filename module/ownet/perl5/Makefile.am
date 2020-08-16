@@ -20,7 +20,7 @@ endif
 #	$(MAKE) -C OWNet install DESTDIR="$(DESTDIR)"
 #	( cd OWNet; $(MAKE) ; $(MAKE) test; $(MAKE) install )
 
-clean-generic:
+clean-local:
 	if test -f OWNet/Makefile; then cd OWNet; $(MAKE) clean; fi
-	@RM@ -f OWNet/Makefile.old OWNet/Makefile
+	-@RM@ -f OWNet/Makefile.old OWNet/Makefile
 

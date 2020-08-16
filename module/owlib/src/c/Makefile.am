@@ -275,5 +275,4 @@ AM_CFLAGS = -I../include \
 #SRC:=$(OWLIB_SOURCE)
 #include $(abs_top_srcdir)/src/tools/lint/lint.mk
 #
-#clean-generic:
-#	@RM@ -f *~ .*~ *.lint *.lint.txt .#* *.bak
+
