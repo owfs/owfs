@@ -4,7 +4,7 @@ SUBDIRS = src module
 RPMMACROS = ${HOME}/.rpmmacros
 RPMDIR = ${HOME}/.rpm
 
-EXTRA_DIST = bootstrap README.md
+EXTRA_DIST = bootstrap README.md CHANGELOG.md
 
 preparerpm: dist
 
