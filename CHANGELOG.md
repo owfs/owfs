@@ -1,6 +1,6 @@
 # Recent Releases
 
-## ver. 3.2p4 (not yet released)
+## ver. 3.2p4 (2020-08-23)
 
 v3.2p4 is mainly a bugfix & cleanup release.
 
