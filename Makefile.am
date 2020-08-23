@@ -4,11 +4,7 @@ SUBDIRS = src module
 RPMMACROS = ${HOME}/.rpmmacros
 RPMDIR = ${HOME}/.rpm
 
-EXTRA_DIST = bootstrap
-
-clean-generic:
-
-	@RM@ -f *~ .*~
+EXTRA_DIST = bootstrap README.md CHANGELOG.md
 
 preparerpm: dist
 
@@ -34,4 +30,3 @@ rpm: preparerpm
 rpmcvs: preparerpm
 	@LN_S@ -f `pwd`/@PACKAGE@-@VERSION@.tar.gz ${RPMDIR}/SOURCES/@PACKAGE@-@VERSION@_cvs_`date +"%Y%m%d"`.tar.gz
 	cd ${RPMDIR}/SPECS && @RPMBUILD@ -ba @PACKAGE@.spec --define 'cvs 1'
-

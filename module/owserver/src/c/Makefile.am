@@ -59,5 +59,3 @@ LDADD = -low ${PTHREAD_LIBS} ${LD_EXTRALIBS} ${OSLIBS}
 #SRC:=$(owserver_SOURCES)
 #include $(abs_top_srcdir)/src/tools/lint/lint.mk
 #
-#clean-generic:
-#	@RM@ -f *~ .*~ *.lint *.lint.txt .#* *.bak
