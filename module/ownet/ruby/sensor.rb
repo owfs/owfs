@@ -51,17 +51,17 @@ module OWNet
         if @attrs.include? name
           @connection.read(@attrs[name])
         else
-          raise AttributeError, name
+          raise AttributeError(name)
         end
       elsif name[-1] == "="[0] and args.size == 1
         name = name.to_s[0..-2]
         if @attrs.include? name
           @connection.write(@attrs[name], args[0])
         else
-          raise AttributeError, name
+          raise AttributeError(name)
         end
       else
-        raise NoMethodError, "undefined method \"#{name}\" for #{self}:#{self.class}"
+        raise NoMethodError("undefined method \"#{name}\" for #{self}:#{self.class}")
       end
     end
     

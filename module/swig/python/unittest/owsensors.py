@@ -38,7 +38,7 @@ class OWSensors( unittest.TestCase ):
     def setUp( self ):
         #print 'OWSensors.setup'
         if not os.path.exists( 'owtest.ini' ):
-            raise IOError, 'owtest.ini'
+            raise IOError('owtest.ini')
 
         self.config = ConfigParser.ConfigParser( )
         self.config.read( 'owtest.ini' )
