@@ -7,7 +7,7 @@
 '\"
 '\" Free for all use. No warranty. None. Use at your own risk.
 '\"
-.TH OWFS 5 2006 "OWFS Configuration File Manpage" "One-Wire File System"
+.TH OWFS 5 2020 "OWFS Configuration File Manpage" "One-Wire File System"
 .SH NAME
 .B owfs.conf
 \- owfs programs configuration file
@@ -112,6 +112,13 @@ Not all OWFS programs use the same command line options, but the non-relevant on
 Command line and configuration options can mixed. They will be invoked in the order presented. Left to right for the command line. Top to bottom for the configuration file.
 .P
 Configuration files can call other configuration files. There is an arbitrary depth of 5 levels to prevent infinite loops. More than one configuration file can be specified.
+.SH OPTIONS
+.IP "alias=path-to/alias-file"
+Sets the path to the alias file. The alias file should contain a list of aliases one per line in the format, serial-number = alias
+.br
+ie. 12.0AB668000000 = office
+.br
+See owfs.aliasfile (5) for more information about the owfs alias file.
 .SH SAMPLE
 .TP
 Here is a sample configuration file with all the possible parameters included.
@@ -191,6 +198,12 @@ specific
 #
 .br
 #
+.B Alias File
+.br
+.I alias=/home/username/onewire-aliases.config
+.br
+#
+.br
 .B Temperature scales
 .br
 .I Celsius
