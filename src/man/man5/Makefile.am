@@ -1,6 +1,6 @@
 ## man sources
 MANFILES = \
-    owfs.man
+    owfs.man owfs.aliasfile.man
 ## .so includes
 SOFILES = \
     description.5so seealso.5so
