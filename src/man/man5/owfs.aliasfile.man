@@ -55,55 +55,80 @@ The alias file should contain a list of aliases one per line in the format, seri
 .br
 ie. 12.0AB668000000 = office
 .br
-\(bu The serial number is in hexidecimal in any format that owfs accepts
-  \(bu dots are optional
+
 .br
-  \(bu CRC8 is optional but must be accurate if specified
-.br
-  \(bu Initial / in the path is allowed
-.br
-  \(bu hexidecimal upper or lower case
-.br
-\(bu The separator between ID and name can be any combination of spaces, tabs and the = sign
-.br
-\(bu Empty lines are ignored
-.br
-\(bu Bad lines are ignored
+.RS
+.IP \[bu] 2
+The serial number is in hexadecimal in any format that owfs accepts
+.RS 2
+.IP \[bu] 2
+2 dots are optional
+.IP \[bu]
+CRC8 is optional but must be accurate if specified
+.IP \[bu]
+Initial / in the path is allowed
+.IP \[bu]
+hexadecimal upper or lower case
+.RE
+.IP \[bu]
+The separator between ID and name can be any combination of spaces, tabs and the = sign
+.IP \[bu]
+Empty lines are ignored
+.IP \[bu]
+Bad lines are ignored
+.RE 7
+
 .br
 There are some caveats:
 .br
-\(bu Only devices can get human readable names, not individual properties.
-  So in the example above
+.RS
+.IP \[bu] 2
+Only devices can get human readable names, not individual properties.
+.in +.1in
+So in the example above
 .br
-    12.0AB668000000 = office
+.in +.1i
+12.0AB668000000 = office
 .br
-  NOT
+.in -.1i
+NOT
 .br
-    12.0AB668000000/PIO.B = office
+.in +.1i
+12.0AB668000000/PIO.B = office
+.in -.2i
 .br
-\(bu Alias names can't interfere with "reserved words" like uncached, statistics, alarm...
-.br
-\(bu Alias names can't be a directory. E.g no "bedroom/light"
-.br
-\(bu Spaces in names might be confusing to some of the programs.
-.br
-\(bu Alias files must be specified locally
+.IP \[bu]
+Alias names can't interfere with "reserved words" like uncached, statistics, alarm...
+.IP \[bu]
+Alias names can't be a directory. E.g no "bedroom/light"
+.IP \[bu]
+Spaces in names might be confusing to some of the programs.
+.IP \[bu]
+Alias files must be specified locally
+.RE
+
 .br
 The current design:
+.RS
+.IP \[bu] 2
+Aliases can be initially assigned in the alias file and specified on the command line
+.RS
+.IP \[bu] 2
+Same format: serial_number = alias_name
+.IP \[bu]
+multiple lines allowed
+.IP \[bu]
+repeats of name or serial numbers allowed, but duplicates will be overwritten
+.RE
+.IP \[bu]
+The list of currently known alias pairings can be generated dynamically by reading
 .br
-\(bu Aliases can be initially assigned in the alias file and specified on the command line
-.br
-  \(bu Same format: serial_number = alias_name
-.br
-  \(bu multiple lines allowed
-.br
-  \(bu repeats of name or serial numbers allowed, but duplicates will be overwritten
-.br
-\(bu The list of currently known alias pairings can be generated dynamically by reading
-.br
-  /settings/alias/list
-.br
-\(bu Alias names can be changed by writing to a device's alias property
+.in +.25i
+/settings/alias/list
+.in -.25i
+.IP \[bu]
+Alias names can be changed by writing to a device's alias property
+.RE
 .br
 .SH SAMPLE
 .TP
