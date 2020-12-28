@@ -19,5 +19,6 @@
 /* ------- Structures ----------- */
 
 DeviceHeader(DS2413);
+DeviceHeader(DS2413_85);
 
 #endif							/* 2413 code */
