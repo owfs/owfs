@@ -56,6 +56,7 @@ READ_FUNCTION(FS_Humid_1735);
 READ_FUNCTION(FS_Humid_3600);
 READ_FUNCTION(FS_Humid_4000);
 READ_FUNCTION(FS_Humid_5030);
+READ_FUNCTION(FS_Humid_SHT3X);
 READ_FUNCTION(FS_Humid_datanab);
 WRITE_FUNCTION(FS_reset_datanab);
 READ_FUNCTION(FS_Current);
@@ -155,6 +156,9 @@ static struct filetype DS2438[] = {
 
 	{"HIH5030", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"HIH5030/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Humid_5030, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+
+	{"SHT3X", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"SHT3X/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Humid_SHT3X, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 
 	{"DATANAB", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE_DATANAB, NO_FILETYPE_DATA, },
 	{"DATANAB/humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Humid_datanab, NO_WRITE_FUNCTION, VISIBLE_DATANAB, NO_FILETYPE_DATA, },
@@ -430,6 +434,30 @@ static ZERO_OR_ERROR FS_Humid_5030(struct one_wire_query *owq)
 	return 0;
 }
 
+/* Calculations and compensation for SHT30-ARP/SHT31-ARP
+ * Formula from Datasheet
+ * https://www.sensirion.com/fileadmin/user_upload/customers/sensirion/Dokumente/2_Humidity_Sensors/Datasheets/Sensirion_Humidity_Sensors_SHT3x_Datasheet_analog.pdf
+ * */
+static ZERO_OR_ERROR FS_Humid_SHT3X(struct one_wire_query *owq)
+{
+	_FLOAT VAD, VDD;
+
+	if (
+		FS_r_sibling_F( &VAD, "VAD", owq ) != 0
+		|| FS_r_sibling_F( &VDD, "VDD", owq ) != 0
+	) {
+		return -EINVAL ;
+	}
+
+	if ( VDD < .01 ) {
+		LEVEL_DEBUG("Low measured VDD %g",VDD);
+		return -EINVAL ;
+	}
+	// Since the sensor has a "Fully calibrated, linearized, and temperature compensated analog output", we can calculate the humidity directly.
+	OWQ_F(owq) = -12.5 + 125 *(VAD/VDD) ;
+
+	return 0;
+}
 
 /* The Datanab verion of the HIH-4000 */
 static ZERO_OR_ERROR FS_Humid_datanab(struct one_wire_query *owq)
