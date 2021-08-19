@@ -29,7 +29,6 @@ import os
 #import platform
 from distutils.core import setup, Extension
 from distutils import sysconfig
-import string
 
 #python_version = platform.python_version()[0:3]
 python_version = sysconfig.get_config_vars()["VERSION"]
@@ -90,14 +89,14 @@ my_extra_compile_args = [ '-D_FILE_OFFSET_BITS=64' ]
 my_extra_link_args = [ ]
 
 if bsd_fixes:
-    my_extra_link_args = my_extra_link_args + string.split('../../owlib/src/c/.libs/libow.so', ' ')
+    my_extra_link_args = my_extra_link_args + str.split('../../owlib/src/c/.libs/libow.so', ' ')
 
 my_libraries = [ 'ow' ]
 
 #if ARCH == "x64":
 #    my_extra_objects = [ '../../owlib/src/c/.libs/libow.a' ]
 #    my_libraries = [ ]
-#    #my_extra_link_args = my_extra_link_args + string.split('-Wl,--export-dynamic', ' ')
+#    #my_extra_link_args = my_extra_link_args + str.split('-Wl,--export-dynamic', ' ')
 #elif ARCH != "x64":
 #    my_extra_objects = ""
 #    my_libraries = [ 'ow' ]
