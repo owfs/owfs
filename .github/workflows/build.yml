@@ -23,6 +23,10 @@ jobs:
     - name: setup
       if: ${{ matrix.setup }}
       run: ${{ matrix.setup }}
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+          php-version: "7.4"
     - name: install dependencies on Linux
       if: runner.os == 'Linux'
       run: sudo apt-get install -y libfuse-dev swig3.0 uthash-dev tcl-dev python-dev libftdi1-dev libavahi-client-dev check
@@ -61,6 +65,10 @@ jobs:
     # Verify if this is possible without copying verbatim.
     # Natural solution would be YAML anchors and pointers, but these
     # are not supported yet.
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+          php-version: "7.4"
     - name: install dependencies on Linux
       if: runner.os == 'Linux'
       run: sudo apt-get install -y libfuse-dev swig3.0 uthash-dev tcl-dev python-dev libftdi1-dev libavahi-client-dev check
