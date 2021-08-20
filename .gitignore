@@ -29,31 +29,13 @@
 *.trs
 *.log
 
-/blib/
-/.build/
 _build/
-cover_db/
-inc/
-Build
-!Build/
-Build.bat
-.last_cover_stats
-/Makefile
+
 Makefile
 libtool
 *.exists
 configure
 config.status
-*.log
-/Makefile.old
-/MANIFEST.bak
-/META.yml
-/META.json
-/MYMETA.*
-nytprof.out
-/pm_to_blib
-*.o
-*.bs
 
 *.in
 .deps/
@@ -71,8 +53,6 @@ module/owfs/src/c/owfs
 module/owftpd/src/c/owftpd
 module/owhttpd/src/c/owhttpd
 module/owlib/tests/owlib_test
-module/ownet/perl5/OWNet/blib/
-module/ownet/perl5/OWNet/pm_to_blib
 module/ownet/php/examples/ownet_example.php
 module/owserver/src/c/owexternal
 module/owserver/src/c/owserver
@@ -85,13 +65,8 @@ module/owshell/src/c/owwrite
 module/owshell/src/c/owusbprobe
 module/owtcl/ow.tcl.h
 module/owtcl/pkgIndex.tcl
-module/swig/perl5/OW/Makefile.PL
 module/swig/perl5/OW/Makefile.linux
 module/swig/perl5/OW/Makefile.osx
-module/swig/perl5/OW/OW.pm
-module/swig/perl5/OW/blib/
-module/swig/perl5/OW/ow_wrap.c
-module/swig/perl5/OW/pm_to_blib
 module/swig/php/OW.php
 module/swig/php/example/load_php_OW.php
 module/swig/php/ow_wrap.c

@@ -211,7 +211,7 @@ my $PERSISTENCE_BIT = 0x04 ;
 my $DEFAULT_SG = 0x100 + 0x2 + 0x8 ;
 my $DEFAULT_BLOCK_LENGTH = 33000 ;
 
-our $VERSION=(split(/ /,q[$Revision$]))[1] ;
+our $VERSION   = '1.26';
 
 sub _new($$) {
 	my ($self,$addr) = @_ ;
