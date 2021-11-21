@@ -375,6 +375,7 @@ static void OW_reset(struct parsedname *pn)
 {
 	struct transaction_log t[] = {
 		TRXN_RESET,
+		TRXN_END
 	};
 	BUS_transaction(t, pn) ;
 }
