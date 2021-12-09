@@ -60,6 +60,8 @@
 |
 .B HTM1735/humidity
 |
+.B SHT3X/humidity
+|
 .B DATANAB/reset
 |
 .B DATANAB/humidity
@@ -238,6 +240,12 @@ This value is for a design based on Honeywell's HIH-5030/5031 humidity sensor.
 Relative humidity, as percent (1-100 scale).
 .br
 This value is for a design based on Humirel's HTM-1735 humidity sensor.
+.SS SHT3X/humidity
+.I read-only, floating point
+.br
+Relative humidity, as percent (1-100 scale).
+.br
+This value is for a design based on Sensirion's SHT3x-ARP humidity sensor family.
 .SS DATANAB/humidity
 .I read-only, floating point
 .br
