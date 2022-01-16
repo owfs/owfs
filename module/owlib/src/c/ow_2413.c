@@ -39,6 +39,7 @@
 
 /* Changes
     7/2004 Extensive improvements based on input from Serg Oskin
+    1/2022 Add Family Code 85 (Chip marked 3A 2100H)
 */
 
 #include <config.h>
@@ -67,6 +68,8 @@ static struct filetype DS2413[] = {
 };
 
 DeviceEntryExtended(3A, DS2413, DEV_resume | DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
+// Family Code 85 for 3A 2100H marked clones
+DeviceEntryExtendedSecondary(85, DS2413, DEV_resume | DEV_ovdr, NO_GENERIC_READ, NO_GENERIC_WRITE);
 
 #define _1W_PIO_ACCESS_READ 0xF5
 #define _1W_PIO_ACCESS_WRITE 0x5A
