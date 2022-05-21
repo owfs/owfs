@@ -103,6 +103,7 @@ noinst_HEADERS =           \
         ow_reset.h         \
         ow_return_code.h   \
         ow_settings.h      \
+        ow_seahu_CD.h      \
         ow_search.h        \
         ow_sibling.h       \
         ow_simultaneous.h  \
