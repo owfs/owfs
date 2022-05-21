@@ -1,0 +1,45 @@
+Paul H Allfille:     	     Concept and original work
+Vadim Tkachenko:	     Module split, build infrastructure, configuration
+Geo Carncross:          Configuration work
+Christian Magnusson: Embedded work, and work on chips, and multiple busses
+Serg Oskin:                TCL support as well as alarms and many patches
+Peter Kropf:               Python support
+Sebastian Zuther:      PHP support
+
+By Sections:
+
+Programs:
+owfs		Paul Alfille
+owhttpd		Paul Alfille
+owftpd		Paul Alfille
+owserver	Paul Alfille and Christian Magnusson
+
+Lanquages (light weight)
+C	Christian Magnusson
+C# (.NET)	George M. Zouganelis
+java 	jowfsclient	Patrik Åkerfeldt
+java	ownet.java	George M. Zouganelis
+pascal	ownet.pas	George M. Zouganelis
+php	ownet.php	Christian Magnusson
+perl5	OWNet.pm	Paul Alfille
+python	ownet		Peter Kropf
+ruby	Pedro Côrte-Real
+shell	owdir owread owwrite Paul Alfille
+VisualBasic	OWNet.VB	Roberto Spadim
+
+Languages (heavy weight)
+owtcl		Serg Oskin
+owperl		Paul Alfille
+owphp		Sebastian Zuther
+owpython	Peter Kropf
+
+Libraies:
+owlib		Paul Alfille and Christian Magnusson
+owcapi		Paul Alfille and Christian Magnusson
+ownet		Paul Alfille and Christian Magnusson
+swig		Paul Alfille
+
+Added Modules:
+temploggerd	Christian Magnusson
+TempTrakker	Jim Canfield
+Maison		Nicholas Huilard

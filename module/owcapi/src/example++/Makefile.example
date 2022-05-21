@@ -1,0 +1,31 @@
+# Makefile for owcapi example program -- invoked separately from this directory
+
+CXXFLAGS = -g -I/opt/owfs/include -Wno-deprecated
+
+OBJS = owcapiexample.o
+
+all:	owcapiexample
+
+ifeq "$(shell uname)" "Darwin"
+
+# Compile-flags for MacOSX
+DARWINLDFLAGS = -L/opt/owfs/lib -lowcapi -low -L/usr/lib -lusb
+
+owcapiexample: $(OBJS)
+	gcc $(CFLAGS) -o $@ $(OBJS) $(DARWINLDFLAGS)
+
+else
+
+# Compile-flags for Linux and Cygwin
+LDFLAGS = -L/opt/owfs/lib -Wl,--rpath -Wl,/opt/owfs/lib -lowcapi
+
+owcapiexample: $(OBJS)
+	g++ $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS) -lstdc++
+
+endif
+
+#%.o: %.cpp
+#	g++ $(CXXFLAGS) -c -o $@ $<
+
+clean:
+	$(RM) -f owcapiexample *.o *~ .~

@@ -1,0 +1,84 @@
+#!/bin/bash
+#
+# owftpd        Startup script for the 1-Wire networks
+#
+# chkconfig: - 95 05
+# description: OWFTPD is a FTP daemon providing access to 1-Wire networks.
+#
+# config: /etc/sysconfig/owftpd
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+if [ -f /etc/sysconfig/owftpd ]; then
+        . /etc/sysconfig/owftpd
+fi
+
+numfs=${#PORT[*]}
+if [ $numfs -eq 0 ]; then
+	exit 0
+fi
+
+lockfile=/var/lock/subsys/owftpd
+owftpd=/usr/sbin/owftpd
+RETVAL=0
+
+start() {
+        echo -n $"Starting owftpd: "
+	i=0; n=0
+	while [ $n -lt $numfs ]; do
+		port=${PORT[$i]}
+		options=${OPTIONS[$i]}
+		if [ "$port" != "" ]; then
+			$owftpd -p $port $options >/dev/null
+			RETVAL=$?
+			[ $RETVAL = 0 ] || {
+				echo_failure
+				echo
+				return $RETVAL
+			}
+			n=`expr $n + 1`
+		fi
+		i=`expr $i + 1`
+	done
+	echo_success
+	echo
+	touch ${lockfile}
+	return 0
+}
+
+stop() {
+	echo -n $"Shutdown owftpd: "
+	killproc $owftpd
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && rm -f ${lockfile}
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+	status $owftpd
+	;;
+  restart)
+	stop
+	start
+	;;
+  condrestart)
+	if [ -f ${lockfile} ]; then
+		stop
+		start
+	fi
+	;;
+  *)
+	echo $"Usage: $prog {start|stop|restart|condrestart|status}"
+	exit 1
+esac
+
+exit $RETVAL

@@ -1,0 +1,34 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No warranty. None. Use at your own risk.
+'\"
+.SH PERSISTENT THRESHOLD OPTIONS
+These settings control the behavior of
+.B owserver (1)
+in granting and dropping persistent tcp connections. The default settings are shown.
+.PP 
+In general no changes should be needed. In general the purpose is to limit total resource usage from an errant or rogue client.
+.SS --timeout_persistent_low=600
+Minimum seconds that a persistent tcp connection to
+.B owserver (1)
+is kept open. This is the limit used when the number of connections is above
+.I --clients_persistent_low
+.SS --timeout_persistent_high=3600
+Maximum seconds that a persistent tcp connection to
+.B owserver (1)
+is kept open. This is the limit used when the number of connections is below
+.I --clients_persistent_low
+.SS --clients_persistent_low=10
+Maximum number of persistent tcp connections to
+.B owserver (1)
+before connections start getting the more stringent time limitation
+.I --timeout_persistent_low
+.SS --clients_persistent_high=20
+Maximum number of persistent tcp connections to before no more are allowed (only non-persistent at this point).
+.B owserver (1)
+before no more are allowed (only non-persistent at this point).

@@ -1,0 +1,58 @@
+#
+# Travis CI configuration
+#
+# - Linux: the Travis PHP installation does not work with swig3
+#   we install the standard bionic package php7.2 and direct
+#   config to use with the configure options listed in $CONFOPTS
+# - osx: disabled (due to very slow compilation and python2 problems)
+# - osx: we use the homebrew php. Note that on osx 'compiler: gcc' is
+#   an alias for 'compiler: clang'. Therefore we build only with clang.
+#
+
+language: c
+dist: bionic
+
+compiler:
+- clang
+- gcc
+
+os:
+- linux
+
+env: CONFOPTS="--with-phpconfig=/usr/bin/php-config7.2 --with-php=/usr/bin/php7.2"
+
+# Darwin is disabled
+# jobs:
+#   include:
+#     - os: osx
+#       env:
+
+
+addons:
+
+  apt:
+    packages:
+    - check
+    - libavahi-client-dev
+    - libftdi-dev
+    - libfuse-dev
+    - libusb-1.0-0-dev
+    - php7.2-dev
+    - swig3.0
+    - uthash-dev
+
+# Darwin is disabled
+#  homebrew:
+#    packages:
+#    - check
+#    - php
+#    - swig
+#    update: true
+
+before_script:
+- ./bootstrap
+
+script:
+- ./configure ${CONFOPTS}
+- make
+- make check

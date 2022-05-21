@@ -1,0 +1,93 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No warranty. None. Use at your own risk.
+'\"
+.TH OWPERL 3 2004 "OWFS Manpage" "One-Wire File System"
+.SH NAME
+.B owperl
+\- perl interface for the 1-wire filesystem
+.SH SYNOPSIS
+.B OW.pm
+.br
+.B use OW ;
+.br
+.B OW::init(
+.I interface
+.B );
+.br
+.B OW::init(
+.I initialization string
+.B );
+.PP
+The full set of initialization options is extensive. They correspond roughly to the command line options of
+,B owfs (1)
+.B owhttpd (1)
+and
+.B owftpd (1)
+.br
+.B OW::get(
+.I path
+.B );
+.br
+.B OW::put(
+.I path
+.B ,
+.I value
+.B );
+.br
+.B OW::finish();
+.SH "DESCRIPTION"
+.so man3/description.3so
+.SS owperl
+.B owperl (3)
+is a perl module that provides an interface to OWFS. The path to each 1-wire device is the same as
+.B owfs (1)
+\&. Only the top layer has been modified to return native perl strings.
+.PP
+.B owperl (3)
+is created by
+.B swig (1)
+(http://www.swig.org) which can be easily modified to support other programming languages.
+.SH FUNCTIONS
+.SS OW::init( interface )
+.I interface
+.br
+Location of the 1-wire bus:
+.TP
+"u"
+Direct connection to the 1-wire interface on the USB port --
+.I DS9490
+.TP
+/dev/ttySx
+Direct connection to a 1-wire interface on the serial port --
+.I DS9097U
+or
+.I DS9097
+.TP
+port | :port | IPaddress:port
+Location of an
+.I owserver
+daemon that connects to the 1-wire bus. Multiple
+.I owperl
+as well as
+.I owfs
+and
+.I owhttpd
+programs can access the
+.I owserver
+process simultaneously. In fact, this will probably be the preferred mode of access to OWFS for
+.I owperl
+except in trivial applications.
+.SH EXAMPLE
+perl \-MOW \-e "OW::init('/dev/ttyS1'); printf OW::get('\');"
+.SH SEE ALSO
+.so man3/seealso.3so
+.SH AVAILABILITY
+http://www.owfs.org
+.SH AUTHOR
+Paul Alfille (paul.alfille@gmail.com)

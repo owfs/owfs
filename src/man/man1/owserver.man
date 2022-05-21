@@ -1,0 +1,86 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No warranty. None. Use at your own risk.
+'\"
+.TH OWSERVER 1 2004 "OWSERVER Manpage" "One-Wire File System"
+.SH NAME
+.B owserver
+\- Backend server (daemon) for 1-wire control
+.SH SYNOPSIS
+.B owserver
+.so man1/cmdline_mini.1so
+.I \-p
+tcp-port
+.SH "DESCRIPTION"
+.so man1/description.1so
+.SS owserver
+.B owserver (1)
+is the backend component of the OWFS 1-wire bus control system.
+.B owserver (1)
+arbitrates access to the bus from multiple client processes. The physical bus is usually connected to a serial or USB port, and other processes connect to
+.B owserver (1)
+over network sockets (tcp port). Communication can be local or over a network. Secure tunneling can be implemented using standard techniques.
+.PP
+Frontend clients include a filesystem representation:
+.B owfs (1)
+, and a webserver:
+.B owhttpd (1).
+Direct language bindings are also available, e.g:
+.B owperl (3).
+Several instances of each client can be initiated.
+.PP
+Each client can also connect directly to the physical bus, skipping
+.B owserver (1)
+but only one client can connect to the physical bus safely. Simultaneous access is prevented by the operating system for USB ports, but unfortunately not serial ports. The safe way to share access to the 1-wire bus is via
+.B owserver (1)
+with the clients connecting. Note:
+.B owserver (1)
+can connect to another
+.B owserver (1)
+process, though the utility of this technique is limited (perhaps as a
+.I readonly
+buffer?)
+.PP
+.B owserver (1)
+is by default multithreaded. Optional data caching is in the server, not clients, so all the clients gain efficiency.
+.so man1/device.1so
+.SH SPECIFIC OPTIONS
+.SS \-p
+TCP port or IPaddress:port for
+.I owserver
+.PP
+Other OWFS programs will access owserver via this address. (e.g. owfs \-s IP:port /1wire)
+.PP
+If no port is specified, the default well-known port (4304 -- assigned by the IANA) will be used.
+.so man1/temperature.1so
+.so man1/pressure.1so
+.so man1/format.1so
+.so man1/job_control.1so
+.so man1/configuration.1so
+.so man1/help.1so
+.so man1/timeout.1so
+.so man1/persistent_thresholds.1so
+.SH DEVELOPER OPTIONS
+.SS --no_dirall
+Reject DIRALL messages (requests directory as a single message), forcing client to use older DIR method (each element is an individual message)
+.SS --no_get
+Reject GET messages (lets owserver determine if READ or DIRALL is appropriate). Client will fall back to older methods.
+.SS --no_persistence
+Reject persistence in requests. All transactions will have to be new connections.
+.SS --pingcrazy
+Interject many "keep-alive" (PING) responses. Usually PING responses are only sent when processing is taking a long time to inform client that owserver is still there.
+
+.SH EXAMPLE
+.B owserver -p 3001 -d /dev/ttyS0
+runs owserver on tcp port 3001 and connects to a physical 1-wire bus on a serial port.
+.SH SEE ALSO
+.so man1/seealso.1so
+.SH AVAILABILITY
+http://www.owfs.org
+.SH AUTHOR
+Paul Alfille (paul.alfille@gmail.com)

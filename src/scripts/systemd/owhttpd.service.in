@@ -1,0 +1,14 @@
+[Unit]
+Description=Tiny webserver for 1-wire control
+Documentation=man:owhttpd(1)
+After=avahi-daemon.service
+
+[Service]
+Type=notify
+NotifyAccess=all
+ExecStart=@bindir@/owhttpd --foreground --server=127.0.0.1
+User=ow
+Group=ow
+
+[Install]
+WantedBy=multi-user.target

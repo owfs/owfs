@@ -1,0 +1,84 @@
+#!/bin/bash
+#
+# owhttpd        Startup script for the 1-Wire networks
+#
+# chkconfig: - 95 05
+# description: OWHTTPD is a HTTP daemon providing access to 1-Wire networks.
+#
+# config: /etc/sysconfig/owhttpd
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+if [ -f /etc/sysconfig/owhttpd ]; then
+        . /etc/sysconfig/owhttpd
+fi
+
+numfs=${#PORT[*]}
+if [ $numfs -eq 0 ]; then
+	exit 0
+fi
+
+lockfile=/var/lock/subsys/owhttpd
+owhttpd=/usr/sbin/owhttpd
+RETVAL=0
+
+start() {
+        echo -n $"Starting owhttpd: "
+	i=0; n=0
+	while [ $n -lt $numfs ]; do
+		port=${PORT[$i]}
+		options=${OPTIONS[$i]}
+		if [ "$port" != "" ]; then
+			$owhttpd -p $port $options >/dev/null
+			RETVAL=$?
+			[ $RETVAL = 0 ] || {
+				echo_failure
+				echo
+				return $RETVAL
+			}
+			n=`expr $n + 1`
+		fi
+		i=`expr $i + 1`
+	done
+	echo_success
+	echo
+	touch ${lockfile}
+	return 0
+}
+
+stop() {
+	echo -n $"Shutdown owhttpd: "
+	killproc $owhttpd
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && rm -f ${lockfile}
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+	status $owhttpd
+	;;
+  restart)
+	stop
+	start
+	;;
+  condrestart)
+	if [ -f ${lockfile} ]; then
+		stop
+		start
+	fi
+	;;
+  *)
+	echo $"Usage: $prog {start|stop|restart|condrestart|status}"
+	exit 1
+esac
+
+exit $RETVAL

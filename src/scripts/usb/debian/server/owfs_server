@@ -1,0 +1,21 @@
+#!/bin/bash
+
+
+PID_FILE=/var/run/owserver.pid
+PORT=3003
+
+
+if [ "$ACTION" = "add" ] && [ -f "$DEVICE" ]
+then
+
+/opt/owfs/bin/owserver -u -p $PORT --background --pid-file $PID_FILE
+
+cat << EOF >> $REMOVER
+#! /bin/sh
+kill \`cat $PID_FILE\`
+rm -f $PID_FILE
+EOF
+
+chmod +x $REMOVER
+
+fi

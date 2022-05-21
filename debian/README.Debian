@@ -1,0 +1,11 @@
+$ID:$
+1wire / owfs for Debian
+-----------------------
+
+I decided to name the package "1wire" instead of Upstream's "owfs"
+because, frankly, that's what it does -- drive 1wire buses.
+
+owfs aka one wire file system is just a small part of this; in fact,
+most "real" applications will not use the file system at all: it's SLOW.
+
+ -- Matthias Urlichs <smurf@debian.org>  Tue, 15 May 2007 11:59:13 +0200

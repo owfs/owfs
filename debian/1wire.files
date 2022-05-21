@@ -1,0 +1,16 @@
+/usr/bin/owdir
+/usr/bin/owftpd
+/usr/bin/owhttpd
+/usr/bin/owpresent
+/usr/bin/owread
+/usr/bin/owserver
+/usr/bin/owwrite
+/usr/share/man/man1/owdir.1
+/usr/share/man/man1/owftpd.1
+/usr/share/man/man1/owhttpd.1
+/usr/share/man/man1/owpresent.1
+/usr/share/man/man1/owread.1
+/usr/share/man/man1/owserver.1
+/usr/share/man/man1/owshell.1
+/usr/share/man/man1/owwrite.1
+/usr/share/man/man5/owfs.5

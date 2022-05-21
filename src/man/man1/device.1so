@@ -1,0 +1,291 @@
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No warranty. None. Use at your own risk.
+'\"
+.SH "Device Options (1-wire Bus Master)"
+These options specify the device (bus master) connecting the computer to the 1-wire bus. The 1-wire slaves are connected to the 1-wire bus, and the bus master connects to a port on the computer and controls the 1-wire bus. The bus master is either an actual physical device, the kernel w1 module, or an 
+.B owserver (1). 
+.P
+At least one device option is required. There is no default. More than one device can be listed, and all will be used. (A logical union unless you explore the \fI/bus.n/\fR directories.)
+.P
+Linux and BSD enforce a security policy restricting access to hardware ports. You must have sufficient rights to access the given port or access will silently fail.
+.SH "* Serial devices"
+.I port 
+specifies a serial port, e.g. 
+.I /dev/ttyS0
+or an USB port accessed as serial port, e.g. \fI/dev/ttyUSB0\fR
+.P
+If OWFS was built with \fBlibftdi\fR support, you may be able to use the
+.I ftdi:
+prefix in any of the options as \fIport\fR to address a FTDI-based USB device.
+.br
+For details, see the FTDI ADDRESSING section.
+.TP
+\fI-d port\fI \fR|\fR \fI--device=port\fI \fB(DS2480B)\fB
+DS2480B-based bus master (like the \fBDS9097U\fR or an adapter of the \fBLINK\fR family in emulation mode). If the adapter doesn't respond, a passive type (DS9907E or diode/resistor) circuit will be assumed.
+.TP
+.I --serial_flextime | --serial_regulartime \fB(DS2480B)\fB
+.br
+Changes details of bus timing (see DS2480B datasheet). Some devices, like the
+.I Swart LCD
+cannot work with
+.I flextime.
+.TP
+\fI--baud=\fI\fR1200|9600|19200|38400|57600|115200\fR \fB(DS2480B,LINK,HA5)\fB
+Sets the initial serial port communication speed for all bus masters. Not all serial devices support all speeds. You can change the individual bus master speed for a device of the
+.B LINK
+family and
+.B DS2880B
+in the interface/settings directory. The
+.B HA5
+speed is set in hardware, so the command line baud rate should match that rate.
+.br
+Usually the default settings (9600 for a device of the
+.B LINK
+family and
+.B DS2480B
+) and 115200 for the
+.B HA5
+are sane and shouldn't be changed.
+.TP
+\fI--straight_polarity\fI  \fR|\fR \fI--reverse_polarity\fI \fB(DS2480B)\fB
+Reverse polarity of the DS2480B output transistors? Not needed for the DS9097U, but required for some other designs.
+.TP
+\fI--link=port\fI \fB(LINK)\fB
+.B iButtonLink
+.I LINK
+adapter (all versions) in non-emulation mode. Uses an ascii protocol over serial.
+.br
+This supports the simplified \fIftdi:\fB<serial number>\fR addressing scheme.
+.TP
+\fI--ha7e=port\fI \fB(HA7E)\fB
+.B Embedded Data Systems
+.I HA7E
+adapter ( and
+.I HA7S
+) in native ascii mode.
+.TP
+\fI\-\-ha5=port | \-\-ha5=port:a | \-\-ha5=port:acg\fI \fB(HA5)\fB
+.B Embedded Data Systems
+.I HA5
+mutidrop adapter in native ascii mode. Up to 26 adapters can share the same port, each with an assigned letter. If no letter specified, the program will scan for the first response (which may be slow).
+.TP
+.I --checksum | --no_checksum \fB(HA5)\fB
+.br
+Turn on (default) or off the checksum feature of the HA5 communication. 
+.TP
+\fI--passive=port\fR | \fI--ha2=port\fR | \fI--ha3=port\fR | \fI--ha4b=port \fB(Passive)\fB
+Passive 1-wire adapters. Powered off the serial port and using passive electrical components (resitors and diodes).
+.TP
+.I --8bit | --6bit \fB(Passive)\fB
+.br
+Synthesize the 1-wire waveforme using a 6-bit (default) serial word, or 8-bit word. Not all UART devices support 6 bit operation.
+.TP
+\fI--timeout_serial=5\fI
+Timeout (in seconds) for all serial communications. 5 second default. Can be altered dynamically under 
+.I /settings/timeout/serial
+.SH "* USB devices"
+The only supported true USB bus masters are based on the DS2490 chip. The most common is the DS9490R which has an included 1-wire ID slave with family code 81.
+.P
+There are also bus masters based on the serial chip with a USB to serial conversion built in. These are supported by the serial bus master protocol. 
+.TP
+.I \-u  \fR|\ \fI\-\-usb
+DS2490 based bus master (like the DS9490R).
+.TP
+.I \-u2  \fR|\ \fI\-\-usb=2
+Use the second USB bus master. (The order isn't predicatble, however, since the operating system does not consistently order USB devices).
+.TP
+.I \-uall  \fR|\ \fI\-\-usb=ALL
+Use all the USB devices.
+.TP
+.I \-\-usb_flextime | \-\-usb_regulartime
+Changes the details of 1-wire waveform timing for certain network configurations.
+.TP
+.I \-\-altusb
+Willy Robion's alternative USB timing. 
+.TP
+.I \-\-timeout_usb=5
+Timeout for USB communications. This has a 5 second default and can be changed dynamically under
+.I /settings/timeout/usb
+.SH "* I2C devices"
+I2C is  2 wire protocol used for chip-to-chip communication. The bus masters:
+.I DS2482-100, DS2482-101
+and
+.I DS2482-800
+can specify (via pin voltages) a subset of addresses on the i2c bus. Those choices are
+.P
+.I i2c_address
+.TP
+0,1,2,3
+0x18,0x19,0x1A,0x1B
+.TP
+4,5,6,7
+0x1C,0x1D,0x1E,0x1F (DS2482-800 only)
+.P
+.I port
+for i2c masters have the form 
+.I /dev/i2c-0, /dev/i2c-1, ...
+.TP
+\fI\-d port\fR | \fI\-\-device=port
+This simple form only permits a specific 
+.I port 
+and the first available
+.I i2c_address
+.TP
+\fI\-\-i2c=port\fR | \fI\-\-i2c=port:i2c_address\fR | \fI\-\-i2c=port:ALL
+Specific i2c
+.I port
+and the
+.I i2c_address
+is either the first, specific, or all or them. The 
+.I i2c_address
+is 0,1,2,...
+.TP
+\fI\-\-i2c\fR | \fI\-\-i2c=:\fR | \fI\-\-i2c=ALL:ALL
+Search the available i2c buses for either the first, the first, or every i2c adapter.
+.P
+The
+.I DS2482-800
+masters 8 1-wire buses and so will generate 8
+.I /bus.n
+entries.
+.SH "* Network devices"
+These bus masters communicate via the tcp/ip network protocol and so can be located anywhere on the network.
+The
+.I network_address
+is of the form tcp_address:port
+.P
+E.g. 192.168.0.1:3000 or localhost:3000
+.TP
+.I \-\-link=network_address
+LinkHubE network LINK adapter by 
+.B iButtonLink
+.TP
+.I \-\-ha7net=network_address | \-\-ha7net
+HA7Net network 1-wire adapter with specified tcp address or discovered by udp multicast. By
+.B Embedded Data Systems
+.br
+.I \-\-timeout_ha7=60
+specific timeout for HA7Net communications (60 second default).
+.TP
+.I \-\-etherweather=network_address
+Etherweather adapter
+.TP
+\fI\-s network_address\fR | \fI\-\-server=network_address
+Location of an
+.B owserver (1)
+program that talks to the 1-wire bus. The default port is 4304.
+.TP
+.I \-\-timeout_network=5
+Timeout for network bus master communications. This has a 1 second default and can be changed dynamically under
+.I /settings/timeout/network
+.SH "* Simulated devices"
+Used for testing and development. No actual hardware is needed. Useful for separating the hardware development from the rest of the software design.
+.TP
+.I devices
+is a list of comma-separated 1-wire devices in the following formats. Note that a valid CRC8 code is created automatically.
+.TP
+10,05,21
+Hexadecimal
+.I family codes
+(the DS18S20, DS2405 and DS1921 in this example).
+.TP
+10.12AB23431211
+A more complete hexadecimal unique address. Useful when an actual hardware device should be simulated.
+.TP
+DS2408,DS2489
+The 1-wire device name. (Full ID cannot be speciifed in this format).
+.TP
+.I \-\-fake=devices
+Random address and random values for each read. The device ID is also random (unless specified).
+.TP
+.I \-\-temperature_low=12 \-\-temperature_high=44
+Specify the temperature limits for the
+.I fake
+adapter simulation. These should be in the same temperature scale that is specified in the command line. It is possible to change the limits dynamically for each adapter under
+.I /bus.x/interface/settings/simulated/[temperature_low|temperature_high]
+.TP
+.I \-\-tester=devices
+Predictable address and predictable values for each read. (See the website for the algorhythm).
+.SH "* w1 kernel module"
+This a linux-specific option for using the operating system's access to bus masters. Root access is required and the implementation was still in progress as of owfs v2.7p12 and linux 2.6.30.
+.P
+Bus masters are recognized and added dynamically. Details of the physical bus master are not accessible, bu they include USB, i2c and a number of GPIO designs on embedded boards.
+.P
+Access is restrict to superuser due to the netlink broadcast protocol employed by w1. Multitasking must be configured (threads) on the compilation.
+.TP
+.I \-\-w1
+Use the linux kernel w1 virtual bus master.
+.TP
+.I \-\-timeout_w1=10
+Timeout for w1 netlink communications. This has a 10 second default and can be changed dynamically under
+.I /settings/timeout/w1
+.SH "FTDI ADDRESSING"
+FTDI is a brand of USB-to-serial chips which are very common. If your serial device is connected via a USB serial dongle based on a FTDI chip, or if your 
+adapter uses a built-in FTDI USB chip (for example, the LinkUSB), you can use this FTDI addressing.
+.P
+The main benefit with this mode of access is that we can decrease the communication delay, yielding twice as fast 1-Wire communication in many cases.
+.P
+The following values for \fIport\fR can be used to identify a specific FTDI port in several of the serial devices options.
+.br
+Note that this requires that OWFS is built with libftdi support, which might not be the case in standard repositories.
+.TP
+\fIftdi:d:\fB<device-node>\fB
+path of bus and device-node (e.g. "003/001") within usb device tree
+(usually at /proc/bus/usb/ or /dev/bus/usb/)
+.TP
+\fIftdi:i:\fI\fB<vendor>:<product>\fB
+first device with given vendor and product id, ids can be decimal, octal
+(preceded by "0") or hex (preceded by "0x")
+.TP
+\fIftdi:i:\fI\fB<vendor>:<product>:<index>\fB
+as above with index being the number of the device (starting with 0)
+if there are more than one
+.TP
+\fIftdi:s:\fI\fB<vendor>:<product>:<serial number>\fB
+the device with given vendor id, product id and serial number string
+.P
+The above formats are parsed fully by libftdi (minus the \fIftdi:\fR prefix).
+.SS Simplified device \fBserial-only\fB support
+An additional format is supported, for certain bus types. This only specifies the USB serial number.
+.TP
+\fIftdi:\fI\fB<serial number>\fB
+Identifies a FTDI device by serial number only.
+Currently, this is only valid for the VID/PID found on the LinkUSB (i.e. --link).
+Note that those VID/PID's are the default for any FT232R device, and in no way exclusive
+to LinkUSB.
+.SS Permsissions
+In order to run \fBowserver (1)\fR without root privileges - as you should, you must have sufficient permissions to the raw USB node your adapter is connected to e.g. "003/001" (usually at /proc/bus/usb/ or /dev/bus/usb/).
+.P
+An easy way to achieve this would be using \fBchown (1)\fR:
+.TP
+\fBsudo chown :<your user> /dev/bus/usb/003/001
+changes the group of the raw USB node "003/001" from default "root" to "<your user>"
+.P
+You can also write a \fBudev (1)\fR rule for your adapter:
+.TP
+\fBSUBSYSTEM=="usb", DRIVER=="usb", ATTR{idVendor}=="0403", ATTR{idProduct}=="6001", ATTR{serial}=="AK0048A0", GROUP="owsrv"\fR
+saved as a file e.g. "10-FTDI-LinkUSB.rules" in "/etc/udev/rules.d/", this rule will automate the process of changing the group to "owsrv" of the raw USB node the LinkUSB adapter with S/N:AK0048A0 is connected to.
+.SS Serial USB node
+Communication in FTDI mode accesses the RAW USB node and NOT the serial USB node your OS might have created automatically e.g. /dev/ttyUSB0.
+.br
+As a side effect, if existing, the serial USB node e.g. /dev/ttyUSB0 is removed on successful starting of \fBowserver (1)\fR. After it's termination un- and re-plugging the adapter, or un- and reloading of the module ftdi_sio will recreate the serial USB node.
+.SS Finding FTDI related information on your USB adapter
+\fBowusbprobe\fR is THE tool to find the information needed for direct FTDI addressing
+.br
+However this tool might not yet be packaged in your version. Alternatively you can also use lsusb to find the usb node your adapter is connected to, and then use lsusb again on this very node:
+.TP
+\fBsudo lsusb -D /path/to/your/raw/USB/device/node  |egrep "idVendor|idProduct|iSerial"
+sudo is necessary to get the value of iSerial field, if the permissions are still unchanged
+.SS Examples FTDI addressing
+.TP
+\fBowserver -d ftdi:s:0x0403:0x6001:A800bXHr\fR
+starts owserver with a LinkUSB (VID:0x0403,PID:0x6001,S/N:A800bXHr) as bus master in DS2480B-based emulation mode with direct FTDI access
+.TP
+\fBowserver --link=ftdi:A800bXHr\fR
+starts owserver with a LinkUSB (S/N:A800bXHr) as bus master identified by serial number only in native mode with direct FTDI access

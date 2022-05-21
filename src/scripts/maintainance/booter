@@ -1,0 +1,23 @@
+#!/bin/sh
+DIR=/home/updater
+cd $DIR
+export CVS_RSH=ssh
+rm -f owfs.tmp
+rm -f opt.tmp
+rm -fdr owfs
+rm -fdr opt
+cvs -d :ext:alfille@cvs.sf.net:/cvsroot/owfs co owfs
+pushd owfs
+./bootstrap
+popd
+tar cf - owfs | gzip -9 > owfs.tmp && scp owfs.tmp alfille@owfs.sf.net:owfs.tmp && ssh alfille@owfs.sf.net "mv owfs.tmp /home/groups/o/ow/owfs/htdocs/daily/owfs-`date +'%Y-%m-%d'`.tar.gz"
+pushd owfs
+touch *
+touch */*
+touch */*/*
+touch */*/*/*
+touch */*/*/*/*
+./configure --prefix=$DIR/opt
+make install
+popd
+tar cf - opt | gzip -9 > opt.tmp && scp opt.tmp alfille@owfs.sf.net:opt.tmp && ssh alfille@owfs.sf.net "mv opt.tmp /home/groups/o/ow/owfs/htdocs/daily/opt-`date +'%Y-%m-%d'`.386.tar.gz"
