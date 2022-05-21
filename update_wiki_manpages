@@ -1,8 +1,0 @@
-#!/bin/sh
-OWFS_BASE=$(pwd)
-cd src/man
-find -name '*.man' | while read
-do
-	echo "soelim -r $REPLY | pandoc -f man -t markdown >$OWFS_BASE/../owfs-doc.wiki/$(basename $REPLY .man).md"
-	soelim -r $REPLY | pandoc -f man -t markdown_strict >$OWFS_BASE/../owfs-doc.wiki/$(basename $REPLY .man).md
-done

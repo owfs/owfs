@@ -1,1 +1,0 @@
-.so mann/owtcl.n

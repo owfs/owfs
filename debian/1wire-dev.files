@@ -1,6 +1,0 @@
-/usr/lib/*.so
-/usr/lib/*.a
-/usr/lib/*.la
-/usr/include/*.h
-/usr/share/man/man1/libowcapi.1
-/usr/share/man/man1/owcapi.1

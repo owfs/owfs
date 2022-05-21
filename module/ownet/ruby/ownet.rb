@@ -1,2 +1,0 @@
-require 'connection'
-require 'sensor'
