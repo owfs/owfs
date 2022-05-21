@@ -1,0 +1,663 @@
+# Use --define 'cvs 1' on the command line to enable CVS version
+%{!?cvs:%define CVSVERSION %{nil}}
+%{?cvs:%define CVSVERSION %(echo "_cvs_`date +"%Y%m%d"`")}
+%{!?cvs:%define CVS 0}
+%{?cvs:%define CVS 1}
+
+%define build_fs 1
+%define build_httpd 1
+%define build_capi 1
+%define build_ownet 1
+%define build_ftpd 1
+%define build_server 1
+%define build_perl 1
+%define build_python 1
+%define build_php 1
+%define build_side 0
+%define build_tap 1
+%define build_mon 1
+%define build_tcl 1
+%define build_shell 1
+%define build_man 1
+
+%define debug_package   %{nil}
+
+# include some mandriva defines
+# Look at http://wiki.mandriva.com/en/Policies/Release_Tag
+%define rel 3
+
+# define the mkrel macro if it is not already defined
+# %{?!mkrel:%define mkrel(c:) %{-c:0.%{-c''}.}%{!?''with''unstable:%(perl -e '$''="%{1}";m/(.\'''\\D\+)?(\\d+)$/;$rel=${2}-1;re;print "$1$rel";').%{?subrel:%subrel}%{!?subrel:1}.%{?distversion:%distversion}}%{?''with_unstable:%{1}}%{?distsuffix:%distsuffix}%{?!distsuffix:mdk}}
+
+# For mandriva mkrel could be used. It doesn't work on older distributions though.
+# the define above fails with different syntax errors on FC1 atleast.
+#%define release %mkrel %rel
+%define release 1
+
+%if %{build_tcl}
+%define tcl_pkgpath %(echo 'puts [lindex $tcl_pkgPath 0]' | %{_bindir}/tclsh)
+%endif
+
+Name: owfs
+Version: @VERSION@%{?cvs:%{CVSVERSION}}
+Release: %release
+Summary: 1-Wire Virtual File System
+Source: %{name}-%{version}.tar.gz
+#Copyright: GPL
+License: GPL
+Group: System Environment/Libraries
+URL: http://sourceforge.net/projects/owfs
+Buildroot: %{_tmppath}/%{name}-root
+Prefix: /usr
+Requires: %{name}-libs = %{version}-%{release}
+Packager: Serg Oskin <serg@oskin.ru>
+Summary: Virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
+
+%description
+OWFS is a userspace virtual filesystem providing access to 1-Wire networks.
+
+%package libs
+Summary: Core library providing base functions to other OWFS modules.
+Group: System Environment/Libraries
+Requires: libusb >= 0.1.6
+BuildRequires: automake autoconf libtool
+BuildRequires: libusb-devel
+
+%description libs
+%{name}-libs is a core library providing base functions to other OWFS modules.
+
+%if %{build_capi}
+%package capi
+Summary: C-API to develop third-part applications which access 1-Wire networks.
+Group: System Environment/Libraries
+Requires: %{name}-libs = %{version}-%{release}
+
+%description capi
+%{name}-capi library on top of libow providing an easy API to develop third-part applications to access to 1-Wire networks.
+%endif
+
+%if %{build_ownet}
+%package ownet
+Summary: C-API to develop third-part applications which access 1-Wire networks.
+Group: System Environment/Libraries
+Requires: %{name}-libs = %{version}-%{release}
+
+%description ownet
+%{name}-ownet library provids an easy API to develop third-part applications to access to 1-Wire networks. It doesn't depend on owlib, and only supports remote-server connections. This library doesn't include any 1-wire adapter support, except server connections.
+%endif
+
+%if %{build_fs}
+%package fs
+Summary: Virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
+Group: System Environment/Daemon
+Requires: %{name}-libs = %{version}-%{release}, fuse >= 1.0
+#BuildRequires: fuse-devel >= 1.0
+
+%description fs
+%{name}-fs is a virtual filesystem on top of %{name}-libs providing access to 1-Wire networks.
+%endif
+
+%if %{build_httpd}
+%package httpd
+Summary: HTTP daemon providing access to 1-Wire networks.
+Group: System Environment/Daemon
+Requires: %{name}-libs = %{version}-%{release}
+
+%description httpd
+%{name}-httpd is a HTTP daemon on top of %{name} providing access to 1-Wire networks.
+%endif
+
+%if %{build_ftpd}
+%package ftpd
+Summary: FTP daemon providing access to 1-Wire networks.
+Group: System Environment/Daemon
+Requires: %{name}-libs = %{version}-%{release}
+
+%description ftpd
+%{name}-ftpd is a FTP daemon on top of %{name} providing access to 1-Wire networks.
+%endif
+
+%if %{build_server}
+%package server
+Summary: Backend server (daemon) for 1-wire control
+Group: System Environment/Daemon
+Requires: %{name}-libs = %{version}-%{release}
+
+%description server
+%{name}-server is the backend component of the OWFS 1-wire bus control system.
+owserver arbitrates access to the bus from multiple client processes. The
+physical bus is usually connected to a serial or USB port, and other processes
+connect to owserver over network sockets (tcp port). Communication can be local
+or over a network.
+%endif
+
+%if %{build_side}
+%package side
+Summary: Packet sniffer for the owserver protocol
+Group: System Environment/Daemon
+Requires: tcl >= 8.1
+
+%description side
+%{name}-side is a packet sniffer for the owserver protocol
+%endif
+
+%if %{build_tap}
+%package tap
+Summary: Packet sniffer for the owserver protocol
+Group: System Environment/Daemon
+Requires: tcl >= 8.1
+
+%description tap
+%{name}-tap is a packet sniffer for the owserver protocol
+%endif
+
+%if %{build_mon}
+%package mon
+Summary: Statistics and settings monitor for owserver
+Group: System Environment/Daemon
+Requires: tcl >= 8.1
+
+%description mon
+%{name}-mon is a graphical monitor of owserver\'s status
+%endif
+
+%if %{build_perl}
+%package perl
+Summary: %{name}-perl is a Perl interface for the 1-wire filesystem
+Group: System Environment/Libraries
+Requires: %{name}-libs = %{version}-%{release}, perl
+BuildRequires: swig
+# FC1 doesn't have perl-devel, but should be added
+
+%description perl
+%{name}-perl is a Perl interface for the 1-wire filesystem
+%endif
+
+%if %{build_python}
+%package python
+Summary: %{name}-python is a python interface for the 1-wire filesystem
+Group: System Environment/Libraries
+Requires: %{name}-libs = %{version}-%{release}, python >= 2.0
+BuildRequires: python-devel >= 2.0, swig
+
+%description python
+%{name}-python is a Python interface for the 1-wire filesystem
+%endif
+
+%if %{build_php}
+%package php
+Summary: %{name}-php is a php interface for the 1-wire filesystem
+Group: System Environment/Libraries
+Requires: %{name}-libs = %{version}-%{release}, php >= 4.3.0
+BuildRequires: php-devel >= 4.3.0, swig
+# FC1 doesn't have php-cli >= 4.3.0, but should be added
+
+%description php
+%{name}-php is a php interface for the 1-wire filesystem
+%endif
+
+%if %{build_tcl}
+%package tcl
+Summary: %{name}-tcl is a Tcl interface for the 1-wire filesystem
+Group: System Environment/Libraries
+Requires: %{name}-libs = %{version}-%{release}, tcl >= 8.1
+BuildRequires: tcl-devel >= 8.1
+
+%description tcl
+%{name}-tcl is a Tcl interface for the 1-wire filesystem
+%endif
+
+%if %{build_shell}
+%package shell
+Summary: %{name}-shell gives light weight shell access to owserver and the 1-wire filesystem
+Group: Applications/System
+
+%description shell
+%{name}-shell is 5 small programs to easily access owserver (and thus the 1-wire system) from shell scripts. owdir, owread, owwrite, owget  and owpresent.
+%endif
+
+%if %{build_man}
+%package man
+Summary: %{name}-man installs man pages for all the OWFS programs 1-wire devices.
+Group: Documentation
+
+%description man
+%{name}-man installs man pages for all the OWFS progams (owfs, owhtttpd, owserver, owftpd, owshell, owperl, owtcl) and also all the supported 1-wire devices.
+%endif
+
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%prep
+%if %{CVS} == 0
+%setup
+%else
+%setup -n owfs-@VERSION@
+%endif
+
+%build
+aclocal
+libtoolize -f -c
+autoheader
+autoconf
+automake -a -c
+./configure \
+	--prefix=%{prefix} \
+	--libdir=%{_libdir} \
+	--disable-static \
+	--enable-usb \
+	--enable-cache \
+	--enable-mt \
+%if %{build_fs}
+	--enable-owfs \
+%else
+	--disable-owfs \
+%endif
+%if %{build_httpd}
+	--enable-owhttpd \
+%else
+	--disable-owhttpd \
+%endif
+%if %{build_capi}
+	--enable-owcapi \
+%else
+	--disable-owcapi \
+%endif
+%if %{build_ownet}
+	--enable-ownetlib \
+%else
+	--disable-ownetlib \
+%endif
+%if %{build_ftpd}
+	--enable-owftpd \
+%else
+	--disable-owftpd \
+%endif
+%if %{build_server}
+	--enable-owserver \
+%else
+	--disable-owserver \
+%endif
+%if %{build_side}
+	--enable-owside \
+%else
+	--disable-owside \
+%endif
+%if %{build_tap}
+	--enable-owtap \
+%else
+	--disable-owtap \
+%endif
+%if %{build_mon}
+	--enable-owmon \
+%else
+	--disable-owmon \
+%endif
+%if %{build_perl}
+	--enable-owperl \
+%else
+	--disable-owperl \
+%endif
+%if %{build_python}
+	--enable-owpython \
+%else
+	--disable-owpython \
+%endif
+%if %{build_php}
+	--enable-owphp \
+%else
+	--disable-owphp \
+%endif
+%if %{build_tcl}
+	--enable-owtcl \
+%else
+	--disable-owtcl \
+%endif
+
+make
+#make check
+
+%install
+case "$RPM_BUILD_ROOT" in *-root) rm -rf $RPM_BUILD_ROOT ;; esac
+make install \
+	DESTDIR=$RPM_BUILD_ROOT
+#pushd src/man
+#make install-so-man
+#popd
+
+install -d -m 755 $RPM_BUILD_ROOT%{prefix}/include/owfs
+mv -f $RPM_BUILD_ROOT%{prefix}/include/*.h $RPM_BUILD_ROOT%{prefix}/include/owfs
+
+# man-files already installed at correct place on FC7
+if [ -d $RPM_BUILD_ROOT%{prefix}/man ]; then
+   install -d -m 755 $RPM_BUILD_ROOT%{_mandir}
+   install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man1
+   mv -f $RPM_BUILD_ROOT%{prefix}/man/man1/* $RPM_BUILD_ROOT%{_mandir}/man1/
+   install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man3
+   mv -f $RPM_BUILD_ROOT%{prefix}/man/man3/* $RPM_BUILD_ROOT%{_mandir}/man3/
+   install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/man5
+   mv -f $RPM_BUILD_ROOT%{prefix}/man/man5/* $RPM_BUILD_ROOT%{_mandir}/man5/
+   install -d -m 755 $RPM_BUILD_ROOT%{_mandir}/mann
+   mv -f $RPM_BUILD_ROOT%{prefix}/man/mann/* $RPM_BUILD_ROOT%{_mandir}/mann/
+   rm -rf $RPM_BUILD_ROOT%{prefix}/man
+fi
+rm -f $RPM_BUILD_ROOT%{_mandir}/man1/*.1so $RPM_BUILD_ROOT%{_mandir}/man1/*.1so.gz
+rm -f $RPM_BUILD_ROOT%{_mandir}/man3/*.3so $RPM_BUILD_ROOT%{_mandir}/man3/*.3so.gz
+rm -f $RPM_BUILD_ROOT%{_mandir}/man5/*.5so $RPM_BUILD_ROOT%{_mandir}/man5/*.5so.gz
+rm -f $RPM_BUILD_ROOT%{_mandir}/mann/*.nso $RPM_BUILD_ROOT%{_mandir}/mann/*.nso.gz
+
+%if %{build_fs}
+install -D -m 644 src/rpm/owfs.conf $RPM_BUILD_ROOT/etc/sysconfig/owfs
+install -D -m 755 src/rpm/owfs.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owfs
+install -d -m 755 $RPM_BUILD_ROOT%{prefix}/sbin
+mv -f $RPM_BUILD_ROOT%{prefix}/bin/owfs $RPM_BUILD_ROOT%{prefix}/sbin
+%endif
+%if %{build_httpd}
+install -D -m 755 src/rpm/owhttpd.conf $RPM_BUILD_ROOT/etc/sysconfig/owhttpd
+install -D -m 644 src/rpm/owhttpd.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owhttpd
+install -d -m 755 $RPM_BUILD_ROOT%{prefix}/sbin
+mv -f $RPM_BUILD_ROOT%{prefix}/bin/owhttpd $RPM_BUILD_ROOT%{prefix}/sbin
+%endif
+%if %{build_ftpd}
+install -D -m 644 src/rpm/owftpd.conf $RPM_BUILD_ROOT/etc/sysconfig/owftpd
+install -D -m 755 src/rpm/owftpd.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owftpd
+install -d -m 755 $RPM_BUILD_ROOT%{prefix}/sbin
+mv -f $RPM_BUILD_ROOT%{prefix}/bin/owftpd $RPM_BUILD_ROOT%{prefix}/sbin
+%endif
+%if %{build_server}
+install -D -m 644 src/rpm/owserver.conf $RPM_BUILD_ROOT/etc/sysconfig/owserver
+install -D -m 755 src/rpm/owserver.init $RPM_BUILD_ROOT/etc/rc.d/init.d/owserver
+install -d -m 755 $RPM_BUILD_ROOT%{prefix}/sbin
+mv -f $RPM_BUILD_ROOT%{prefix}/bin/owserver $RPM_BUILD_ROOT%{prefix}/sbin
+%endif
+%if %{build_side}
+%endif
+%if %{build_tap}
+%endif
+%if %{build_mon}
+%endif
+%if %{build_perl}
+%define perl_archlib %(eval "`@PERL@ -V:installarchlib`"; echo $installarchlib)
+%define perl_sitearch %(eval "`@PERL@ -V:installsitearch`"; echo $installsitearch)
+%define perl_sitelib %(eval "`@PERL@ -V:installsitelib`"; echo $installsitelib)
+%define perl_siteman3dir %(eval "`@PERL@ -V:siteman3dir`"; echo $siteman3dir)
+rm -f $RPM_BUILD_ROOT%{perl_archlib}/perllocal.pod
+rm -f $RPM_BUILD_ROOT%{perl_sitearch}/auto/OW/.packlist
+rm -f $RPM_BUILD_ROOT%{perl_sitearch}/auto/OWNet/.packlist
+%endif
+%if %{build_python}
+%define python_sitedir %(@PYTHON@ -c "from distutils.sysconfig import get_python_lib; print get_python_lib(plat_specific=1)" 2>/dev/null|| echo @PYSITEDIR@)
+# Remove OpenSUSE info files
+rm -f $RPM_BUILD_ROOT%{python_sitedir}/ow-*-info
+rm -f $RPM_BUILD_ROOT%{python_sitedir}/ownet-*-info
+%endif
+%if %{build_php}
+#don't use the PHPLIBDIR here... assume php-config works instead.
+%define php_extdir %(php-config --extension-dir 2>/dev/null || php5-config --extension-dir 2>/dev/null || php4-config --extension-dir 2>/dev/null || echo @PHPLIBDIR@)
+#don't use the PHPLIBDIR here... assume php-config works instead.
+rm -f $RPM_BUILD_ROOT%{php_extdir}/libowphp.la $RPM_BUILD_ROOT%{php_extdir}/libowphp.a
+%endif
+%if %{build_tcl}
+rm -f $RPM_BUILD_ROOT%{_libdir}/owtcl-*/ow.la $RPM_BUILD_ROOT%{_libdir}/owtcl-*/ow.a
+%endif
+
+%post libs
+/sbin/ldconfig
+
+%postun libs
+/sbin/ldconfig
+
+%if %{build_capi}
+%post capi
+/sbin/ldconfig
+
+%postun capi
+/sbin/ldconfig
+%endif
+
+%if %{build_ownet}
+%post ownet
+/sbin/ldconfig
+
+%postun ownet
+/sbin/ldconfig
+%endif
+
+%if %{build_fs}
+%post fs
+/sbin/chkconfig --add owfs
+
+%preun fs
+if [ $1 = 0 ]; then
+	/sbin/chkconfig --del owfs
+fi
+%endif
+
+%if %{build_httpd}
+%post httpd
+/sbin/chkconfig --add owhttpd
+
+%preun httpd
+if [ $1 = 0 ]; then
+	/sbin/chkconfig --del owhttpd
+fi
+%endif
+
+%if %{build_ftpd}
+%post ftpd
+/sbin/chkconfig --add owftpd
+
+%preun ftpd
+if [ $1 = 0 ]; then
+	/sbin/chkconfig --del owftpd
+fi
+%endif
+
+%if %{build_server}
+%post server
+/sbin/chkconfig --add owserver
+
+%preun server
+if [ $1 = 0 ]; then
+	/sbin/chkconfig --del owserver
+fi
+%endif
+
+%files libs
+%defattr(-,root,root)
+%doc README NEWS INSTALL ChangeLog AUTHORS COPYING
+%{prefix}/include/owfs/owfs_config.h
+%{_libdir}/libow-*.so*
+%{_libdir}/libow.so
+%{_libdir}/libow.la
+%{_mandir}/man3/*.3.*
+
+%if %{build_capi}
+%files capi
+%defattr(-,root,root)
+%{prefix}/include/owfs/owcapi.h
+%{_libdir}/libowcapi-*.so*
+%{_libdir}/libowcapi.so
+%{_libdir}/libowcapi.la
+%{_mandir}/man1/*owcapi.1.*
+%endif
+
+%if %{build_ownet}
+%files ownet
+%defattr(-,root,root)
+%{prefix}/include/owfs/ownetapi.h
+%{_libdir}/libownet-*.so*
+%{_libdir}/libownet.so
+%{_libdir}/libownet.la
+%{_mandir}/man1/*ownet*.1.*
+%endif
+
+%if %{build_fs}
+%files fs
+%defattr(-,root,root)
+%attr(0755,root,root) /etc/rc.d/init.d/owfs
+%config /etc/sysconfig/owfs
+%{prefix}/sbin/owfs
+%{_mandir}/man1/owfs.1.*
+%endif
+
+%if %{build_httpd}
+%files httpd
+%defattr(-,root,root)
+%attr(0755,root,root) /etc/rc.d/init.d/owhttpd
+%config /etc/sysconfig/owhttpd
+%{prefix}/sbin/owhttpd
+%{_mandir}/man1/owhttpd.1.*
+%endif
+
+%if %{build_shell}
+%files shell
+%defattr(-,root,root)
+%{prefix}/bin/owdir
+%{prefix}/bin/owread
+%{prefix}/bin/owwrite
+%{prefix}/bin/owget
+%{prefix}/bin/owpresent
+%{_mandir}/man1/owshell.1.*
+%{_mandir}/man1/owdir.1.*
+%{_mandir}/man1/owread.1.*
+%{_mandir}/man1/owget.1.*
+%{_mandir}/man1/owpresent.1.*
+
+%if %{build_php}
+# include ownet-php (it's a duplicate since it's in owfs-php too)
+%{prefix}/bin/ownet.php
+%endif
+
+%if %{build_python}
+#%dir %{python_sitedir}/ow
+#%{python_sitedir}/ow/__init__.py*
+#%{python_sitedir}/ow/_OW.so
+# include ownet-python (it's a duplicate since it's in owfs-python too)
+%dir %{python_sitedir}/ownet
+%{python_sitedir}/ownet/__init__.py*/
+%{python_sitedir}/ownet/connection.py*
+%endif
+
+%endif
+
+%if %{build_man}
+%files man
+%defattr(-,root,root)
+%{_mandir}/man1/*.1.*
+#%{_mandir}/man1/*.1so
+%{_mandir}/man3/*.3.*
+#%{_mandir}/man3/*.3so
+%{_mandir}/man5/*.5.*
+#%{_mandir}/man5/*.5so
+%{_mandir}/mann/*.n.*
+#%{_mandir}/mann/*.nso
+%endif
+
+%if %{build_ftpd}
+%files ftpd
+%defattr(-,root,root)
+%attr(0755,root,root) /etc/rc.d/init.d/owftpd
+%config /etc/sysconfig/owftpd
+%{prefix}/sbin/owftpd
+%{_mandir}/man1/owftpd.1.*
+%endif
+
+%if %{build_server}
+%files server
+%defattr(-,root,root)
+%attr(0755,root,root) /etc/rc.d/init.d/owserver
+%config /etc/sysconfig/owserver
+%{prefix}/sbin/owserver
+%{_mandir}/man1/owserver.1.*
+%endif
+
+%if %{build_side}
+%files side
+%defattr(-,root,root)
+%{prefix}/bin/owside
+#%{_mandir}/man1/owside.1.*
+%endif
+
+%if %{build_tap}
+%files tap
+%defattr(-,root,root)
+%{prefix}/bin/owtap
+%{_mandir}/man1/owtap.1.*
+%endif
+
+%if %{build_mon}
+%files mon
+%defattr(-,root,root)
+%{prefix}/bin/owmon
+#%{_mandir}/man1/owmon.1.*
+%endif
+
+%if %{build_perl}
+%files perl
+%defattr(-,root,root)
+%dir %{perl_sitearch}/auto/OW
+%{perl_sitearch}/auto/OW/OW.*
+%{perl_sitearch}/OW.pm
+%{perl_sitelib}/OWNet.pm
+%{perl_siteman3dir}/OWNet.3*
+%endif
+
+%if %{build_python}
+%files python
+%defattr(-,root,root)
+%dir %{python_sitedir}/ow
+%{python_sitedir}/ow/__init__.py*
+%{python_sitedir}/ow/_OW.so
+#OpenSUSE info file
+#%{python_sitedir}/ow-*info
+%dir %{python_sitedir}/ownet
+%{python_sitedir}/ownet/__init__.py*
+%{python_sitedir}/ownet/connection.py*
+#OpenSUSE info file
+#%{python_sitedir}/ownet-*info
+%endif
+
+%if %{build_php}
+%files php
+%defattr(-,root,root)
+%dir %{php_extdir}
+%{php_extdir}/libowphp.so*
+%{prefix}/bin/ownet.php
+%endif
+
+%if %{build_tcl}
+%files tcl
+%defattr(-,root,root)
+%dir %{tcl_pkgpath}/owtcl-*
+%{tcl_pkgpath}/owtcl-*/*
+# ow-*.so ow.so ow.tcl pkgIndex.tcl
+%{_mandir}/mann/owtcl.n.*
+%endif
+
+
+%changelog
+
+* Sat Nov 15 2008 Serg Oskin <serg@oskin.ru>
+- Build pkgs from released and CVS sources.
+- Correct TCL install path
+
+* Tue Jan 19 2008 Christian Magnusson <mag@mag.cx>
+- x86_64 support, tested on i386 and x86_64
+
+* Tue Jan 15 2008 Serg Oskin <serg@oskin.ru>
+- no scripts for owshell
+- x86_64 support (Not fully tested)
+
+* Sat Sep 30 2006 Paul Alfille <paul.alfille@gmail.com>
+- added shell programs, removed nfsd
+
+* Thu Jan 13 2005 Serg Oskin <oskin@macomnet.ru>
+- reorganized
+
+* Sun Oct 24 2004 Serg Oskin <oskin@macomnet.ru>
+- recreated
+
+* Wed Sep 24 2003 Vadim Tkachenko <vt@freehold.crocodile.org>
+- Initial take at RPM build

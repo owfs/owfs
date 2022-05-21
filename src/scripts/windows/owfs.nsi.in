@@ -1,0 +1,203 @@
+# Part of the OWFS (One Wire Filesystem)
+# See http://www.owfs.org
+# Copyright 2006 Paul H Alfille
+#
+# Windows installer script
+# Using NSIS from Nullsoft
+#
+# file src/windows/owfs.nsi
+
+#########
+# Interface
+#########
+!include "MUI.nsh"
+# Use Logic Library to improve readability
+!include "LogicLib.nsh"
+
+#########
+# Version
+#########
+!ifndef VERSION
+  !define VERSION '@VERSION@'
+!endif
+
+#########
+# directories -- up from src/windows/scripts
+#########
+!define ROOT_OWFS "..\..\.."
+!define OPTDIR "\cygwin\opt\owfs"
+!define ROOT_HOME "${ROOT_OWFS}\..\.."
+!define ROOT_CYGWIN "${ROOT_HOME}\.."
+!define ROOT_OWNET "$(ROOT_OWFS)\module\ownet"
+
+#########
+# Install settings
+#########
+SetCompressor /SOLID lzma
+SetOverwrite ifnewer
+CRCCheck on
+
+#########
+# Name
+#########
+Name "OWFS"
+Caption "OWFS (One Wire Filesystem) ${VERSION} Setup"
+BrandingText "One-Wire Filesystem http://www.owfs.org"
+Icon "owfs.ico"
+UninstallIcon "unowfs.ico"
+
+#########
+# Location
+#########
+# The default installation directory
+InstallDir $PROGRAMFILES\OWFS
+# Result
+!ifdef OUTFILE
+  OutFile "${OUTFILE}"
+!else
+  OutFile ${ROOT_OWFS}\owfs_${VERSION}.exe
+!endif
+
+
+InstType "Programs"
+InstType "Source"
+
+#########
+# Pages
+#########
+ !insertmacro MUI_PAGE_WELCOME
+ !insertmacro MUI_PAGE_LICENSE "${ROOT_OWFS}\COPYING"
+ !insertmacro MUI_PAGE_COMPONENTS
+ !insertmacro MUI_PAGE_DIRECTORY
+ !insertmacro MUI_PAGE_INSTFILES
+ !insertmacro MUI_PAGE_FINISH
+
+ !insertmacro MUI_UNPAGE_WELCOME
+ !insertmacro MUI_UNPAGE_CONFIRM
+ !insertmacro MUI_UNPAGE_INSTFILES
+ !insertmacro MUI_UNPAGE_FINISH
+
+ !define      MUI_ABORTWARNING
+
+ !insertmacro MUI_LANGUAGE "English"
+
+#########
+# Kill running programs
+#########
+Section "Terminate currently running OWFS programs"
+  ExecWait '"tskill" "owdir"'
+  ExecWait '"tskill" "owread"'
+  ExecWait '"tskill" "owwrite"'
+  ExecWait '"tskill" "owpresent"'
+  ExecWait '"tskill" "owserver"'
+  ExecWait '"tskill" "owhttpd"'
+  ExecWait '"tskill" "owftpd"'
+SectionEnd
+
+#########
+# Files
+#########
+Section "OWFS program files" Bins
+
+  SetDetailsPrint textonly
+  DetailPrint "Installing OWFS Program Files..."
+  SetDetailsPrint listonly
+
+  SectionIn 1 2 RO
+  SetOutPath $INSTDIR
+  File /r "${OPTDIR}\*"
+   File "*.ico"
+  WriteUninstaller "$INSTDIR\owfs_uninstall.exe"
+  WriteRegStr HKLM "Software\OWFS\Version" "String Value" "${VERSION}"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OWFS" "DisplayName" "OWFS -- One Wire Filesystem"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OWFS" "UninstallString" '"$INSTDIR\owfs_uninstall.exe"'
+
+  SetOutPath $INSTDIR\ownet
+  File  ..\..\..\module\ownet\python\ownet\*
+  WriteRegStr HKLM "Software\Python\PythonCore\2.5\PythonPath\OWFS" "" '"$INSTDIR"'
+  WriteRegStr HKLM "Software\Python\PythonCore\2.4.4\PythonPath\OWFS" "" '"$INSTDIR"'
+
+SectionEnd
+
+#########
+# Start Menu
+#########
+Section "Add to Start menu"
+  SectionIn 1
+  CreateDirectory "$SMPROGRAMS\OWFS"
+  Delete "$SMPROGRAMS\OWFS\owserver.lnk"
+  Delete "$SMPROGRAMS\OWFS\owftpd.lnk"
+  Delete "$SMPROGRAMS\OWFS\owhttpd.lnk"
+  Delete "$SMPROGRAMS\OWFS\owfs_uninstall.lnk"
+  CreateShortcut "$SMPROGRAMS\OWFS\owserver.lnk" "$INSTDIR\bin\owserver.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS ${VERSION} Server/Multiplexor"
+  CreateShortcut "$SMPROGRAMS\OWFS\owftpd.lnk" "$INSTDIR\bin\owftpd.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS ${VERSION} FTP server"
+  CreateShortcut "$SMPROGRAMS\OWFS\owhttpd.lnk" "$INSTDIR\bin\owhttpd.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS ${VERSION} Web server"
+  CreateShortcut "$SMPROGRAMS\OWFS\owfs_uninstall.lnk" "$INSTDIR\owfs_uninstall.exe" "" "$INSTDIR\unowfs.ico" "" "" "" "Uninstall OWFS ${VERSION}"
+SectionEnd
+
+#########
+# Desktop
+#########
+Section "Add to Desktop"
+  SectionIn 1
+  Delete "$DESKTOP\owserver.lnk"
+  Delete "$DESKTOP\owftpd.lnk"
+  Delete "$DESKTOP\owhttpd.lnk"
+  Delete "$DESKTOP\owfs_uninstall.lnk"
+  CreateShortcut "$DESKTOP\owserver.lnk" "$INSTDIR\bin\owserver.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS ${VERSION} Server/Multiplexor"
+  CreateShortcut "$DESKTOP\owftpd.lnk" "$INSTDIR\bin\owftpd.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS ${VERSION} FTP server"
+  CreateShortcut "$DESKTOP\owhttpd.lnk" "$INSTDIR\bin\owhttpd.exe" "" "$INSTDIR\owfs.ico" "" "" "" "OWFS ${VERSION} Web server"
+  CreateShortcut "$DESKTOP\owfs_uninstall.lnk" "$INSTDIR\owfs_uninstall.exe" "" "$INSTDIR\unowfs.ico" "" "" "" "Uninstall OWFS ${VERSION}"
+SectionEnd
+
+#########
+# USB driver
+#########
+Section "USB (Universal Serial Bus) driver installation"
+  SectionIn 1
+  MessageBox MB_OK "Going to Sourceforge for libusb-win32 installation."
+  ExecShell "open" "http://sourceforge.net/projects/libusb-win32/files/libusb-win32-releases/0.1.12.2/libusb-win32-filter-bin-0.1.12.2.exe/download"
+  ExecWait 'rundll32 libusb0.dll,usb_install_driver_np_rundll $INSTDIR\driver\ds9490.inf'
+SectionEnd
+
+#########
+# Bonjour
+#########
+Section "Bonjour (zeroconf autodiscovery) installation"
+  SectionIn 1
+  MessageBox MB_OK "Going to Apple site for Bonjour installation."
+  ExecShell "open" "http://developer.apple.com/networking/bonjour/download/"
+SectionEnd
+
+#########
+# Source
+#########
+Section "OWFS source files" Source
+  SectionIn 2
+  MessageBox MB_OK "Going to Sourceforge OWFS site for source file installation."
+  ExecShell "open" "http://sourceforge.net/project/downloading.php?group_id=85502&filename=owfs-${VERSION}.zip"
+SectionEnd
+
+Section "USB Support Installation"
+  MessageBox MB_OK "Going to LibUsb-Win32 site for installation."
+  ExecShell "open" "http://sourceforge.net/projects/libusb-win32/files/libusb-win32-releases/0.1.12.2/libusb-win32-src-0.1.12.2.tar.gz/download"
+SectionEnd
+
+Section "Cygwin Installation"
+  MessageBox MB_OK "Going to RedHat's Cygwin site for installation."
+  ExecShell "open" "http://www.cygwin.com"
+SectionEnd
+
+Section "Uninstall"
+  RMDir /r /REBOOTOK $INSTDIR
+  RMDir /r /REBOOTOK "$SMPROGRAMS\OWFS"
+  Delete "$DESKTOP\owserver.lnk"
+  Delete "$DESKTOP\owftpd.lnk"
+  Delete "$DESKTOP\owhttpd.lnk"
+  Delete "$DESKTOP\owfs_uninstall.lnk"
+  DeleteRegKey HKLM "Software\OWFS\Version"
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OWFS"
+  DeleteRegKey HKLM "Software\Python\PythonCore\2.5\PythonPath\OWFS"
+  DeleteRegKey HKLM "Software\Python\PythonCore\2.4.4\PythonPath\OWFS"
+
+SectionEnd

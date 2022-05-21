@@ -1,0 +1,20 @@
+#!/usr/bin/perl -w
+
+use ExtUtils::MakeMaker ;
+
+WriteMakefile(
+    'CC'	=>	'@CC@',
+    'ABSTRACT'	=>	q[Perl interface to the 1-wire filesytem] ,
+    'AUTHOR'	=>	q[Paul H Alfille <paul.alfille@gmail.com>] ,
+    'VERSION'	=>	q[@VERSION@],
+# Avoid compilation problem for Fedora Core 1 and Slackware 10.2
+    'DEFINE'    =>	q[@PTHREAD_CFLAGS@ -D_FILE_OFFSET_BITS=64 -DSKIP_SEARCH_H @DEFS@],
+    'INC'       =>	q[-I../../../../src/include -I../../../owlib/src/include @CPPFLAGS@ @LIBUSB_CFLAGS@],
+# Default value for LDDLFLAGS is $Config{lddlflags}="-shared -L/usr/local/lib"
+# but we want rpath to be @libdir@ or @exec_prefix@/lib
+    'LDDLFLAGS' =>      q[-bundle -flat_namespace -undefined suppress -Wl,-L../../../owlib/src/c/.libs],
+    'LIBS'      =>	q[-L../../../owlib/src/c/.libs -low @PTHREAD_LIBS@ @LIBS@],
+    'OBJECT'	=>	'ow_wrap.o',
+    'NAME'      =>	'OW',
+	'POLLUTE'	=>  1,
+) ;
