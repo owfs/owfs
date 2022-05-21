@@ -39,12 +39,12 @@
 pthread_mutex_t persistence_mutex ;
 
 /* --- Prototypes ------------ */
-static void SetupAntiloop(int argc, char **argv);
+static void SetupAntiloop(void);
 
 int main(int argc, char **argv)
 {
 	int c;
-	
+
 	/* Set up owlib */
 	LibSetup(program_type_server);
 	Setup_Systemd() ; // systemd?
@@ -97,9 +97,9 @@ int main(int argc, char **argv)
 	_MUTEX_INIT(persistence_mutex);
 
 	/* Set up "Antiloop" -- a unique token */
-	SetupAntiloop( argc, argv );
-	
-	/* Call up main processing routine -- waits for network queries */ 
+	SetupAntiloop();
+
+	/* Call up main processing routine -- waits for network queries */
 	ServerProcess( Handler );
 	LEVEL_DEBUG("ServerProcess done");
 
@@ -109,45 +109,28 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-#define ARG_STRING_LENGTH 500
-static void SetupAntiloop(int argc, char **argv)
+static void SetupAntiloop(void)
 {
-	// a structure of relatively unique items to hash together
+	/* A structure of relatively unique items to hash together */
 	struct {
 		struct tms t;
 		pid_t pid ;
 		long int rand ;
-		char args[ARG_STRING_LENGTH+1] ;
 	} data_struct ;
-	
-	int argnum ; 
-	int left = ARG_STRING_LENGTH ;
-	
-	// current time
+
+	/* clock ticks elapsed since startup */
 	times( & (data_struct.t) );
-	
-	// process ID
+
+	/* process ID */
 	data_struct.pid = getpid() ;
-	
-	// random number (seeded from current time)
+
+	/* random number (seeded from current time) */
 	srandom(time(0)) ;
 	data_struct.rand = random() ;
-	
-	// command line arguments (don't clear out buffer)
-	for ( argnum=0 ; argnum < argc ; ++argnum )
-	{
-		int argsize = strlen( argv[argnum] ) ;
-		if ( argsize > left ) {
-			argsize = left ;
-		}
-		strncat( data_struct.args, argv[argnum], argsize ) ;
-		left -= argsize ;
-	}
-	
-	// backup definition
+
+	/* backup definition */
 	memcpy( Globals.Token.uuid, (void *) &data_struct, 16 ) ;
-	
-	// use MD5 has (gives the required 16 bytes)
+
+	/* use MD5 has (gives the required 16 bytes) */
 	md5( (void *) &data_struct, sizeof(data_struct) , Globals.Token.uuid ) ;
-	
 }

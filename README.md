@@ -1,4 +1,3 @@
-[![master Build Status](https://travis-ci.org/owfs/owfs.svg?branch=master)](https://travis-ci.org/owfs/owfs)
 [![build](https://github.com/owfs/owfs/workflows/build/badge.svg)](https://github.com/owfs/owfs/actions?query=workflow%3Abuild)
 
 # This is OWFS — the one-wire filesystem.

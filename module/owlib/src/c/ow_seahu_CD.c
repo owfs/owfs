@@ -81,7 +81,7 @@ B. Header
 C. Makefile and include
   1. Add this file to Makefile.am
   2. Add the header to ../include/Makefile.am
-  3. Add the header file to ../include/devices.h
+  3. Add the header file to ../include/ow_devices.h
 
 D. Device tree
   1. Add the appropriate entry to the device tree in
@@ -494,8 +494,12 @@ GOOD_OR_BAD OW_write_to_section(BYTE cmd, BYTE section, void *buf, UINT len, UIN
 {
 	BYTE p[2+64+2+1]={cmd, section, }; // p[2+len+2+1]
 	memcpy(&p[2], buf, len);
-	UINT * crc=(UINT *)&p[2+len]; // define crc pointer placed into p[]
-	*crc=~crc16(&p[0],2+len,0); // crc from cmd, number section and data (from buf)
+	// comented way the pointer is used responds with a compiler warning: cast increases required alignment of target type [-Wcast-align]
+	// UINT * crc=(UINT *)&p[2+len]; // define crc pointer placed into p[]
+	// *crc=~crc16(&p[0],2+len,0); // crc from cmd, number section and data (from buf)
+	// therefore to avoid compiler warning must first crt calculate and ten copy to right place
+	UINT crc=~crc16(&p[0],2+len,0); // crc from cmd, number section and data (from buf)
+	memcpy(&p[2+len],&crc,2); // copy 2 bytes of crt to right palce into p[]
 	BYTE check_OK=0xAA; // prepare value to check
 
 	struct transaction_log t[] = {

@@ -40,6 +40,8 @@
 /* Shorthand macros for some cumbersome definitions. */
 #define owtcl_ObjCmdProc(name)            \
   int name (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj **objv)
+#define owtcl_ObjDelProc(name)            \
+  void name (ClientData clientData, Tcl_Interp *interp)
 
 #define owtcl_ArgObjIncr         \
   int objix;                         \
@@ -170,13 +172,10 @@ owtcl_ObjCmdProc(Owtcl_isConnect)
 /*
  * Disconnect from onewire host(s).
  */
-owtcl_ObjCmdProc(Owtcl_Delete)
+owtcl_ObjDelProc(Owtcl_Delete)
 {
+	(void) interp; /* don't care. */
 	OwtclStateType *OwtclStatePtr = (OwtclStateType *) clientData;
-
-	(void) interp;				// suppress compiler warning
-	(void) objc;				// suppress compiler warning
-	(void) objv;				// suppress compiler warning
 
 	/* Disconnect if connected, otherwise ignore. */
 	if (OwtclStatePtr->used)
@@ -184,7 +183,7 @@ owtcl_ObjCmdProc(Owtcl_Delete)
 
 	/* Remember disconnected state. */
 	OwtclStatePtr->used = 0;
-	return TCL_OK;
+	return;
 }
 
 /*
@@ -594,7 +593,7 @@ int Ow_Init(Tcl_Interp * interp)
 	}
 
 	/* Callback - clean up procs left open on interpreter deletetion. */
-	Tcl_CallWhenDeleted(interp, (Tcl_InterpDeleteProc *) Owtcl_Delete, (ClientData) & OwtclState);
+	Tcl_CallWhenDeleted(interp, Owtcl_Delete, (ClientData) & OwtclState);
 
 	/* Announce successful package loading to "package require". */
 	if (Tcl_PkgProvide(interp, "ow", OWTCL_VERSION) != TCL_OK)

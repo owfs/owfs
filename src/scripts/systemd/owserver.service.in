@@ -5,7 +5,7 @@ Documentation=man:owserver(1)
 [Service]
 Type=notify
 NotifyAccess=all
-ExecStart=@bindir@/owserver --w1
+ExecStart=@bindir@/owserver --w1 --foreground
 Restart=on-failure
 #User=ow
 #Group=ow
