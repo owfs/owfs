@@ -52,6 +52,7 @@ READ_FUNCTION(FS_temp);
 READ_FUNCTION(FS_latesttemp);
 READ_FUNCTION(FS_volts);
 READ_FUNCTION(FS_Humid);
+READ_FUNCTION(FS_Humid_HR202L);
 READ_FUNCTION(FS_Humid_1735);
 READ_FUNCTION(FS_Humid_3600);
 READ_FUNCTION(FS_Humid_4000);
@@ -94,10 +95,11 @@ static struct filetype DS2437[] = {
 	{"pages", PROPERTY_LENGTH_SUBDIR, NON_AGGREGATE, ft_subdir, fc_subdir, NO_READ_FUNCTION, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"pages/page", 8, &A2437, ft_binary, fc_stable, FS_r_page, FS_w_page, VISIBLE, NO_FILETYPE_DATA, },
 
-	{"VDD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {.i=voltage_source_VAD}, },
+	{"VDD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {.i=voltage_source_VDD}, },
 	{"VAD", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {.i=voltage_source_VAD}, },
 	{"temperature", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_simultaneous_temperature, FS_temp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"latesttemp", PROPERTY_LENGTH_TEMP, NON_AGGREGATE, ft_temperature, fc_volatile, FS_latesttemp, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
+	{"humidity", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_link, FS_Humid_HR202L, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"vis", PROPERTY_LENGTH_FLOAT, NON_AGGREGATE, ft_float, fc_volatile, FS_Current, NO_WRITE_FUNCTION, VISIBLE, NO_FILETYPE_DATA, },
 	{"IAD", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {.i=0}, },
 	{"CA", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_status, FS_w_status, VISIBLE, {.i=1}, },
@@ -488,6 +490,15 @@ static ZERO_OR_ERROR FS_Humid_1735(struct one_wire_query *owq)
 	ZERO_OR_ERROR z_or_e = FS_r_sibling_F( &VAD, "VAD", owq ) ;
 
 	OWQ_F(owq) = 38.92 * VAD - 41.98;
+	return z_or_e ;
+}
+
+static ZERO_OR_ERROR FS_Humid_HR202L(struct one_wire_query *owq)
+{
+	_FLOAT VDD = 0.;
+	ZERO_OR_ERROR z_or_e = FS_r_sibling_F( &VDD, "VDD", owq ) ;
+
+	OWQ_F(owq) = 10.0 * VDD;
 	return z_or_e ;
 }
 
