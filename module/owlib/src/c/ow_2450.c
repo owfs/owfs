@@ -49,6 +49,7 @@ READ_FUNCTION(FS_r_page);
 WRITE_FUNCTION(FS_w_page);
 READ_FUNCTION(FS_r_mem);
 WRITE_FUNCTION(FS_w_mem);
+READ_FUNCTION(FS_convert);
 READ_FUNCTION(FS_volts);
 READ_FUNCTION(FS_latestvolts);
 READ_FUNCTION(FS_r_power);
@@ -102,6 +103,7 @@ static struct filetype DS2450[] = {
 
 	{"power", PROPERTY_LENGTH_YESNO, NON_AGGREGATE, ft_yesno, fc_stable, FS_r_power, FS_w_power, VISIBLE, NO_FILETYPE_DATA, },
 	{"PIO", PROPERTY_LENGTH_YESNO, &A2450, ft_yesno, fc_stable, FS_r_PIO, FS_w_PIO, VISIBLE, {.i=0}, },
+	{"convert", PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_volatile, FS_convert, NO_WRITE_FUNCTION, INVISIBLE, NO_FILETYPE_DATA, },
 	{"volt", PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {.i=r_5V_16bit}, },
 	{"volt2", PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_volatile, FS_volts, NO_WRITE_FUNCTION, VISIBLE, {.i=r_2V_16bit}, },
 	{"latestvolt", PROPERTY_LENGTH_FLOAT, &A2450v, ft_float, fc_volatile, FS_latestvolts, NO_WRITE_FUNCTION, VISIBLE, {.i=r_5V_16bit}, },
@@ -363,6 +365,18 @@ static ZERO_OR_ERROR FS_volts(struct one_wire_query *owq)
 	if ( BAD( OW_convert( OWQ_SIMUL_TEST(owq), (int)(.5+.16+4.*resolution*.08), pn) )) {
 		return -EINVAL ;
 	}	
+
+	return FS_latestvolts( owq );
+}
+
+static ZERO_OR_ERROR FS_convert(struct one_wire_query *owq)
+{
+	struct parsedname *pn = PN(owq);
+
+	// Start A/D process if needed
+	if ( BAD( OW_convert( OWQ_SIMUL_TEST(owq), (int)(.5+.16+4.*16*.08), pn) )) {
+		return -EINVAL ;
+	}
 
 	return FS_latestvolts( owq );
 }
