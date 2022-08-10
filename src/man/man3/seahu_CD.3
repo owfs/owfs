@@ -1,0 +1,368 @@
+'\"
+'\" Copyright (c) 2017-2020 Ondrej Lycka (www.seahu.cz)
+'\" (info@seahu.cz)
+'\"
+'\" Device manual page for the OWFS -- 1-wire filesystem package
+'\"
+'\" Free for all use. No waranty. None. Use at your own risk.
+'\" $Id$
+'\"
+.TH Seahu_CD 3  2020 "OWFS Manpage" "One-Wire File System"
+.SH NAME
+.TP
+.B Seahu_CD
+\- Devices based on Seahu SH_CD (open source arduino 1-Wire multi sensor/actor slave library)
+.SH SYNOPSIS
+Multise sensors/actors.
+.PP
+.B CD
+[.]XXXXXXXXXXXX[XX][/[
+.B device_description
+|
+.B number_sections
+|
+.B section0
+|
+.B sectionX
+|
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No warranty. None. Use at your own risk.
+'\"
+.B address
+|
+.B crc8
+|
+.B id
+|
+.B locator
+|
+.B r_address
+|
+.B r_id
+|
+.B r_locator
+|
+.B type
+]]
+.PP
+.B CD
+[.]XXXXXXXXXXXX[XX][/sectionX[
+.B actual_value
+|
+.B control_byte
+|
+.B description
+|
+.B enable_max_alarm
+|
+.B enable_min_alarm
+|
+.B enable_read
+|
+.B enable_write
+|
+.B give_alarm
+|
+.B max_alarm_value
+|
+.B measure
+|
+.B min_alarm_value
+|
+.B status_alarm
+|
+.B user_note
+]]
+.SH FAMILY CODE
+.PP
+.I CD
+.SH SPECIAL PROPERTIES
+.SS device_description
+.I read-only, string
+.br
+String description of device [64B].
+.SS number_sections
+.I read-only, integer point
+.br
+Number of section.
+.SS section0-X
+.I read-only, directory
+.br
+Sub directory of section.
+.SS actual_value
+.I read-write, integer point
+.br
+Show last measured value of section. If section property enable_write is NO then write has no effect.
+.SS control_byte
+.I read-write, integer point
+.br
+Control byte of section. Every bit of this byte set or show some properties of section etc. type data of section, read/write and alarm property, anable/disbale min/max alarm and show status alarm.
+More of this seting scomes out into separe propertis: enable_read, enable_write, give_alarm, enable_max_alarm, status_alarm, enable_min_alarm,.
+.br
+bit 0 R   : READ FLAG  1 - section value can be read , 0 - measuring now not ready for read
+.br
+bit 1 R   : WRITE FLAG 1 - section value is writable for output devices, 0 - actual value is no writable (for only input section)
+.br
+bit 2 R   : ALARM FLAG 1 - section have alarm function
+.br
+bit 3 R   : \
+.br
+bit 4 R   :  = TYPE VALUE FLAG 0 - bool, 1 - unsigned 8bit, 2 - unsigned 16bit, 3 - unsigned 24bit, 4 - unsigned 32bit,
+.br
+bit 5 R   : ALARM STATUS FLAG - actual sesion alarm status
+.br
+bit 6 R/W : 1 - on min. value alarm,  0 - off min. value alarm
+.br
+bit 7 R/W : 1 - on max. value alarm , 0 - off max. value alarm
+.br
+.SS description
+.I read-only, string
+.br
+String description of section [64B].
+.SS enable_max_alarm
+.I read-only, yes-no
+.br
+For this sections 1=enable or 0=disable max alarm. If section no have alarm options (give_alarm=NO), than sec alarm no effect.
+.SS enable_min_alarm
+.I read-only, yes-no
+.br
+For this sections 1=enable or 0=disable min alarm. If section no have alarm options (give_alarm=NO), than sec alarm no effect.
+.SS enable_read
+.I read-only, yes-no
+.br
+Show read ability for this sections 1=enable or 0=disable read. This is almost always =1, but during measurment may be set to 0.
+One means ready for read, but during new measurment may be set to zero for prevent read bat value.
+.SS enable_write
+.I read-only, yes-no
+.br
+Show write ability for this sections 1=enable or 0=disable write. If section not have this avility, then write new value has no efecet.
+.SS give_alarm
+.I read-only, yes-no
+.br
+Show alarm ability for this sections 1=have or 0=no have alarm. If section not have alarm, tahn min/max alarm have no effect.
+.SS max_alarm_value
+.I read-write, integer point
+.br
+Value for max alarm boundary. If section no have alarm ability or is not set property enable_max_alarm, then this has no effect.
+.SS measure
+.I read, integer point
+.br
+Execute new measure and show result valule of this measurment.
+.SS min_alarm_value
+.I read-write, integer point
+.br
+Value for min alarm boundary. If section no have alarm ability or is not set property enable_min_alarm, then this has no effect.
+.SS status_alarm
+.I read, string
+.br
+Show alarm status of this section.
+.SS user_note
+.I read-write, string
+.br
+User description of section. If control_byte has set type data section as memeory, this is used as [32B] memory.
+.SH STANDARD PROPERTIES
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No warranty. None. Use at your own risk.
+'\"
+.SS address
+.SS r_address
+.I read-only, ascii
+.br
+The entire 64-bit unique ID. Given as upper case hexadecimal digits (0-9A-F).
+.br
+.I address
+starts with the
+.I family
+code
+.br
+.I r address
+is the
+.I address
+in reverse order, which is often used in other applications and labeling.
+.SS crc8
+.I read-only, ascii
+.br
+The 8-bit error correction portion. Uses cyclic redundancy check. Computed from the preceding 56 bits of the unique ID number. Given as upper case hexadecimal digits (0-9A-F).
+.SS family
+.I read-only, ascii
+.br
+The 8-bit family code. Unique to each
+.I type
+of device. Given as upper case hexadecimal digits (0-9A-F).
+.SS id
+.SS r_id
+.I read-only, ascii
+.br
+The 48-bit middle portion of the unique ID number. Does not include the family code or CRC. Given as upper case hexadecimal digits (0-9A-F).
+.br
+.I r id
+is the
+.I id
+in reverse order, which is often used in other applications and labeling.
+.SS locator
+.SS r_locator
+.I read-only, ascii
+.br
+Uses an extension of the 1-wire design from iButtonLink company that associated 1-wire physical connections with a unique 1-wire code. If the connection is behind a
+.B Link Locator
+the
+.I locator will show a unique 8-byte number (16 character hexadecimal) starting with family code FE.
+.br
+If no
+.B Link Locator
+is between the device and the master, the
+.I locator
+field will be all FF.
+.br
+.I r locator
+is the
+.I locator
+in reverse order.
+.SS present (DEPRECATED)
+.I read-only, yes-no
+.br
+Is the device currently
+.I present
+on the 1-wire bus?
+.SS type
+.I read-only, ascii
+.br
+Part name assigned by Dallas Semi. E.g.
+.I DS2401
+Alternative packaging (iButton vs chip) will not be distiguished.
+.SH DESCRIPTION
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No warranty. None. Use at your own risk.
+'\"
+.SS 1-Wire
+.I 1-wire 
+is a wiring protocol and series of devices designed and manufactured
+by Dallas Semiconductor, Inc. The bus is a low-power low-speed low-connector
+scheme where the data line can also provide power.
+.PP
+Each device is uniquely and unalterably numbered during manufacture. There are a wide variety
+of devices, including memory, sensors (humidity, temperature, voltage,
+contact, current), switches, timers and data loggers. More complex devices (like
+thermocouple sensors) can be built with these basic devices. There are also
+1-wire devices that have encryption included.
+.PP
+The 1-wire scheme uses a single 
+.I bus master
+and multiple
+.I slaves
+on the same wire. The bus master initiates all communication. The slaves can be 
+individually discovered and addressed using their unique ID.
+.PP
+Bus masters come in a variety of configurations including serial, parallel, i2c, network or USB
+adapters.
+.SS OWFS design
+.I OWFS
+is a suite of programs that designed to make the 1-wire bus and its
+devices easily accessible. The underlying principle is to create a virtual
+filesystem, with the unique ID being the directory, and the individual
+properties of the device are represented as simple files that can be read and written.
+.PP 
+Details of the individual slave or master design are hidden behind a consistent interface. The goal is to 
+provide an easy set of tools for a software designer to create monitoring or control applications. There 
+are some performance enhancements in the implementation, including data caching, parallel access to bus 
+masters, and aggregation of device communication. Still the fundamental goal has been ease of use, flexibility
+and correctness rather than speed.
+.SS Seahu_CD
+The
+.B Seahu_CD (3)
+is multisenor/actor device based on arduino 1-Wire slave library. Every sensor/actor has own section aviable as sub directory.
+.SH ADDRESSING
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No warranty. None. Use at your own risk.
+'\"
+All 1-wire devices are factory assigned a unique 64-bit address. This address is of the form:
+.TP
+.B Family Code
+8 bits
+.TP
+.B Address
+48 bits
+.TP
+.B CRC
+8 bits
+.IP
+.PP
+Addressing under OWFS is in hexadecimal, of form:
+.IP
+.B 01.123456789ABC
+.PP
+where
+.B 01
+is an example 8-bit family code, and
+.B 12345678ABC
+is an example 48 bit address.
+.PP
+The dot is optional, and the CRC code can included. If included, it must be correct.
+.SH DATASHEET
+.br
+https://github.com/seahu/seahu_CD
+.SH SEE ALSO
+.SS Programs
+.B owfs (1) owhttpd (1) owftpd (1) owserver (1)
+.B owdir (1) owread (1) owwrite (1) owpresent (1)
+.B owtap (1)
+.SS Configuration and testing
+.B owfs (5) owfs.aliasfile (5) owtap (1) owmon (1)
+.SS Language bindings
+.B owtcl (3) owperl (3) owcapi (3)
+.SS Clocks
+.B DS1427 (3) DS1904 (3) DS1994 (3) DS2404 (3) DS2404S (3) DS2415 (3) DS2417 (3)
+.SS ID
+.B DS2401 (3) DS2411 (3) DS1990A (3)
+.SS Memory
+.B DS1982 (3) DS1985 (3) DS1986 (3) DS1991 (3) DS1992 (3) DS1993 (3) DS1995 (3) DS1996 (3) DS2430A (3) DS2431 (3) DS2433 (3) DS2502 (3) DS2506 (3) DS28E04 (3) DS28EC20 (3)
+.SS Switches
+.B DS2405 (3) DS2406 (3) DS2408 (3) DS2409 (3) DS2413 (3) DS28EA00 (3) InfernoEmbedded (3)
+.SS Temperature
+.B DS1822 (3) DS1825 (3) DS1820 (3) DS18B20 (3) DS18S20 (3) DS1920 (3) DS1921 (3) DS1821 (3) DS28EA00 (3) DS28E04 (3) EDS0064 (3) EDS0065 (3) EDS0066 (3) EDS0067 (3) EDS0068 (3) EDS0071 (3) EDS0072 (3) MAX31826 (3)
+.SS Humidity
+.B DS1922 (3) DS2438 (3) EDS0065 (3) EDS0068 (3)
+.SS Voltage
+.B DS2450 (3)
+.SS Resistance
+.B DS2890 (3)
+.SS Multifunction (current, voltage, temperature)
+.B DS2436 (3) DS2437 (3) DS2438 (3) DS2751 (3) DS2755 (3) DS2756 (3) DS2760 (3) DS2770 (3) DS2780 (3) DS2781 (3) DS2788 (3) DS2784 (3)
+.SS Counter
+.B DS2423 (3)
+.SS LCD Screen
+.B LCD (3) DS2408 (3)
+.SS Crypto
+.B DS1977 (3)
+.SS Pressure
+.B DS2406 (3) TAI8570 (3) EDS0066 (3) EDS0068 (3)
+.SS Moisture
+.B EEEF (3) DS2438 (3)
+.SH AVAILABILITY
+http://www.owfs.org
+.SH AUTHOR
+Ondrej Lycka (info@seahu.cz)

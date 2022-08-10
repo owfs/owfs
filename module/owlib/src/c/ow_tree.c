@@ -171,6 +171,7 @@ void DeviceSort(void)
 	Device2Tree( & d_mTS017,         ePN_real);
 	Device2Tree( & d_mDI001,         ePN_real);
 	Device2Tree( & d_IBLSS,          ePN_real);
+	Device2Tree( & d_seahu_CD,       ePN_real);
 	Device2Tree( & d_simultaneous,   ePN_real);
 
 	Device2Tree( & d_stats_cache,          ePN_statistics);

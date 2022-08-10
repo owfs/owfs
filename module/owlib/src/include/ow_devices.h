@@ -56,6 +56,7 @@
 #include "ow_lcd.h"				// LCD driver
 #include "ow_simultaneous.h"	// fake entry to address entire directory
 #include "ow_stats.h"			// statistic reporting pseudo-device
+#include "ow_seahu_CD.h"		// Seahu_CD - open source arduino 1-Wire multi sensor/actor slave devices
 #include "ow_settings.h"		// settings pseudo-device
 #include "ow_system.h"			// system pseudo-device
 
