@@ -1,0 +1,229 @@
+'\"
+'\" Copyright (c) 2003-2008 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No warranty. None. Use at your own risk.
+'\"
+.TH OWFS ALIASFILE 5 2020 "OWFS Alias File Manpage" "One-Wire File System"
+.SH NAME
+.B owfs Alias File
+\- owfs programs alias file
+.SH SYNOPSIS
+An OWFS alias file is specified on the command line:
+.TP 
+.B owfs -a alias_file [other options]
+The file name is arbitrary, there is no default alias file used.
+.SH USAGE
+An alias file can be invoked for any of the OWFS programs (
+.B owfs (1) owhttpd (1) owserver (1) owftpd (1)
+) or any of the language bindings (
+.B owperl (1) owcapi (1) owtcl (1) owphp owpython
+) to set aliases for 1-wire device serial numbers.
+.SH SYNTAX
+.P
+Similar to Unix shell script or perl syntax
+.TP
+Comments
+# Any 
+.I #
+marks the start of a comment
+.br
+# blank lines are ignored
+
+.TP
+Options
+.B option 
+.B option = value 
+# options need a value
+
+.SH "DESCRIPTION"
+'\"
+'\" Copyright (c) 2003-2004 Paul H Alfille, MD
+'\" (paul.alfille@gmail.com)
+'\"
+'\" Program manual page for the OWFS -- 1-wire filesystem package
+'\" Based on Dallas Semiconductor, Inc's datasheets, and trial and error.
+'\"
+'\" Free for all use. No warranty. None. Use at your own risk.
+'\"
+.SS 1-Wire
+.I 1-wire 
+is a wiring protocol and series of devices designed and manufactured
+by Dallas Semiconductor, Inc. The bus is a low-power low-speed low-connector
+scheme where the data line can also provide power.
+.PP
+Each device is uniquely and unalterably numbered during manufacture. There are a wide variety
+of devices, including memory, sensors (humidity, temperature, voltage,
+contact, current), switches, timers and data loggers. More complex devices (like
+thermocouple sensors) can be built with these basic devices. There are also
+1-wire devices that have encryption included.
+.PP
+The 1-wire scheme uses a single 
+.I bus master
+and multiple
+.I slaves
+on the same wire. The bus master initiates all communication. The slaves can be 
+individually discovered and addressed using their unique ID.
+.PP
+Bus masters come in a variety of configurations including serial, parallel, i2c, network or USB
+adapters.
+.SS OWFS design
+.I OWFS
+is a suite of programs that designed to make the 1-wire bus and its
+devices easily accessible. The underlying principle is to create a virtual
+filesystem, with the unique ID being the directory, and the individual
+properties of the device are represented as simple files that can be read and written.
+.PP 
+Details of the individual slave or master design are hidden behind a consistent interface. The goal is to 
+provide an easy set of tools for a software designer to create monitoring or control applications. There 
+are some performance enhancements in the implementation, including data caching, parallel access to bus 
+masters, and aggregation of device communication. Still the fundamental goal has been ease of use, flexibility
+and correctness rather than speed.
+.SS Configuration
+.B owfs.aliasfile (5)
+allows aliases to be set for 1-wire serial numbers.
+.br
+"alias=path-to/alias-file"
+In the owfs configuration file sets the path to the alias file.
+.br
+.SH OPTIONS
+.IP "serial-number = alias"
+.br
+The alias file should contain a list of aliases one per line in the format, serial-number = alias
+.br
+ie. 12.0AB668000000 = office
+.br
+
+.br
+.RS
+.IP \[bu] 2
+The serial number is in hexadecimal in any format that owfs accepts
+.RS 2
+.IP \[bu] 2
+2 dots are optional
+.IP \[bu]
+CRC8 is optional but must be accurate if specified
+.IP \[bu]
+Initial / in the path is allowed
+.IP \[bu]
+hexadecimal upper or lower case
+.RE
+.IP \[bu]
+The separator between ID and name can be any combination of spaces, tabs and the = sign
+.IP \[bu]
+Empty lines are ignored
+.IP \[bu]
+Bad lines are ignored
+.RE 7
+
+.br
+There are some caveats:
+.br
+.RS
+.IP \[bu] 2
+Only devices can get human readable names, not individual properties.
+.in +.1in
+So in the example above
+.br
+.in +.1i
+12.0AB668000000 = office
+.br
+.in -.1i
+NOT
+.br
+.in +.1i
+12.0AB668000000/PIO.B = office
+.in -.2i
+.br
+.IP \[bu]
+Alias names can't interfere with "reserved words" like uncached, statistics, alarm...
+.IP \[bu]
+Alias names can't be a directory. E.g no "bedroom/light"
+.IP \[bu]
+Spaces in names might be confusing to some of the programs.
+.IP \[bu]
+Alias files must be specified locally
+.RE
+
+.br
+The current design:
+.RS
+.IP \[bu] 2
+Aliases can be initially assigned in the alias file and specified on the command line
+.RS
+.IP \[bu] 2
+Same format: serial_number = alias_name
+.IP \[bu]
+multiple lines allowed
+.IP \[bu]
+repeats of name or serial numbers allowed, but duplicates will be overwritten
+.RE
+.IP \[bu]
+The list of currently known alias pairings can be generated dynamically by reading
+.br
+.in +.25i
+/settings/alias/list
+.in -.25i
+.IP \[bu]
+Alias names can be changed by writing to a device's alias property
+.RE
+.br
+.SH SAMPLE
+.TP
+Here is a sample alias file.
+.P
+2C.66FE04000000 = Window
+.br
+2C.1B7900000000 = Door
+.br
+22.367A03000000 = Vacant_room
+.br
+12.C4DF1F000000 = Hall closet
+.br
+81.6B1B24000000 = BusMasterID
+.br
+89.BD29C300705E = Light
+.br
+
+.SH SEE ALSO
+.SS Programs
+.B owfs (1) owhttpd (1) owftpd (1) owserver (1)
+.B owdir (1) owread (1) owwrite (1) owpresent (1)
+.B owtap (1)
+.SS Configuration and testing
+.B owfs (5) owfs.aliasfile (5) owtap (1) owmon (1)
+.SS Language bindings
+.B owtcl (3) owperl (3) owcapi (3)
+.SS Clocks
+.B DS1427 (3) DS1904(3) DS1994 (3) DS2404 (3) DS2404S (3) DS2415 (3) DS2417 (3)
+.SS ID
+.B DS2401 (3) DS2411 (3) DS1990A (3)
+.SS Memory
+.B DS1982 (3) DS1985 (3) DS1986 (3) DS1991 (3) DS1992 (3) DS1993 (3) DS1995 (3) DS1996 (3) DS2430A (3) DS2431 (3) DS2433 (3) DS2502 (3) DS2506 (3) DS28E04 (3) DS28EC20 (3)
+.SS Switches
+.B DS2405 (3) DS2406 (3) DS2408 (3) DS2409 (3) DS2413 (3) DS28EA00 (3)
+.SS Temperature
+.B DS1822 (3) DS1825 (3) DS1820 (3) DS18B20 (3) DS18S20 (3) DS1920 (3) DS1921 (3) DS1821 (3) DS28EA00 (3) DS28E04 (3)
+.SS Humidity
+.B DS1922 (3)
+.SS Voltage
+.B DS2450 (3)
+.SS Resistance
+.B DS2890 (3)
+.SS Multifunction (current, voltage, temperature)
+.B DS2436 (3) DS2437 (3) DS2438 (3) DS2751 (3) DS2755 (3) DS2756 (3) DS2760 (3) DS2770 (3) DS2780 (3) DS2781 (3) DS2788 (3) DS2784 (3)
+.SS Counter
+.B DS2423 (3)
+.SS LCD Screen
+.B LCD (3) DS2408 (3)
+.SS Crypto
+.B DS1977 (3)
+.SS Pressure
+.B DS2406 (3) -- TAI8570
+.SH AVAILABILITY
+http://www.owfs.org
+.SH AUTHOR
+Paul Alfille (paul.alfille@gmail.com)
