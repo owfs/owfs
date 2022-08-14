@@ -543,17 +543,24 @@ enum content_type PoorMansParser( char * bad_url )
 	LEVEL_DEBUG("Error on http request <%s> assume html",bad_url);
 	return ct_html ;
 }
-			
+
+static regex_t rx_host;
+static pthread_once_t regex_init_once = PTHREAD_ONCE_INIT;
+
+static void regex_init(void)
+{
+    ow_regcomp( &rx_host, "host *: *([^ ]+) *\r", REG_ICASE ) ;
+}
+
 static GOOD_OR_BAD GetHostURL( struct OutputControl * oc )
 {
 	FILE * out = oc->out ;
 	char * line = NULL ;
-	static regex_t rx_host ;
 	struct ow_regmatch orm ;
 	
 	orm.number = 1 ;	
 	
-	ow_regcomp( &rx_host, "host *: *([^ ]+) *\r", REG_ICASE ) ;
+    pthread_once(&regex_init_once, regex_init);
 
 	do {
 		size_t s ;
