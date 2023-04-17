@@ -7,12 +7,12 @@ AC_DEFUN([OW_CHECK_NESTED_FUNCTIONS],
 [AC_REQUIRE([AC_PROG_CC])
 AC_MSG_CHECKING(if compiler supports nested functions)
 AC_TRY_RUN([
-f(void (*nested)())
+void f(void (*nested)())
 {
     (*nested)();
 }
 
-main()
+int main(void)
 {
     int a = 0;
     void nested()
@@ -21,8 +21,8 @@ main()
     }
     f(nested);
     if(a != 1)
-         exit(1);
-    exit(0);
+         return 1;
+    return 0;
 }
 ],
 [AC_MSG_RESULT(yes)
