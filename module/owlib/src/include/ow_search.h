@@ -60,6 +60,7 @@ struct device_search {
 	int LastDevice;				// for search
 	int index;
 	BYTE sn[SERIAL_NUMBER_SIZE];
+	BYTE family;
 	BYTE search;
 
 	// For adapters that maintain dir-at-once (or dirgulp):

@@ -42,6 +42,7 @@ static enum parse_enum Parse_RealDeviceSN(enum parse_pass remote_status, struct 
 static enum parse_enum Parse_NonRealDevice(char *filename, struct parsedname *pn);
 static enum parse_enum Parse_External_Device( char *filename, struct parsedname *pn) ;
 static enum parse_enum Parse_Bus( INDEX_OR_ERROR bus_number, struct parsedname *pn);
+static enum parse_enum Parse_Family( BYTE family_number, struct parsedname *pn);
 static enum parse_enum Parse_Alias(char *filename, enum parse_pass remote_status, struct parsedname *pn);
 static enum parse_enum Parse_Alias_Known( char *filename, enum parse_pass remote_status, struct parsedname *pn);
 static void ReplaceAliasInPath( char * filename, struct parsedname * pn);
@@ -53,6 +54,7 @@ static char * find_segment_in_path( char * segment, char * path ) ;
 #define BRANCH_INCR (9)
 
 static regex_t rx_bus;
+static regex_t rx_family;
 static regex_t rx_set;
 static regex_t rx_sta;
 static regex_t rx_str;
@@ -75,6 +77,7 @@ static regex_t rx_letter;
 static void regex_fini(void)
 {
 	regfree(&rx_bus);
+	regfree(&rx_family);
 	regfree(&rx_set);
 	regfree(&rx_sta);
 	regfree(&rx_str);
@@ -100,6 +103,7 @@ static pthread_once_t regex_init_once = PTHREAD_ONCE_INIT;
 static void regex_init(void)
 {
 	ow_regcomp(&rx_bus, "^bus\\.([[:digit:]]+)/?", REG_ICASE);
+	ow_regcomp(&rx_family, "^family\\.([[:xdigit:]]{2})/?", REG_ICASE);
 	ow_regcomp(&rx_set, "^settings/?", REG_ICASE | REG_NOSUB);
 	ow_regcomp(&rx_sta, "^statistics/?", REG_ICASE | REG_NOSUB);
 	ow_regcomp(&rx_str, "^structure/?", REG_ICASE | REG_NOSUB);
@@ -420,7 +424,10 @@ static enum parse_enum Parse_Unspecified(char *pathnow, enum parse_pass remote_s
 		INDEX_OR_ERROR bus_number = (INDEX_OR_ERROR) atoi(orm.match[1]) ;
 		ow_regexec_free( &orm ) ;
 		return Parse_Bus( bus_number, pn);
-
+	} else if (ow_regexec( &rx_family, pathnow, &orm ) == 0) {
+		BYTE family_number = strtol(orm.match[1], NULL, 16);
+		ow_regexec_free( &orm ) ;
+		return Parse_Family( family_number, pn);
 	} else if (ow_regexec( &rx_set, pathnow, NULL ) == 0) {
 		return set_type( ePN_settings, pn ) ;
 
@@ -580,6 +587,28 @@ static enum parse_enum Parse_Bus( INDEX_OR_ERROR bus_number, struct parsedname *
 	}
 	return parse_first;
 }
+
+/* We've reached a /family.n entry */
+static enum parse_enum Parse_Family ( BYTE family_number, struct parsedname *pn)
+{
+	pthread_once(&regex_init_once, regex_init);
+
+	/* Processing for family.X directories */
+	if ( family_number < 1 || family_number > 255) {
+		return parse_error;
+	}
+
+	/* Check no family already specified */
+	if (SpecifiedFamily(pn)) {	/* already specified a "family." */
+		return parse_error;
+	}
+
+	pn->state |= ePS_family;
+	pn->family=family_number;
+
+	return parse_first;
+}
+
 
 // search path for this exact matching path segment
 static char * find_segment_in_path( char * segment, char * path )
