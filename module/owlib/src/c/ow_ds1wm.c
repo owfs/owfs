@@ -275,7 +275,6 @@ static RESET_TYPE DS1WM_reset(const struct parsedname * pn)
 	}
 }
 
-#define SERIAL_NUMBER_BITS (8*SERIAL_NUMBER_SIZE)
 /* search = normal and alarm */
 static enum search_status DS1WM_next_both(struct device_search *ds, const struct parsedname *pn)
 {

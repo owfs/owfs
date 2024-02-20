@@ -188,7 +188,7 @@ enum search_status BUS_next_both_bitbang(struct device_search *ds, const struct 
 				}
 			} else {
 				bits[0] = search_direction;
-				if (bit_number < 64) {
+				if (bit_number < SERIAL_NUMBER_BITS) {
 					/* Send chosen bit path, then check match on next two */
 					if ( BAD( BUS_sendback_bits(bits, bits, 3, pn) ) ) {
 						return search_error;
@@ -229,7 +229,7 @@ enum search_status BUS_next_both_bitbang(struct device_search *ds, const struct 
 			
 		}	// loop until through serial number bits
 		
-		if ( (CRC8(ds->sn, SERIAL_NUMBER_SIZE)!=0) || (bit_number < 64) || (ds->sn[0] == 0)) {
+		if ( (CRC8(ds->sn, SERIAL_NUMBER_SIZE)!=0) || (bit_number < SERIAL_NUMBER_BITS) || (ds->sn[0] == 0)) {
 			/* A minor "error" */
 			return search_error;
 		}

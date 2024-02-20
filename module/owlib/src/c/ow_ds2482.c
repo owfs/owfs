@@ -555,7 +555,7 @@ static enum search_status DS2482_next_both(struct device_search *ds, const struc
 		return search_error;
 	}
 	// loop to do the search
-	for (bit_number = 0; bit_number < 64; ++bit_number) {
+	for (bit_number = 0; bit_number < SERIAL_NUMBER_BITS; ++bit_number) {
 		LEVEL_DEBUG("bit number %d", bit_number);
 		/* Set the direction bit */
 		if (bit_number < ds->LastDiscrepancy) {
@@ -579,7 +579,7 @@ static enum search_status DS2482_next_both(struct device_search *ds, const struc
 		UT_setbit(ds->sn, bit_number, bits[2]);
 	}							// loop until through serial number bits
 
-	if (CRC8(ds->sn, SERIAL_NUMBER_SIZE) || (bit_number < 64) || (ds->sn[0] == 0)) {
+	if (CRC8(ds->sn, SERIAL_NUMBER_SIZE) || (bit_number < SERIAL_NUMBER_BITS) || (ds->sn[0] == 0)) {
 		/* Unsuccessful search or error -- possibly a device suddenly added */
 		return search_error;
 	}

@@ -243,6 +243,8 @@ time_t timegm(struct tm *tm);
 
 /* Bytes in a 1-wire address */
 #define SERIAL_NUMBER_SIZE           8
+/* Bits in a 1-wire address */
+#define SERIAL_NUMBER_BITS           (8*SERIAL_NUMBER_SIZE)
 
 /* Allocation wrappers for debugging */
 #include "ow_alloc.h"
