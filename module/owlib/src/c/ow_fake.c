@@ -271,11 +271,13 @@ static enum search_status Fake_next_both(struct device_search *ds, const struct 
 		ds->LastDevice = 1;
 		return search_done;
 	}
-	if (DirblobGet(++ds->index, ds->sn, &(pn->selected_connection->master.fake.main))) {
-		ds->LastDevice = 1;
-		return search_done;
+	while (!DirblobGet(++ds->index, ds->sn, &(pn->selected_connection->master.fake.main))) {
+		if (!ds->family || ds->sn[0] == ds->family) {
+			return search_good;
+		}
 	}
-	return search_good;
+	ds->LastDevice = 1;
+	return search_done;
 }
 
 /* Need to lock struct global_namefind_struct since twalk requires global data -- can't pass void pointer */
