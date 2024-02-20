@@ -242,11 +242,13 @@ time_t timegm(struct tm *tm);
 #endif							/* ENOTSUP */
 
 /* Bytes in a 1-wire address */
-#define SERIAL_NUMBER_SIZE             8
+#define SERIAL_NUMBER_SIZE                8
 /* Bits in a 1-wire address */
-#define SERIAL_NUMBER_BITS             (8*SERIAL_NUMBER_SIZE)
+#define SERIAL_NUMBER_BITS                (8*SERIAL_NUMBER_SIZE)
 /* Bits in a 1-wire address used for the family code of the device */
-#define SERIAL_NUMBER_FAMILY_CODE_BITS 8
+#define SERIAL_NUMBER_FAMILY_CODE_BITS    8
+/* Number of family code available for a 1-wire address */
+#define SERIAL_NUMBER_FAMILY_CODE_OPTIONS (1 << SERIAL_NUMBER_FAMILY_CODE_BITS)
 
 /* Allocation wrappers for debugging */
 #include "ow_alloc.h"
