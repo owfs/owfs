@@ -555,10 +555,12 @@ static enum search_status DS2482_next_both(struct device_search *ds, const struc
 		return search_error;
 	}
 	// loop to do the search
-	for (bit_number = 0; bit_number < 64; ++bit_number) {
+	for (bit_number = 0; bit_number < SERIAL_NUMBER_BITS; ++bit_number) {
 		LEVEL_DEBUG("bit number %d", bit_number);
 		/* Set the direction bit */
-		if (bit_number < ds->LastDiscrepancy) {
+		if (ds->family && bit_number < SERIAL_NUMBER_FAMILY_CODE_BITS) {
+			search_direction = UT_getbit(&ds->family, bit_number);
+		} else if (bit_number < ds->LastDiscrepancy) {
 			search_direction = UT_getbit(ds->sn, bit_number);
 		} else {
 			search_direction = (bit_number == ds->LastDiscrepancy) ? 1 : 0;
@@ -572,14 +574,24 @@ static enum search_status DS2482_next_both(struct device_search *ds, const struc
 				/* No devices respond */
 				ds->LastDevice = 1;
 				return search_done;
+			} else if (ds->family
+				&& bit_number < SERIAL_NUMBER_FAMILY_CODE_BITS // Search on the family number
+				&& bits[0] != bits[1] // There is no search direction choice to be made
+				&& bits[0] != search_direction // The search is heading in the wrong direction
+				) {
+				/* If we are filtering down family specific devices
+				 * we stop if we are heading to the wrong direction
+				 */
+				ds->LastDevice = 1;
+				return search_done;
 			}
-		} else {				/* 0,0,0 */
+		} else if (!ds->family || bit_number >= SERIAL_NUMBER_FAMILY_CODE_BITS) { /* 0,0,0 */
 			last_zero = bit_number;
 		}
 		UT_setbit(ds->sn, bit_number, bits[2]);
 	}							// loop until through serial number bits
 
-	if (CRC8(ds->sn, SERIAL_NUMBER_SIZE) || (bit_number < 64) || (ds->sn[0] == 0)) {
+	if (CRC8(ds->sn, SERIAL_NUMBER_SIZE) || (bit_number < SERIAL_NUMBER_BITS) || (ds->sn[0] == 0)) {
 		/* Unsuccessful search or error -- possibly a device suddenly added */
 		return search_error;
 	}

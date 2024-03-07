@@ -633,30 +633,59 @@ static ZERO_OR_ERROR FS_realdir(void (*dirfunc) (void *, const struct parsedname
 
 	DirblobInit(&db);			// set up a fresh dirblob
 
+	if (SpecifiedFamily(pn_whole_directory)) {
+		ds.family = pn_whole_directory->family;
+	} else {
+		ds.family = 0;
+	}
+
 	ret = PossiblyLockedBusCall( BUS_first, &ds, pn_whole_directory) ;
 	
 	if (RootNotBranch(pn_whole_directory)) {
 		db.allocated = pn_whole_directory->selected_connection->last_root_devs;	// root dir estimated length
 	}
+	BYTE family_presence[SERIAL_NUMBER_FAMILY_CODE_OPTIONS] = {0};
 	while ( ret == search_good ) {
-		char dev[PROPERTY_LENGTH_ALIAS + 1];
+		if (!ds.family || ds.sn[0] == ds.family) {
+			/* For devices not supporting family search algorithm
+			 * a double check is made here to filter out devices not
+			 * belonging in the queried family.
+			 */
+			char dev[PROPERTY_LENGTH_ALIAS + 1];
 
-		/* Add to device cache */
-		Cache_Add_Device(pn_whole_directory->selected_connection->index,ds.sn) ;
-		
-		/* Get proper device name (including alias subst) */
-		FS_devicename(dev, PROPERTY_LENGTH_ALIAS, ds.sn, pn_whole_directory);
-		
-		/* Execute callback function */
-		if ( FS_dir_plus(dirfunc, v, flags, pn_whole_directory, dev) != 0 ) {
-			DirblobPoison(&db);
-			break ;
+			family_presence[ds.sn[0]] = 1; /* Mark family code as present on the bus */
+
+			/* Add to device cache */
+			Cache_Add_Device(pn_whole_directory->selected_connection->index,ds.sn) ;
+
+			/* Get proper device name (including alias subst) */
+			FS_devicename(dev, PROPERTY_LENGTH_ALIAS, ds.sn, pn_whole_directory);
+
+			/* Execute callback function */
+			if ( FS_dir_plus(dirfunc, v, flags, pn_whole_directory, dev) != 0 ) {
+				DirblobPoison(&db);
+				break ;
+			}
+			DirblobAdd(ds.sn, &db);
+			++devices;
 		}
-		DirblobAdd(ds.sn, &db);
-		++devices;
 
 		ret = PossiblyLockedBusCall( BUS_next, &ds, pn_whole_directory) ;
 	} 
+
+	if (!ds.family) {
+		/* Do not show the directory if already in a family filtered directory */
+		for (int i = 0; i < SERIAL_NUMBER_FAMILY_CODE_OPTIONS; ++i) {
+			if (family_presence[i]) {
+				char name[10];
+				sprintf(name, "family.%.2x", i);
+				if ( FS_dir_plus(dirfunc, v, flags, pn_whole_directory, name) != 0 ) {
+					DirblobPoison(&db);
+					break ;
+				}
+			}
+		}
+	}
 
 	STATLOCK;
 	dir_main.entries += devices;

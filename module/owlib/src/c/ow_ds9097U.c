@@ -813,7 +813,6 @@ static RESET_TYPE DS2480_reset_once(struct connection_in * in)
 	}
 }
 
-#define SERIAL_NUMBER_BITS (8*SERIAL_NUMBER_SIZE)
 /* search = normal and alarm */
 static enum search_status DS2480_next_both(struct device_search *ds, const struct parsedname *pn)
 {

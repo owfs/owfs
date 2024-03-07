@@ -37,7 +37,7 @@ GOOD_OR_BAD BUS_verify(BYTE search, const struct parsedname *pn)
 	buffer[0] = search;
 
 	// now set or clear apropriate bits for search
-	for (i = 0; i < 64; i++) {
+	for (i = 0; i < SERIAL_NUMBER_BITS; i++) {
 		UT_setbit(buffer, 3 * i + 10, UT_getbit(pn->sn, i));
 	}
 
@@ -47,7 +47,7 @@ GOOD_OR_BAD BUS_verify(BYTE search, const struct parsedname *pn)
 	if (buffer[0] != search) {
 		return gbBAD;
 	}
-	for (i = 0; (i < 64) && (goodbits < 64); i++) {
+	for (i = 0; (i < SERIAL_NUMBER_BITS) && (goodbits < SERIAL_NUMBER_BITS); i++) {
 		switch (UT_getbit(buffer, 3 * i + 8) << 1 | UT_getbit(buffer, 3 * i + 9)) {
 		case 0:
 			break;

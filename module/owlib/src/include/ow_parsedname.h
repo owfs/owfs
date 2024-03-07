@@ -123,6 +123,7 @@ enum ePS_state {
 	ePS_reconnection  = 0x0100,
 	ePS_unaliased     = 0x0200,
 	ePS_json          = 0x0400,
+	ePS_family        = 0x0800,
 };
 
 struct parsedname {
@@ -132,6 +133,7 @@ struct parsedname {
 	struct connection_in *known_bus;	// where this device is located
 	enum ePN_type type;			// real? settings? ...
 	enum ePS_state state;			// alarm?
+	BYTE family;				// 1 byte family filter
 	BYTE sn[SERIAL_NUMBER_SIZE];				// 64-bit serial number
 	struct device *selected_device;		// 1-wire device
 	struct filetype *selected_filetype;	// device property
@@ -207,6 +209,8 @@ struct parsedname {
 #define SpecifiedLocalBus(pn)          ((((pn)->state) & ePS_buslocal) != 0 )
 
 #define SpecifiedBus(pn)          ( SpecifiedLocalBus(pn) || SpecifiedRemoteBus(pn) )
+
+#define SpecifiedFamily(pn)   ((((pn)->state) & ePS_family) != 0 )
 
 #define RootNotBranch(pn)         (((pn)->ds2409_depth)==0)
 

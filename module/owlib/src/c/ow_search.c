@@ -188,7 +188,7 @@ enum search_status BUS_next_both_bitbang(struct device_search *ds, const struct 
 				}
 			} else {
 				bits[0] = search_direction;
-				if (bit_number < 64) {
+				if (bit_number < SERIAL_NUMBER_BITS) {
 					/* Send chosen bit path, then check match on next two */
 					if ( BAD( BUS_sendback_bits(bits, bits, 3, pn) ) ) {
 						return search_error;
@@ -200,7 +200,15 @@ enum search_status BUS_next_both_bitbang(struct device_search *ds, const struct 
 					break;
 				}
 			}
-			if (bits[1]) {
+			if (ds->family && bit_number < SERIAL_NUMBER_FAMILY_CODE_BITS) {
+				/* Force to search the family prefix */
+				if (bits[1] && bits[2]) {	/* 1,1 */
+					/* If no devices respond during family prefix transmission there will be no devices for this family type */
+					ds->LastDevice = 1;
+					return search_done;
+				}
+				search_direction = UT_getbit(&ds->family, bit_number);
+			} else if (bits[1]) {
 				if (bits[2]) {	/* 1,1 */
 					/* No devices respond */
 					ds->LastDevice = 1;
@@ -220,7 +228,7 @@ enum search_status BUS_next_both_bitbang(struct device_search *ds, const struct 
 			} else if (UT_getbit(ds->sn, bit_number)) {	/* 0,0 -- old news, use previous "1" bit */
 				// this discrepancy is before the Last Discrepancy
 				search_direction = 1;
-			} else {			/* 0,0 -- old news, use previous "0" bit */
+			} else if (!ds->family || bit_number >= SERIAL_NUMBER_FAMILY_CODE_BITS) { /* 0,0 -- old news, use previous "0" bit */
 				// this discrepancy is before the Last Discrepancy
 				search_direction = 0;
 				last_zero = bit_number;
@@ -229,7 +237,7 @@ enum search_status BUS_next_both_bitbang(struct device_search *ds, const struct 
 			
 		}	// loop until through serial number bits
 		
-		if ( (CRC8(ds->sn, SERIAL_NUMBER_SIZE)!=0) || (bit_number < 64) || (ds->sn[0] == 0)) {
+		if ( (CRC8(ds->sn, SERIAL_NUMBER_SIZE)!=0) || (bit_number < SERIAL_NUMBER_BITS) || (ds->sn[0] == 0)) {
 			/* A minor "error" */
 			return search_error;
 		}

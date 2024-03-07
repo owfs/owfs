@@ -803,7 +803,7 @@ static void SetupDiscrepancy(const struct device_search *ds, BYTE * discrepancy)
 	}
 
 	/* This could be more efficiently done than bit-setting, but probably wouldn't make a difference */
-	for (i = ds->LastDiscrepancy + 1; i < 64; i++) {
+	for (i = ds->LastDiscrepancy + 1; i < SERIAL_NUMBER_BITS; i++) {
 		UT_setbit(discrepancy, i, 0);
 	}
 }
