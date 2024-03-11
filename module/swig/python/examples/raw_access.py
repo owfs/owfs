@@ -33,19 +33,19 @@ def tree( path, indent = 0 ):
     if raw:
         entries = raw.split( ',' )
         for entry in entries:
-            print ' ' * indent, entry
+            print(' ' * indent, entry)
             if entry[ -1 ] == '/':
                 tree( entry, indent + 4 )
 
 
 if __name__ == "__main__":
     if len( sys.argv ) == 1:
-        print 'usage: tree.py u|serial_port_path|localhost:4304'
+        print('usage: tree.py u|serial_port_path|localhost:4304')
         sys.exit( 1 )
     else:
         if not _OW.init( sys.argv[ 1 ] ):
-	    print 'problem initializing the 1-wire controller'
-	    sys.exit( 1 )
+            print('problem initializing the 1-wire controller')
+            sys.exit( 1 )
 
 
 tree( '/' )

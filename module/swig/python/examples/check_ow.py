@@ -34,7 +34,7 @@ class nagios:
 
 
 def exit(status, message):
-    print 'ow ' + status[1] + ' - ' + message
+    print('ow ' + status[1] + ' - ' + message)
     sys.exit(status[0])
 
 
@@ -77,11 +77,11 @@ except ow.exUnknownSensor as ex:
 
 
 if options.verbose == 1:
-    print s
+    print(s)
 elif options.verbose > 1:
-    print s
-    print 'entryList:', s.entryList()
-    print 'sensorList:', s.sensorList()
+    print(s)
+    print('entryList:', s.entryList())
+    print('sensorList:', s.sensorList())
 
 if len(pieces) > 1:
     field = pieces[1]
@@ -89,16 +89,16 @@ if len(pieces) > 1:
     try:
         v = float(getattr(s, field))
     except AttributeError:
-	    exit(nagios.unknown, 'unknown field - ' + repr(s) + '.' + field)
+        exit(nagios.unknown, 'unknown field - ' + repr(s) + '.' + field)
 
     if options.critical:
         if v > options.critical:
             exit(nagios.critical, repr(s) + '.' + field + ' %f' % v)
-	
+
     if options.warning:
         if v > options.warning:
             exit(nagios.warning, repr(s) + '.' + field + ' %f' % v)
-	
+
     exit(nagios.ok, repr(s) + '.' + field + ' %f' % v)
 
 else: # len(pieces) > 1

@@ -32,12 +32,13 @@ import ow
 def temperature( ):
     root = ow.Sensor( '/' )
     for sensor in root.find( type = 'DS18S20' ):
-        print sensor._path, sensor.temperature
+        print(sensor)
+        print(sensor._path, sensor.temperature)
 
 
 if __name__ == "__main__":
     if len( sys.argv ) == 1:
-        print 'usage: temperature.py u|serial_port_path'
+        print('usage: temperature.py u|serial_port_path')
         sys.exit( 1 )
     else:
         ow.init( sys.argv[ 1 ] )
