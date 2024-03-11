@@ -28,17 +28,19 @@ address/  crc8/  family/  id/  present/  type/
 import unittest
 import sys
 import os
-import ConfigParser
+import configparser
 import ow
 
 
 __version__ = '0.0'
 
-if not os.path.exists( 'owtest.ini' ):
-    raise IOError('owtest.ini')
+curr_dir = os.path.dirname(os.path.realpath(__file__))
 
-config = ConfigParser.ConfigParser( )
-config.read( 'owtest.ini' )
+if not os.path.exists(os.path.join(curr_dir, 'owtest.ini')):
+    raise IOError(os.path.join(curr_dir, 'owtest.ini'))
+
+config = configparser.ConfigParser( )
+config.read(os.path.join(curr_dir, 'owtest.ini'))
 
 sensors = [ name for name in config.get( 'Root', 'sensors' ).split( ' ' ) ]
 sensors = [ '/' + name for name in sensors if config.get( name, 'type' ) == 'DS1420' ]
@@ -54,20 +56,22 @@ class DS1420( unittest.TestCase ):
 
 
     def testAttributes( self ):
-        self.failIfEqual( len( sensors ), 0 )
+        self.assertNotEqual( len( sensors ), 0 )
         for name in sensors:
             sensor = ow.Sensor( name )
             family, id = name[ 1: ].split( '.' )
 
-            self.failUnlessEqual( family + id,                      sensor.address[ :-2 ] )
-            #self.failUnlessEqual( config.get( name, 'crc8' ),       sensor.crc8 )
-            self.failUnlessEqual( family,                           sensor.family )
-            self.failUnlessEqual( id,                               sensor.id )
-            self.failUnlessEqual( config.get( name[ 1: ], 'type' ), sensor.type )
+            self.assertEqual( family + id,                      sensor.address[ :-2 ] )
+            #self.assertEqual( config.get( name, 'crc8' ),       sensor.crc8 )
+            self.assertEqual( family,                           sensor.family )
+            self.assertEqual( id,                               sensor.id )
+            self.assertEqual( config.get( name[ 1: ], 'type' ), sensor.type )
 
 
 def Suite( ):
-    return unittest.makeSuite( DS1420, 'test' )
+    suite = unittest.TestSuite()
+    suite.addTest(DS1420('testAttributes'))
+    return suite
 
 
 if __name__ == "__main__":
