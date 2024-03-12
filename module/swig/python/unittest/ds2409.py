@@ -29,17 +29,19 @@ aux/      branch.1/  branch.BYTE/  crc8/     event.0/    event.ALL/  family/    
 import unittest
 import sys
 import os
-import ConfigParser
+import configparser
 import ow
 
 
 __version__ = '0.0'
 
-if not os.path.exists( 'owtest.ini' ):
-    raise IOError, 'owtest.ini'
+curr_dir = os.path.dirname(os.path.realpath(__file__))
 
-config = ConfigParser.ConfigParser( )
-config.read( 'owtest.ini' )
+if not os.path.exists(os.path.join(curr_dir, 'owtest.ini')):
+    raise IOError(os.path.join(curr_dir, 'owtest.ini'))
+
+config = configparser.ConfigParser( )
+config.read(os.path.join(curr_dir, 'owtest.ini'))
 
 sensors = [ name for name in config.get( 'Root', 'sensors' ).split( ' ' ) ]
 sensors = [ '/' + name for name in sensors if config.get( name, 'type' ) == 'DS2409' ]
@@ -69,31 +71,33 @@ class DS2409( unittest.TestCase ):
             sensor = ow.Sensor( name )
             family, id = name[ 1: ].split( '.' )
 
-            self.failUnlessEqual( family + id,                      sensor.address[ :-2 ] )
-            #self.failUnlessEqual( config.get( name, 'crc8' ),       sensor.crc8 )
-            self.failUnlessEqual( family,                           sensor.family )
-            self.failUnlessEqual( id,                               sensor.id )
-            self.failUnlessEqual( '1',                              sensor.present )
-            self.failUnlessEqual( config.get( name[ 1: ], 'type' ), sensor.type )
+            self.assertEqual( family + id,                      sensor.address[ :-2 ] )
+            #self.assertEqual( config.get( name, 'crc8' ),       sensor.crc8 )
+            self.assertEqual( family,                           sensor.family )
+            self.assertEqual( id,                               sensor.id )
+            self.assertEqual( '1',                              sensor.present )
+            self.assertEqual( config.get( name[ 1: ], 'type' ), sensor.type )
 
-            self.failUnlessEqual( hasattr( sensor, 'branch_0' ),    True )
-            self.failUnlessEqual( hasattr( sensor, 'branch_1' ),    True )
-            self.failUnlessEqual( hasattr( sensor, 'branch_ALL' ),  True )
-            self.failUnlessEqual( hasattr( sensor, 'branch_BYTE' ), True )
-            self.failUnlessEqual( hasattr( sensor, 'control' ),     True )
-            #self.failUnlessEqual( hasattr( sensor, 'discharge' ),   True )
-            self.failUnlessEqual( hasattr( sensor, 'event_0' ),     True )
-            self.failUnlessEqual( hasattr( sensor, 'event_1' ),     True )
-            self.failUnlessEqual( hasattr( sensor, 'event_ALL' ),   True )
-            self.failUnlessEqual( hasattr( sensor, 'event_BYTE' ),  True )
-            self.failUnlessEqual( hasattr( sensor, 'sensed_0' ),    True )
-            self.failUnlessEqual( hasattr( sensor, 'sensed_1' ),    True )
-            self.failUnlessEqual( hasattr( sensor, 'sensed_ALL' ),  True )
-            self.failUnlessEqual( hasattr( sensor, 'sensed_BYTE' ), True )
+            self.assertEqual( hasattr( sensor, 'branch_0' ),    True )
+            self.assertEqual( hasattr( sensor, 'branch_1' ),    True )
+            self.assertEqual( hasattr( sensor, 'branch_ALL' ),  True )
+            self.assertEqual( hasattr( sensor, 'branch_BYTE' ), True )
+            self.assertEqual( hasattr( sensor, 'control' ),     True )
+            #self.assertEqual( hasattr( sensor, 'discharge' ),   True )
+            self.assertEqual( hasattr( sensor, 'event_0' ),     True )
+            self.assertEqual( hasattr( sensor, 'event_1' ),     True )
+            self.assertEqual( hasattr( sensor, 'event_ALL' ),   True )
+            self.assertEqual( hasattr( sensor, 'event_BYTE' ),  True )
+            self.assertEqual( hasattr( sensor, 'sensed_0' ),    True )
+            self.assertEqual( hasattr( sensor, 'sensed_1' ),    True )
+            self.assertEqual( hasattr( sensor, 'sensed_ALL' ),  True )
+            self.assertEqual( hasattr( sensor, 'sensed_BYTE' ), True )
             
 
 def Suite( ):
-    return unittest.makeSuite( DS2409, 'test' )
+    suite = unittest.TestSuite()
+    suite.addTest(DS2409('testAttributes'))
+    return suite
 
 
 if __name__ == "__main__":

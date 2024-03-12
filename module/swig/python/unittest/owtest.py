@@ -46,13 +46,13 @@ def Suite( ):
             continue
         name = name[:-3]
         try:
-            exec 'import ' + name
-            exec 'load = ' + name + '.load'
+            exec('import ' + name)
+            exec('load = ' + name + '.load')
             if load:
-                exec 'suite = ' + name + '.Suite( )'
+                exec('suite = ' + name + '.Suite( )')
                 test_suites = unittest.TestSuite( ( test_suites, suite ) )
         except AttributeError:
-            print 'skipping ' + name + ' no Suite function found.'
+            print('skipping ' + name + ' no Suite function found.')
             pass
     return test_suites
 

@@ -30,8 +30,8 @@ Or point a browser at http://localhost:8765 to see some documentation.
 
 import sys
 import ow
-from DocXMLRPCServer import DocXMLRPCServer, DocXMLRPCRequestHandler
-from SocketServer import ThreadingMixIn
+from xmlrpc.server import DocXMLRPCServer, DocXMLRPCRequestHandler
+from socketserver import ThreadingMixIn
 
 
 class owr:
@@ -54,7 +54,7 @@ class owr:
     def attr( self, path, attr ):
         """Lookup a specific sensor attribute."""
         sensor = ow.Sensor( path )
-        exec 'val = sensor.' + attr
+        val = getattr(sensor, attr)
         return val
 
 
@@ -62,15 +62,19 @@ class ThreadingServer( ThreadingMixIn, DocXMLRPCServer ):
     pass
 
 
-# Initialize ow for a USB controller or for a serial port.
-ow.init( 'u' )
-#ow.init( '/dev/ttyS0' )
+if __name__ == "__main__":
+    if len( sys.argv ) == 1:
+        print('usage: errormessages.py u|serial_port_path|address')
+        sys.exit( 1 )
+    else:
+        # Initialize ow
+        ow.init( sys.argv[1] )
 
-# Allow connections for the localhost on port 8765.
-serveraddr = ( '', 8765 )
-srvr = ThreadingServer( serveraddr, DocXMLRPCRequestHandler )
-srvr.set_server_title( '1-wire network' )
-srvr.set_server_documentation( 'Welcome to the world of 1-wire networks.' )
-srvr.register_instance( owr( ) )
-srvr.register_introspection_functions( )
-srvr.serve_forever( )
+        # Allow connections for the localhost on port 8765.
+        serveraddr = ( '', 8765 )
+        srvr = ThreadingServer( serveraddr, DocXMLRPCRequestHandler )
+        srvr.set_server_title( '1-wire network' )
+        srvr.set_server_documentation( 'Welcome to the world of 1-wire networks.' )
+        srvr.register_instance( owr( ) )
+        srvr.register_introspection_functions( )
+        srvr.serve_forever( )

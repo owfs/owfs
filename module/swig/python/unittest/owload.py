@@ -27,7 +27,7 @@ of ow.Sensor created.
 import unittest
 import sys
 import os
-import ConfigParser
+import configparser
 
 
 __version__ = '0.0'
@@ -36,22 +36,24 @@ load    = True
 
 class OWLoad( unittest.TestCase ):
     def setUp( self ):
-        if not os.path.exists( 'owtest.ini' ):
-            raise IOError, 'owtest.ini'
+        curr_dir = os.path.dirname(os.path.realpath(__file__))
 
-        self.config = ConfigParser.ConfigParser( )
-        self.config.read( 'owtest.ini' )
+        if not os.path.exists(os.path.join(curr_dir, 'owtest.ini')):
+            raise IOError(os.path.join(curr_dir, 'owtest.ini'))
 
+        self.config = configparser.ConfigParser( )
+        self.config.read(os.path.join(curr_dir, 'owtest.ini'))
 
     def testImport( self ):
-        #print 'OWLoad.testImport'
         import ow
         ow.init( self.config.get( 'General', 'interface' ) )
         s = ow.Sensor( '/' )
 
 
 def Suite( ):
-    return unittest.makeSuite( OWLoad, 'test' )
+    suite = unittest.TestSuite()
+    suite.addTest(OWLoad('testImport'))
+    return suite
 
 
 if __name__ == "__main__":

@@ -24,18 +24,17 @@ Create an XML-RPC client for a 1-wire network.
 """
 
 
-import xmlrpclib
-import code
+from xmlrpc.client import ServerProxy
 
 
-ow_sensor = xmlrpclib.ServerProxy( 'http://localhost:8765/' )
-print 'Entries at the root:', ow_sensor.entries( '/' )
+ow_sensor = ServerProxy( 'http://localhost:8765/' )
+print('Entries at the root:', ow_sensor.entries( '/' ))
 
-print 'List of sensors:'
+print('List of sensors:')
 sensors = ow_sensor.sensors( '/' )
 for sensor in sensors:
     sensor_type = ow_sensor.attr( sensor, 'type' )
     if sensor_type == 'DS18S20':
-        print '   ', sensor, '-', sensor_type, '- temperature:', ow_sensor.attr( sensor, 'temperature' ).strip( )
+        print('   ', sensor, '-', sensor_type, '- temperature:', ow_sensor.attr( sensor, 'temperature' ).strip( ))
     else:
-        print '   ', sensor, '-', sensor_type
+        print('   ', sensor, '-', sensor_type)

@@ -21,16 +21,11 @@ distutils setup file for use in creating a Python module from the owfs
 project.
 """
 
-# allows one to use the python3 syntax for print()
-from __future__ import print_function
-
 import os
-# platform doesn't exist for python 2.2
-#import platform
+
 from distutils.core import setup, Extension
 from distutils import sysconfig
 
-#python_version = platform.python_version()[0:3]
 python_version = sysconfig.get_config_vars()["VERSION"]
 
 
@@ -89,14 +84,14 @@ my_extra_compile_args = [ '-D_FILE_OFFSET_BITS=64' ]
 my_extra_link_args = [ ]
 
 if bsd_fixes:
-    my_extra_link_args = my_extra_link_args + str.split('../../owlib/src/c/.libs/libow.so', ' ')
+    my_extra_link_args = my_extra_link_args + '../../owlib/src/c/.libs/libow.so'.split(' ')
 
 my_libraries = [ 'ow' ]
 
 #if ARCH == "x64":
 #    my_extra_objects = [ '../../owlib/src/c/.libs/libow.a' ]
 #    my_libraries = [ ]
-#    #my_extra_link_args = my_extra_link_args + str.split('-Wl,--export-dynamic', ' ')
+#    #my_extra_link_args = my_extra_link_args + '-Wl,--export-dynamic'.split(' ')
 #elif ARCH != "x64":
 #    my_extra_objects = ""
 #    my_libraries = [ 'ow' ]
@@ -106,24 +101,12 @@ if bsd_fixes:
 
 removals = ['-Wstrict-prototypes']
    
-if python_version == '2.5':
-    cv_opt = sysconfig.get_config_vars()["CFLAGS"]
-    for removal in removals:
-        cv_opt = cv_opt.replace(removal, " ")
-    sysconfig.get_config_vars()["CFLAGS"] = ' '.join(cv_opt.split())
-    cv_opt = ' '.join(my_extra_compile_args)
-    for removal in removals:
-        cv_opt = cv_opt.replace(removal, " ")
-    my_extra_compile_args = ' '.join(cv_opt.split())
-else:
-    cv_opt = sysconfig.get_config_vars()["OPT"]
-    for removal in removals:
-        cv_opt = cv_opt.replace(removal, " ")
-    sysconfig.get_config_vars()["OPT"] = ' '.join(cv_opt.split())
-#    cv_opt = ' '.join(my_extra_compile_args)
-#    my_extra_compile_args = ' '.join(cv_opt.split())
+cv_opt = sysconfig.get_config_vars()["OPT"]
+for removal in removals:
+    cv_opt = cv_opt.replace(removal, " ")
+sysconfig.get_config_vars()["OPT"] = ' '.join(cv_opt.split())
 
-			
+
 #print "my_extra_compile_args=", my_extra_compile_args
 my_extra_compile_args = [ arg for arg in my_extra_compile_args if len(arg) > 1 ]
 #print "my_extra_compile_args=", my_extra_compile_args
@@ -141,14 +124,14 @@ write_configuration(my_define_macros, my_include_dirs, my_libraries, my_library_
 setup(
     name             = 'ow',
     description      = '1-wire hardware interface.',
-    version          = '@VERSION@',
+    version          = '@VERSION@'.replace('p', '.'),
     author           = 'Peter Kropf',
     author_email     = 'pkropf@gmail.com',
     url              = 'http://www.owfs.org/',
     license          = 'GPL',
     platforms        = 'Linux',
     long_description = 'Interface with 1-wire controllers and sensors from Python.',
-    classifiers      = filter( None, classifiers.split( '\n' ) ),
+    classifiers      = classifiers.split( '\n' ),
     packages         = ['ow'],
     ext_package      = 'ow',
     ext_modules      = [ Extension( '_OW',

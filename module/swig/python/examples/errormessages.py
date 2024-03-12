@@ -30,17 +30,17 @@ import ow
 
 
 def tree( sensor ):
-    print '%7s - %s' % ( sensor._type, sensor._path )
+    print('%7s - %s' % ( sensor._type, sensor._path ))
     for next in sensor.sensors( ):
         if next._type in [ 'DS2409', ]:
             tree( next )
         else:
-            print '%7s - %s' % ( next._type, next._path )
+            print('%7s - %s' % ( next._type, next._path ))
 
 
 if __name__ == "__main__":
     if len( sys.argv ) == 1:
-        print 'usage: errormessages.py u|serial_port_path'
+        print('usage: errormessages.py u|serial_port_path')
         sys.exit( 1 )
     else:
         # Turn on the level of message to display

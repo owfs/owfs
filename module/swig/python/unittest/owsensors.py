@@ -26,7 +26,7 @@ Test suite for basic reality checks on a 1-wire nerwork.
 import unittest
 import sys
 import os
-import ConfigParser
+import configparser
 import ow
 
 
@@ -36,12 +36,13 @@ load    = True
 
 class OWSensors( unittest.TestCase ):
     def setUp( self ):
-        #print 'OWSensors.setup'
-        if not os.path.exists( 'owtest.ini' ):
-            raise IOError, 'owtest.ini'
+        curr_dir = os.path.dirname(os.path.realpath(__file__))
 
-        self.config = ConfigParser.ConfigParser( )
-        self.config.read( 'owtest.ini' )
+        if not os.path.exists(os.path.join(curr_dir, 'owtest.ini')):
+            raise IOError(os.path.join(curr_dir, 'owtest.ini'))
+
+        self.config = configparser.ConfigParser( )
+        self.config.read(os.path.join(curr_dir, 'owtest.ini'))
 
         ow.init( self.config.get( 'General', 'interface' ) )
 
@@ -53,43 +54,38 @@ class OWSensors( unittest.TestCase ):
 
 
     def testRootNameType( self ):
-        #print 'OWSensors.testRootNameType'
         path, name = str( ow.Sensor( '/' ) ).split( ' - ' )
-        self.failUnlessEqual( path, '/' )
-        self.failUnlessEqual( name, self.config.get( 'Root', 'type' ) )
+        self.assertEqual( path, '/' )
+        self.assertEqual( name, self.config.get( 'Root', 'type' ) )
 
 
     def testRootEntries( self ):
-        #print 'OWSensors.testRootEntries'
         entries = list( ow.Sensor( '/' ).entries( ) )
         entries.sort( )
 
-        self.failUnlessEqual( entries, self.entries )
+        self.assertEqual( entries, self.entries )
 
 
     def testSensors( self ):
-        #print 'OWSensors.testSensors'
         sensors = [ str( sensor ).split( ' - ' )[ 0 ] for sensor in ow.Sensor( '/' ).sensors( ) ]
         sensors.sort( )
 
-        self.failUnlessEqual( sensors, self.sensors )
+        self.assertEqual( sensors, self.sensors )
 
 
     def testBaseAttributes( self ):
-        #print 'OWSensors.testBaseAttributes'
         for sensor in ow.Sensor( '/' ).sensors( ):
             name = str( sensor ).split( ' - ' )[ 0 ][ 1: ]
             family, id = name.split( '.' )
 
-            self.failUnlessEqual( family + id,                     sensor.address[ :-2 ] )
-            #self.failUnlessEqual( self.config.get( name, 'crc8' ), sensor.crc8 )
-            self.failUnlessEqual( family,                          sensor.family )
-            self.failUnlessEqual( id,                              sensor.id )
-            self.failUnlessEqual( self.config.get( name, 'type' ), sensor.type )
+            self.assertEqual( family + id,                     sensor.address[ :-2 ] )
+            #self.assertEqual( self.config.get( name, 'crc8' ), sensor.crc8 )
+            self.assertEqual( family,                          sensor.family )
+            self.assertEqual( id,                              sensor.id )
+            self.assertEqual( self.config.get( name, 'type' ), sensor.type )
 
 
     def testFindAnyValue( self ):
-        #print 'OWSensors.testFindAnyValue'
         type_list = { }
 
         for id in self.config.get( 'Root', 'sensors' ).split( ' ' ):
@@ -101,20 +97,20 @@ class OWSensors( unittest.TestCase ):
 
         for id_type in type_list:
             sensor_list = [ sensor for sensor in ow.Sensor( '/' ).find( type = id_type ) ]
-            self.failUnlessEqual( len( sensor_list ), type_list[ id_type ] )
+            self.assertEqual( len( sensor_list ), type_list[ id_type ] )
 
 
     def testFindAnyNoValue( self ):
         #print 'OWSensors.testFindAnyNoValue'
         type_count = len( self.config.get( 'Root', 'sensors' ).split( ' ' ) )
         sensor_list = [ sensor for sensor in ow.Sensor( '/' ).find( type = None ) ]
-        self.failUnlessEqual( len( sensor_list ), type_count )
+        self.assertEqual( len( sensor_list ), type_count )
 
 
     def testFindAnyNone( self ):
         #print 'OWSensors.testFindNone'
         sensor_list = [ sensor for sensor in ow.Sensor( '/' ).find( xyzzy = None ) ]
-        self.failUnlessEqual( len( sensor_list ), 0 )
+        self.assertEqual( len( sensor_list ), 0 )
 
 
     def testFindAll( self ):
@@ -133,11 +129,10 @@ class OWSensors( unittest.TestCase ):
             sensor_list = [ sensor for sensor in ow.Sensor( '/' ).find( all = True,
                                                                         family = pair[ 0 ],
                                                                         type = pair[ 1 ] ) ]
-            self.failUnlessEqual( len( sensor_list ), list[ pair ] )
+            self.assertEqual( len( sensor_list ), list[ pair ] )
 
 
     def testFindAllNone( self ):
-        #print 'OWSensors.testFindAllNone'
         list = { }
 
         for id in self.config.get( 'Root', 'sensors' ).split( ' ' ):
@@ -153,22 +148,22 @@ class OWSensors( unittest.TestCase ):
                                                                         xyzzy = True,
                                                                         family = pair[ 0 ],
                                                                         type = pair[ 1 ] ) ]
-            self.failUnlessEqual( len( sensor_list ), 0 )
+            self.assertEqual( len( sensor_list ), 0 )
 
 
     def testCacheUncached( self ):
         for id in self.config.get( 'Root', 'sensors' ).split( ' ' ):
             c = ow.Sensor( '/' + id )
             u = ow.Sensor( '/uncached/' + id )
-            self.failUnlessEqual( c._path, u._path )
+            self.assertEqual( c._path, u._path )
 
             ce = [ entry for entry in c.entries( ) ]
             ue = [ entry for entry in u.entries( ) ]
-            self.failUnlessEqual( ce, ue )
+            self.assertEqual( ce, ue )
 
             cs = [ sensor for sensor in c.sensors( ) ]
             us = [ sensor for sensor in u.sensors( ) ]
-            self.failUnlessEqual( cs, us )
+            self.assertEqual( cs, us )
 
 
     def testCacheSwitch( self ):
@@ -182,8 +177,8 @@ class OWSensors( unittest.TestCase ):
             ue = s.entryList( )
             us = s.sensorList( )
 
-            self.failUnlessEqual( ce, ue )
-            self.failUnlessEqual( cs, us )
+            self.assertEqual( ce, ue )
+            self.assertEqual( cs, us )
 
 
     def testRootCache( self ):
@@ -195,8 +190,8 @@ class OWSensors( unittest.TestCase ):
         ue = r.entryList( )
         us = r.sensorList( )
 
-        self.failUnlessEqual( cs, us )
-        self.failUnlessEqual( ue, [ 'alarm', 'simultaneous' ] )
+        self.assertEqual( cs, us )
+        self.assertEqual( ue, [ 'alarm', 'simultaneous' ] )
 
 
     def testEntryList( self ):
@@ -205,12 +200,12 @@ class OWSensors( unittest.TestCase ):
             u = ow.Sensor( '/uncached/' + id )
 
             ce = [ entry for entry in c.entries( ) ]
-            self.failUnlessEqual( ce, c.entryList( ) )
+            self.assertEqual( ce, c.entryList( ) )
 
             ue = [ entry for entry in u.entries( ) ]
-            self.failUnlessEqual( ue, u.entryList( ) )
+            self.assertEqual( ue, u.entryList( ) )
 
-            self.failUnlessEqual( ce, ue )
+            self.assertEqual( ce, ue )
 
 
     def testSensorList( self ):
@@ -219,25 +214,41 @@ class OWSensors( unittest.TestCase ):
             u = ow.Sensor( '/uncached/' + id )
 
             cs = [ sensor for sensor in c.sensors( ) ]
-            self.failUnlessEqual( cs, c.sensorList( ) )
+            self.assertEqual( cs, c.sensorList( ) )
 
             us = [ sensor for sensor in u.sensors( ) ]
-            self.failUnlessEqual( us, u.sensorList( ) )
+            self.assertEqual( us, u.sensorList( ) )
 
-            self.failUnlessEqual( cs, us )
+            self.assertEqual( cs, us )
 
 
     def testEqual( self ):
         s1 = ow.Sensor( '/' )
         s2 = ow.Sensor( '/' )
         s3 = ow.Sensor( self.config.get( 'Root', 'sensors' ).split( ' ' )[ 0 ] )
-        self.failUnlessEqual( s1, s2 )
-        self.failIfEqual( s1, s3 )
-        self.failIfEqual( s2, s3 )
+        self.assertEqual( s1, s2 )
+        self.assertNotEqual( s1, s3 )
+        self.assertNotEqual( s2, s3 )
 
 
 def Suite( ):
-    return unittest.makeSuite( OWSensors, 'test' )
+    suite = unittest.TestSuite()
+    suite.addTest(OWSensors('testRootNameType'))
+    suite.addTest(OWSensors('testRootEntries'))
+    suite.addTest(OWSensors('testSensors'))
+    suite.addTest(OWSensors('testBaseAttributes'))
+    suite.addTest(OWSensors('testFindAnyValue'))
+    suite.addTest(OWSensors('testFindAnyNoValue'))
+    suite.addTest(OWSensors('testFindAnyNone'))
+    suite.addTest(OWSensors('testFindAll'))
+    suite.addTest(OWSensors('testFindAllNone'))
+    suite.addTest(OWSensors('testCacheUncached'))
+    suite.addTest(OWSensors('testCacheSwitch'))
+    suite.addTest(OWSensors('testRootCache'))
+    suite.addTest(OWSensors('testEntryList'))
+    suite.addTest(OWSensors('testSensorList'))
+    suite.addTest(OWSensors('testEqual'))
+    return suite
 
 
 if __name__ == "__main__":
