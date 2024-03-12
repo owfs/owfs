@@ -32,7 +32,7 @@ AC_ARG_WITH(python, [  --with-python           Set location of Python executable
 AC_ARG_WITH(pythonconfig, [  --with-pythonconfig        Set location of python-config executable],[ PYTHONCONFIGBIN="$withval"], [PYTHONCONFIGBIN=yes])
 
 if test "x$PYTHONCONFIGBIN" = xyes; then
-       AC_CHECK_PROGS(PYTHONCONFIG, python-config python2.7-config python2.5-config python2.4-config python2.3-config)
+       AC_CHECK_PROGS(PYTHONCONFIG, python-config python3.12-config python3.11-config python3.10-config python3.9-config python3.8-config)
 else
       PYTHONCONFIG="$PYTHONCONFIGBIN"
 fi
@@ -44,7 +44,7 @@ else
 # First figure out the name of the Python executable
 
 if test "x$PYBIN" = xyes; then
-AC_CHECK_PROGS(PYTHON, python python2.7 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0 python1.6 python1.5 python1.4 python)
+AC_CHECK_PROGS(PYTHON, python python3.12 python3.11 python3.10 python3.9 python3.8)
 else
 PYTHON="$PYBIN"
 fi
@@ -82,7 +82,7 @@ if test ! -z "$PYTHONCONFIG"; then
 
    # Need to do this hack since autoconf replaces __file__ with the name of the configure file
    filehack="file__"
-   PYVERSION=`($PYTHON -c "import string,operator,os.path; print operator.getitem(os.path.split(operator.getitem(os.path.split(string.__$filehack),0)),1)")`
+   PYVERSION=`($PYTHON -c "import string,operator,os.path; print(operator.getitem(os.path.split(operator.getitem(os.path.split(string.__$filehack),0)),1))")`
    AC_MSG_RESULT($PYVERSION)
 
    AC_MSG_CHECKING(for Python exec-prefix)
@@ -96,7 +96,7 @@ if test ! -z "$PYTHONCONFIG"; then
 
    AC_MSG_CHECKING(for Python site-dir)
    #This seem to be the site-packages dir where files are installed.
-   PYSITEDIR=`($PYTHON -c "from distutils.sysconfig import get_python_lib; print get_python_lib(plat_specific=1)") 2>/dev/null`
+   PYSITEDIR=`($PYTHON -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(plat_specific=1))") 2>/dev/null`
    if test -z "$PYSITEDIR"; then
      # I'm not really sure if it should be installed at /usr/lib64...
      if test -d "$PYEPREFIX/lib$LIBPOSTFIX/$PYVERSION/site-packages"; then
@@ -114,10 +114,10 @@ else
 # python-config not available.
 if test -n "$PYTHON"; then
     AC_MSG_CHECKING(for Python prefix)
-    PYPREFIX=`($PYTHON -c "import sys; print sys.prefix") 2>/dev/null`
+    PYPREFIX=`($PYTHON -c "import sys; print(sys.prefix)") 2>/dev/null`
     AC_MSG_RESULT($PYPREFIX)
     AC_MSG_CHECKING(for Python exec-prefix)
-    PYEPREFIX=`($PYTHON -c "import sys; print sys.exec_prefix") 2>/dev/null`
+    PYEPREFIX=`($PYTHON -c "import sys; print(sys.exec_prefix)") 2>/dev/null`
     AC_MSG_RESULT($PYEPREFIX)
 
 
@@ -128,13 +128,13 @@ if test -n "$PYTHON"; then
 
     # Need to do this hack since autoconf replaces __file__ with the name of the configure file
     filehack="file__"
-    PYVERSION=`($PYTHON -c "import string,operator,os.path; print operator.getitem(os.path.split(operator.getitem(os.path.split(string.__$filehack),0)),1)")`
+    PYVERSION=`($PYTHON -c "import string,operator,os.path; print(operator.getitem(os.path.split(operator.getitem(os.path.split(string.__$filehack),0)),1))")`
     AC_MSG_RESULT($PYVERSION)
 
     # Find the directory for libraries this is necessary to deal with
     # platforms that can have apps built for multiple archs: e.g. x86_64
     AC_MSG_CHECKING(for Python lib dir)
-    PYLIBDIR=`($PYTHON -c "import sys; print sys.lib") 2>/dev/null`
+    PYLIBDIR=`($PYTHON -c "import sys; print(sys.lib)") 2>/dev/null`
     if test -z "$PYLIBDIR"; then
       # older versions don't have sys.lib  so the best we can do is assume lib
       #PYLIBDIR="lib$LIBPOSTFIX"
@@ -159,7 +159,7 @@ if test -n "$PYTHON"; then
     AC_MSG_RESULT($PYLIBDIR)
 
     AC_MSG_CHECKING(for Python site-dir)
-    PYSITEDIR=`($PYTHON -c "from distutils.sysconfig import get_python_lib; print get_python_lib(plat_specific=1)") 2>/dev/null`
+    PYSITEDIR=`($PYTHON -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(plat_specific=1))") 2>/dev/null`
     if test -z "$PYSITEDIR"; then
       # I'm not really sure if it should be installed at /usr/lib64...
       if test -d "$PYEPREFIX/lib$LIBPOSTFIX/$PYVERSION/site-packages"; then
